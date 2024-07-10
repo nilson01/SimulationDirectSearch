@@ -22,7 +22,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 logger = logging.getLogger(__name__)
 
 
-# 0. Simulation run utils
+# 0. Simulation utils
 
 def load_config(file_path='config.yaml'):
     with open(file_path, 'r') as file:
@@ -76,25 +76,19 @@ def save_simulation_data(global_df, all_losses_dicts, all_epoch_num_lists, resul
 def save_results_to_dataframe(results, folder):
     data = {
         "Configuration": [],
-        "Accuracy_A1": [],
-        "Accuracy_A2": [],
         "Behavioral Value fn.": [],
         "Method's Value fn.": [],
-        "Optimal Value fn.": []
     }
 
     for config_key, performance in results.items():
         data["Configuration"].append(config_key)
-        data["Accuracy_A1"].append(performance.get("Accuracy_A1", None))
-        data["Accuracy_A2"].append(performance.get("Accuracy_A2", None))
         data["Behavioral Value fn."].append(performance.get("Behavioral Value fn.", None))
         data["Method's Value fn."].append(performance.get("Method's Value fn.", None))
-        data["Optimal Value fn."].append(performance.get("Optimal Value fn.", None))
 
     df = pd.DataFrame(data)
     
     # Sort the DataFrame by 'Behavioral Value fn.' in descending order
-    df = df.sort_values(by="Behavioral Value fn.", ascending=False)
+    df = df.sort_values(by="Method's Value fn.", ascending=False)
     
     df.to_csv(f'{folder}/configurations_performance.csv', index=False)
     return df
@@ -127,23 +121,18 @@ def load_and_process_data(params, folder):
     # Extract and process unique values
     columns_to_process = {
         'Predicted': ['Predicted_A1', 'Predicted_A2'],
-        'Optimal': ['Optimal_A1', 'Optimal_A2']
     }
     unique_values = extract_unique_treatment_values(global_df, columns_to_process)
 
     # Process and plot results from all simulations
     for i, losses_dict in enumerate(all_losses_dicts):
-        run_name = f"Simulation run trainVval_{i}"
+        run_name = f"run_trainVval_{i}"
         selected_indices = [i for i in range(params['num_replications'])]  
         if  params['f_model'] == 'surr_opt' :
             plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, params['n_epoch'], run_name, folder)
         else:
             plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, run_name, folder)
 
-    # # Plotting epoch frequencies for all runs
-    # for i, epoch_num_list in enumerate(all_epoch_num_lists):
-        # run_name = f"Simulation run epoch_num_{i}"        
-        # plot_epoch_frequency(epoch_num_list, params['n_epoch'], run_name)  
 
     # Print results for each configuration
     logger.info("\n\n")
@@ -625,6 +614,8 @@ def plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, n_epoc
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust the layout to make room for the subtitle
 
     # Save the plot
+    # Create the directory if it doesn't exist
+    os.makedirs(folder, exist_ok=True)
     plot_filename = os.path.join(folder, f"{run_name}.png")
     plt.savefig(plot_filename)
     logging.info(f"TrainVval Plot saved as: {plot_filename}")
@@ -677,6 +668,8 @@ def plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, run_
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     # Save the plot
+    # Create the directory if it doesn't exist
+    os.makedirs(folder, exist_ok=True)
     plot_filename = os.path.join(folder, f"{run_name}.png")
     plt.savefig(plot_filename)
     logging.info(f"TrainVval Plot Deep Q Learning saved as: {plot_filename}")
@@ -695,42 +688,10 @@ def calculate_accuracies(df, V_replications):
     Returns:
         pd.DataFrame: DataFrame containing calculated accuracies and value functions.
     """
-    correct_behavioral = {'A1': 0, 'A2': 0}
-    correct_predicted = {'A1': 0, 'A2': 0}
-    total = {'A1': 0, 'A2': 0}
-    accuracies = {'Accuracy_A1': [], 'Accuracy_A2': []}
-
-    for index, row in df.iterrows():
-        # Unpack the row for clearer access
-        behavioral_A1, behavioral_A2 = row['Behavioral_A1'], row['Behavioral_A2']
-        predicted_A1, predicted_A2 = row['Predicted_A1'], row['Predicted_A2']
-        optimal_A1, optimal_A2 = row['Optimal_A1'], row['Optimal_A2']
-
-        # Calculate accuracy for each action type and axis
-        row_corrects = {
-            'behavioral_A1': sum(a == p for a, p in zip(behavioral_A1, optimal_A1)),
-            'behavioral_A2': sum(a == p for a, p in zip(behavioral_A2, optimal_A2)),
-            'predicted_A1': sum(o == p for o, p in zip(optimal_A1, predicted_A1)),
-            'predicted_A2': sum(o == p for o, p in zip(optimal_A2, predicted_A2)),
-        }
-
-        # Append per-simulation accuracies
-        accuracies['Accuracy_A1'].append(row_corrects['predicted_A1'] / len(predicted_A1))
-        accuracies['Accuracy_A2'].append(row_corrects['predicted_A2'] / len(predicted_A2))
-
-        # Update running totals for overall accuracy
-        correct_behavioral['A1'] += row_corrects['behavioral_A1']
-        correct_behavioral['A2'] += row_corrects['behavioral_A2']
-        correct_predicted['A1'] += row_corrects['predicted_A1']
-        correct_predicted['A2'] += row_corrects['predicted_A2']
-        total['A1'] += len(predicted_A1)
-        total['A2'] += len(predicted_A2)
-
     # Create DataFrame for accuracies
-    accuracy_df = pd.DataFrame(accuracies)
+    accuracy_df = pd.DataFrame()
     accuracy_df["Behavioral Value fn."] = V_replications["V_replications_M1_behavioral"]
     accuracy_df["Method's Value fn."] = V_replications["V_replications_M1_pred"]
-    accuracy_df["Optimal Value fn."] = V_replications["V_replications_M1_optimal"]
 
     return accuracy_df
 
@@ -1159,8 +1120,7 @@ def train_and_validate_W_estimator(model, optimizer, scheduler, train_inputs, tr
 
         model.eval()
         total_val_loss = 0
-
-
+       
         with torch.no_grad():
             for batch_idx in batches(val_inputs.shape[0], batch_size):
                 batch_idx = batch_idx.to(device)
@@ -1171,6 +1131,9 @@ def train_and_validate_W_estimator(model, optimizer, scheduler, train_inputs, tr
 
 
                 outputs = model(combined_inputs)
+                
+
+
                 loss = F.mse_loss(torch.cat(outputs, dim=0).view(-1), targets_batch)
 
                 total_val_loss += loss.item()
@@ -1230,9 +1193,20 @@ def valFn_estimate(Qhat1_H1d1, Qhat2_H2d2, Qhat1_H1A1, Qhat2_H2A2, A1_tensor, A2
 
 
 
-def split_tensors(tensors, train_size):
-    """Split a list of tensors into training and validation sets."""
-    return [tensor[:train_size] for tensor in tensors], [tensor[train_size:] for tensor in tensors]
+
+# def initialize_and_train_stage(stage, input_tensor, action_tensor, outcome_tensor, val_input_tensor, val_action_tensor, val_outcome_tensor, params):
+    
+#     sample_size = params['sample_size']
+    
+#     """Initialize, train and validate a model for a given stage."""
+#     model, optimizer, scheduler = initialize_model_and_optimizer(params, stage)
+#     losses, val_losses, epoch_num = train_and_validate_W_estimator(
+#         model, optimizer, scheduler, input_tensor, action_tensor, outcome_tensor, val_input_tensor, val_action_tensor, val_outcome_tensor, 
+#         params['batch_size'], params['device'], params['n_epoch'], stage, sample_size, params
+#     )
+
+#     return model
+
 
 def initialize_and_train_stage(stage, input_tensor, action_tensor, outcome_tensor, val_input_tensor, val_action_tensor, val_outcome_tensor, params):
     
@@ -1244,38 +1218,10 @@ def initialize_and_train_stage(stage, input_tensor, action_tensor, outcome_tenso
         model, optimizer, scheduler, input_tensor, action_tensor, outcome_tensor, val_input_tensor, val_action_tensor, val_outcome_tensor, 
         params['batch_size'], params['device'], params['n_epoch'], stage, sample_size, params
     )
-
-    return model
-
-
-
-def calculate_policy_values_W_estimator(train_data, params, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor):
-    train_size = int(params['training_validation_prop'] * params['sample_size'])
-    train_tensors, val_tensors = split_tensors(train_data, train_size)
-
-    # Unpack train and validation tensors
-    test_input_stage1, test_input_stage2, train_Y1, train_Y2, train_A1, train_A2 = train_tensors
-    val_input_stage1, val_input_stage2, val_Y1, val_Y2, val_A1, val_A2 = val_tensors
     
-    A2_tr = A2[:train_size] 
-    A2_val = A2[train_size:]
-
-    params.update({
-    'num_networks': 1,
-    'input_dim_stage1': 6,
-    'output_dim_stage1': 1,
-    'input_dim_stage2': 8,
-    'output_dim_stage2': 1,
-    })
-    
-
-    # Stage 2 training
-    stage = 2
-    nn_stage2 = initialize_and_train_stage(stage, test_input_stage2, train_A2, train_Y2, val_input_stage2, val_A2, val_Y2, params)
-
     # Define the directory and file name for the model
     model_dir = f"models/{params['job_id']}"
-    model_filename = f'best_model_stage_{stage}_{params['sample_size']}_W_estimator.pt'
+    model_filename = f"best_model_stage_Q_{stage}_{params['sample_size']}_W_estimator.pt"
         
     model_path = os.path.join(model_dir, model_filename)
     
@@ -1285,37 +1231,214 @@ def calculate_policy_values_W_estimator(train_data, params, A1, A2, P_A1_given_H
         return None  # or handle the error as needed
     
     # Load the model's state dictionary from the file
-    nn_stage2.load_state_dict(torch.load(model_path, map_location=params['device']))
+    model.load_state_dict(torch.load(model_path, map_location=params['device']))
     
-    nn_stage2.eval()
+    model.eval()
+
+
+    return model
+
+
+
+
+# def calculate_policy_values_W_estimator(train_data, params, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor):
+#     train_size = int(params['training_validation_prop'] * params['sample_size'])
+    
+#     #train_tensors = train_data[:train_size]
+#     #val_tensors = train_data[train_size:]
+    
+#     train_tensors = [tensor[:train_size] for tensor in train_data ]
+#     val_tensors = [tensor[train_size:] for tensor in train_data]
+
+#     # Unpack train and validation tensors
+#     test_input_stage1, test_input_stage2, train_Y1, train_Y2, train_A1, train_A2 = train_tensors
+#     val_input_stage1, val_input_stage2, val_Y1, val_Y2, val_A1, val_A2 = val_tensors
+    
+#     A2_tr = A2[:train_size] 
+#     A2_val = A2[train_size:]
+
+
     
     
 
+
+
+#     # Duplicate the params dictionary
+#     param_W = params.copy()
+
+#     # Update specific values in param_W
+#     param_W.update({
+#       'num_networks': 1,
+#       'input_dim_stage1': 6,
+#       'output_dim_stage1': 1,
+#       'input_dim_stage2': 8,
+#       'output_dim_stage2': 1,
+#     })
+
+    
+
+#     # Stage 2 training
+#     stage = 2
+#     nn_stage2 = initialize_and_train_stage(stage, test_input_stage2, train_A2, train_Y2, val_input_stage2, val_A2, val_Y2, param_W)
+
+
+#     combined_inputs2 = torch.cat((test_input_stage2, A2_tr.unsqueeze(-1)), dim=1)
+#     test_tr_outputs_stage2 = nn_stage2(combined_inputs2)[0]  #compute_test_outputs(nn_stage2, test_input_stage2, A2_tr, device, params, is_stage1=False)
+#     train_Y1_hat = test_tr_outputs_stage2.squeeze(1) + train_Y1 # pseudo outcome
+
+
+#     combined_inputs2val = torch.cat((val_input_stage2, A2_val.unsqueeze(-1)), dim=1)
+#     test_val_outputs_stage2 = nn_stage2(combined_inputs2val)[0]  #compute_test_outputs(nn_stage2, val_input_stage2, A2_val, device, params, is_stage1=False)
+#     val_Y1_hat = test_val_outputs_stage2 + val_Y1 # pseudo outcome
+
+#     # test_outputs_stage2 = nn_stage2(torch.cat((test_input_stage2, A2_train[0].unsqueeze(-1)), dim=1))[0]
+#     # train_Y1_hat = test_outputs_stage2.squeeze(1) + train_Y1
+
+#     # Stage 1 training
+#     nn_stage1 = initialize_and_train_stage(1, test_input_stage1, train_A1, train_Y1_hat, val_input_stage1, val_A1, val_Y1_hat, param_W)
+
+#     [test_input_stage1, test_input_stage2, Ci_tensor, Y1_tensor, Y2_tensor, A1_tensor, A2_tensor] =   train_tensors
+
+#     # Estimations
+#     Qhat1_H1d1, Qhat2_H2d2, Qhat1_H1A1, Qhat2_H2A2 = [nn_stage1(torch.cat((test_input_stage1, A1.unsqueeze(-1)), dim=1))[0], nn_stage2(torch.cat((test_input_stage2, A2.unsqueeze(-1)), dim=1))[0],
+#                                                       nn_stage1(torch.cat((test_input_stage1, A1_tensor.unsqueeze(-1)), dim=1))[0], nn_stage2(torch.cat((test_input_stage2, A2_tensor.unsqueeze(-1)), dim=1))[0]]
+
+    
+#     # Calculate V replication
+#     V_replications_M1_pred = valFn_estimate(Qhat1_H1d1, Qhat2_H2d2, Qhat1_H1A1, Qhat2_H2A2, A1_tensor, A2_tensor, A1, A2, Y1_tensor, Y2_tensor, P_A1_given_H1_tensor, P_A2_given_H2_tensor)
+
+#     return V_replications_M1_pred
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor):
+
+
+    train_size = int(params['training_validation_prop'] * params['sample_size'])
+    train_test_tensors = [tensor[:train_size] for tensor in train_tens ]
+    val_test_tensors = [tensor[train_size:] for tensor in train_tens]
+
+    test_input_stage1, test_input_stage2,  train_Y1, train_Y2, train_A1, train_A2 = train_test_tensors
+    val_input_stage1, val_input_stage2, val_Y1, val_Y2, val_A1, val_A2 = val_test_tensors
+
+
+    A1_tr, A2_tr = [tensor[:train_size] for tensor in [A1, A2] ] # actions from chosen policy
+    A1_val, A2_val = [tensor[train_size:] for tensor in [A1, A2]] # actions from chosen policy
+
+
+
+    # Duplicate the params dictionary
+    param_W = params.copy()
+
+    # Update specific values in param_W
+    param_W.update({
+          'num_networks': 1,
+          'input_dim_stage1': 6,
+          'output_dim_stage1': 1,
+          'input_dim_stage2': 8,
+          'output_dim_stage2': 1,
+      })
+
+
+
+
+    nn_stage2, optimizer_2, scheduler_2 = initialize_model_and_optimizer(param_W, 2)
+    train_losses_stage2, val_losses_stage2, epoch_num_model_2 = train_and_validate_W_estimator(nn_stage2, optimizer_2, scheduler_2, test_input_stage2, train_A2, train_Y2, val_input_stage2, val_A2, val_Y2, params['batch_size'], device, params['n_epoch'], 2, params['sample_size'], params)
+    
+    
+    model_dir = f"models/{params['job_id']}"
+    model_filename = f"best_model_stage_Q_{2}_{params['sample_size']}_W_estimator.pt"
+    model_path = os.path.join(model_dir, model_filename)
+    nn_stage2.load_state_dict(torch.load(model_path, map_location=params['device']))
+
+    nn_stage2.eval()
+
     combined_inputs2 = torch.cat((test_input_stage2, A2_tr.unsqueeze(-1)), dim=1)
     test_tr_outputs_stage2 = nn_stage2(combined_inputs2)[0]  #compute_test_outputs(nn_stage2, test_input_stage2, A2_tr, device, params, is_stage1=False)
+
     train_Y1_hat = test_tr_outputs_stage2.squeeze(1) + train_Y1 # pseudo outcome
 
 
     combined_inputs2val = torch.cat((val_input_stage2, A2_val.unsqueeze(-1)), dim=1)
     test_val_outputs_stage2 = nn_stage2(combined_inputs2val)[0]  #compute_test_outputs(nn_stage2, val_input_stage2, A2_val, device, params, is_stage1=False)
-    val_Y1_hat = test_val_outputs_stage2 + val_Y1 # pseudo outcome
+    val_Y1_hat = test_val_outputs_stage2.squeeze() + val_Y1 # pseudo outcome
+    
+    
 
-    # test_outputs_stage2 = nn_stage2(torch.cat((test_input_stage2, A2_train[0].unsqueeze(-1)), dim=1))[0]
-    # train_Y1_hat = test_outputs_stage2.squeeze(1) + train_Y1
 
-    # Stage 1 training
-    nn_stage1 = initialize_and_train_stage(1, test_input_stage1, train_A1, train_Y1_hat, val_input_stage1, val_A1, val_Y1_hat, params)
-
-    [test_input_stage1, test_input_stage2, Ci_tensor, Y1_tensor, Y2_tensor, A1_tensor, A2_tensor] =   train_tensors
-
-    # Estimations
-    Qhat1_H1d1, Qhat2_H2d2, Qhat1_H1A1, Qhat2_H2A2 = [nn_stage1(torch.cat((test_input_stage1, A1.unsqueeze(-1)), dim=1))[0], nn_stage2(torch.cat((test_input_stage2, A2.unsqueeze(-1)), dim=1))[0],
-                                                      nn_stage1(torch.cat((test_input_stage1, A1_tensor.unsqueeze(-1)), dim=1))[0], nn_stage2(torch.cat((test_input_stage2, A2_tensor.unsqueeze(-1)), dim=1))[0]]
+    nn_stage1, optimizer_1, scheduler_1 = initialize_model_and_optimizer(param_W, 1)
+    train_losses_stage1, val_losses_stage1, epoch_num_model_1 = train_and_validate_W_estimator(nn_stage1, optimizer_1, scheduler_1, test_input_stage1, train_A1, train_Y1_hat, val_input_stage1, val_A1, val_Y1_hat, params['batch_size'], device, params['n_epoch'], 1, params['sample_size'], params)
 
     
-    # Calculate V replication
-    V_replications_M1_pred = valFn_estimate(Qhat1_H1d1, Qhat2_H2d2, Qhat1_H1A1, Qhat2_H2A2, A1_tensor, A2_tensor, A1, A2, Y1_tensor, Y2_tensor, P_A1_given_H1_tensor, P_A2_given_H2_tensor)
+        
+    model_dir = f"models/{params['job_id']}"
+    model_filename = f"best_model_stage_Q_{1}_{params['sample_size']}_W_estimator.pt"
+    model_path = os.path.join(model_dir, model_filename)
+    nn_stage1.load_state_dict(torch.load(model_path, map_location=params['device']))
+
+    
+    
+    nn_stage1.eval()
+
+
+
+    [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor, A2_tensor] =   train_tens
+
+    combined_inputs2 = torch.cat((test_input_stage2, A2.unsqueeze(-1)), dim=1)
+    Qhat2_H2d2 = nn_stage2(combined_inputs2)[0]  #compute_test_outputs(nn_stage2, test_input_stage2, A2_tr, device, params, is_stage1=False)
+
+    combined_inputs1 = torch.cat((test_input_stage1, A1.unsqueeze(-1)), dim=1)
+    Qhat1_H1d1 = nn_stage1(combined_inputs1)[0]  #compute_test_outputs(nn_stage2, test_input_stage2, A2_tr, device, params, is_stage1=False)
+
+
+
+    combined_inputs2 = torch.cat((test_input_stage2, A2_tensor.unsqueeze(-1)), dim=1)
+    Qhat2_H2A2 = nn_stage2(combined_inputs2)[0]  #compute_test_outputs(nn_stage2, test_input_stage2, A2_tr, device, params, is_stage1=False)
+
+    combined_inputs1 = torch.cat((test_input_stage1, A1_tensor.unsqueeze(-1)), dim=1)
+    Qhat1_H1A1 = nn_stage1(combined_inputs1)[0]  #compute_test_outputs(nn_stage2, test_input_stage2, A2_tr, device, params, is_stage1=False)
+
+
+    V_replications_M1_pred = valFn_estimate(Qhat1_H1d1, Qhat2_H2d2, Qhat1_H1A1, Qhat2_H2A2, A1_tensor, A2_tensor, A1, A2, Y1_tensor, Y2_tensor , P_A1_given_H1_tensor, P_A2_given_H2_tensor)
+
+
 
     return V_replications_M1_pred
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

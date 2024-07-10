@@ -1,0 +1,9 @@
+__pycache__/
+venv/
+*.pkl
+results_sim.ipynb
+data/
+test.py
+models/
+.DS_Store
+.ipynb_checkpoints/
