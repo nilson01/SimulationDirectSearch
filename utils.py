@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from tqdm.notebook import tqdm
-import warnings
 import numpy as np
 import pandas as pd
 import pickle
@@ -14,6 +13,12 @@ import matplotlib.pyplot as plt
 from collections import Counter
 import logging
 import torch.nn.functional as F
+from collections import defaultdict
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.exceptions import ConvergenceWarning
+import warnings
 
 
 
@@ -23,13 +28,14 @@ logger = logging.getLogger(__name__)
 
 
 # 0. Simulation utils
-
 def load_config(file_path='config.yaml'):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
     
 
-def extract_unique_treatment_values(df, columns_to_process):
+def extract_unique_treatment_values(df, columns_to_process, name): 
+    
+    
     unique_values = {}
 
     for key, cols in columns_to_process.items():
@@ -39,30 +45,31 @@ def extract_unique_treatment_values(df, columns_to_process):
             all_values = [item for sublist in df[col] for item in sublist]
             unique_values[key][col] = set(all_values)
 
-    log_message = "\nUnique values:\n" + "\n".join(f"{k}: {v}" for k, v in unique_values.items()) + "\n"
+    log_message = f"\nUnique values for {name}:\n" + "\n".join(f"{k}: {v}" for k, v in unique_values.items()) + "\n"
     logger.info(log_message)
     
     return unique_values
 
 
-def save_simulation_data(global_df, all_losses_dicts, all_epoch_num_lists, results, folder):
+def save_simulation_data(all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder):
     # Check if the folder exists, if not, create it
     if not os.path.exists(folder):
         os.makedirs(folder)
     
     # Define paths for saving files
-    df_path = os.path.join(folder, 'simulation_data.pkl')
+    df_path_DQL = os.path.join(folder, 'simulation_data_DQL.pkl')
+    df_path_DS = os.path.join(folder, 'simulation_data_DS.pkl')
     losses_path = os.path.join(folder, 'losses_dicts.pkl')
     epochs_path = os.path.join(folder, 'epoch_num_lists.pkl')
     results_path = os.path.join(folder, 'simulation_results.pkl')
 
-    # Save DataFrame
-    # global_df.to_csv(df_path, index=False)
-    with open(df_path, 'wb') as f:
-        pickle.dump(global_df, f)
+    # Save each DataFrame with pickle
+    with open(df_path_DQL, 'wb') as f:
+        pickle.dump(all_dfs_DQL, f)
+    with open(df_path_DS, 'wb') as f:
+        pickle.dump(all_dfs_DS, f)
     
     # Save lists and dictionaries with pickle
-    
     with open(losses_path, 'wb') as f:
         pickle.dump(all_losses_dicts, f)
     with open(epochs_path, 'wb') as f:
@@ -74,41 +81,60 @@ def save_simulation_data(global_df, all_losses_dicts, all_epoch_num_lists, resul
 
 
 def save_results_to_dataframe(results, folder):
+    # Expand the data dictionary to accommodate DQL and DS results separately
     data = {
         "Configuration": [],
+        "Model": [],
         "Behavioral Value fn.": [],
-        "Method's Value fn.": [],
+        "Method's Value fn.": []
     }
 
+    # Iterate through the results dictionary
     for config_key, performance in results.items():
-        data["Configuration"].append(config_key)
-        data["Behavioral Value fn."].append(performance.get("Behavioral Value fn.", None))
-        data["Method's Value fn."].append(performance.get("Method's Value fn.", None))
+        # Each 'performance' item contains a further dictionary for 'DQL' and 'DS'
+        for model, metrics in performance.items():
+            data["Configuration"].append(config_key)
+            data["Model"].append(model)  # Keep track of which model (DQL or DS)
+            # Safely extract metric values for each model
+            data["Behavioral Value fn."].append(metrics.get("Behavioral Value fn.", None))
+            data["Method's Value fn."].append(metrics.get("Method's Value fn.", None))
 
+    # Create DataFrame from the structured data
     df = pd.DataFrame(data)
-    
-    # Sort the DataFrame by 'Behavioral Value fn.' in descending order
-    df = df.sort_values(by="Method's Value fn.", ascending=False)
-    
+
+    # You might want to sort by 'Method's Value fn.' or another relevant column, if NaNs are present handle them appropriately
+    df.sort_values(by=["Configuration", "Model"], ascending=[True, False], inplace=True)
+
+    # Ensure the folder exists
+    import os
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    # Save the DataFrame to a CSV file
     df.to_csv(f'{folder}/configurations_performance.csv', index=False)
+
     return df
 
-    
+
+
+
 def load_and_process_data(params, folder):
     # Check if the folder exists, if not, create it
     if not os.path.exists(folder):
         os.makedirs(folder)
         
-    # Define paths to the files
-    df_path = os.path.join(folder, 'simulation_data.pkl')
+    # Define paths to the files for both DQL and DS
+    df_path_DQL = os.path.join(folder, 'simulation_data_DQL.pkl')
+    df_path_DS = os.path.join(folder, 'simulation_data_DS.pkl')
     losses_path = os.path.join(folder, 'losses_dicts.pkl')
     epochs_path = os.path.join(folder, 'epoch_num_lists.pkl')
     results_path = os.path.join(folder, 'simulation_results.pkl')
 
-    # Load DataFrame
-    # global_df = pd.read_csv(df_path)
-    with open(df_path, 'rb') as f:
-        global_df = pickle.load(f)
+    # Load DataFrames
+    with open(df_path_DQL, 'rb') as f:
+        global_df_DQL = pickle.load(f)
+    with open(df_path_DS, 'rb') as f:
+        global_df_DS = pickle.load(f)
         
     # Load lists and dictionaries with pickle
     with open(losses_path, 'rb') as f:
@@ -118,37 +144,37 @@ def load_and_process_data(params, folder):
     with open(results_path, 'rb') as f:
         results = pickle.load(f)
     
-    # Extract and process unique values
+    # Extract and process unique values for both DQL and DS
     columns_to_process = {
         'Predicted': ['Predicted_A1', 'Predicted_A2'],
     }
-    unique_values = extract_unique_treatment_values(global_df, columns_to_process)
+
+    unique_values_DQL = extract_unique_treatment_values(global_df_DQL, columns_to_process, name = "DQL")
+    unique_values_DS = extract_unique_treatment_values(global_df_DS, columns_to_process, name = "DS")
 
     # Process and plot results from all simulations
-    for i, losses_dict in enumerate(all_losses_dicts):
+    for i, method_losses_dicts in enumerate(all_losses_dicts):
         run_name = f"run_trainVval_{i}"
         selected_indices = [i for i in range(params['num_replications'])]  
-        if  params['f_model'] == 'surr_opt' :
-            plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, params['n_epoch'], run_name, folder)
-        else:
-            plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, run_name, folder)
 
+        # Pass the appropriate sub-dictionary for DQL
+        plot_simulation_Qlearning_losses_in_grid(selected_indices, method_losses_dicts['DQL'], run_name, folder)
+
+        # Pass the appropriate sub-dictionary for DS
+        plot_simulation_surLoss_losses_in_grid(selected_indices, method_losses_dicts['DS'], params['n_epoch'], run_name, folder)
 
     # Print results for each configuration
     logger.info("\n\n")
     for config_key, performance in results.items():
-        logger.info("Configuration: %s\nAverage Performance:\n %s\n", config_key, performance.to_string(index=True, header=False))
+        logger.info("Configuration: %s\nAverage Performance:\n %s\n", config_key, json.dumps(performance, indent=4))
     
     # Call the function to plot value functions
     df = save_results_to_dataframe(results, folder)
-    plot_value_functions(results, folder)
 
 
-
-
-
-
-
+    
+    
+    
 
 # 1. DGP utils
 
@@ -172,6 +198,7 @@ def A_sim(matrix_pi, stage):
         col_names = ['pi_20', 'pi_21', 'pi_22']
     
     probs_dict = {name: probs[:, idx] for idx, name in enumerate(col_names)}
+    
     
     return {'A': A, 'probs': probs_dict}
 
@@ -197,6 +224,7 @@ def M_propen(A, Xs, stage):
     if A.shape[1] != 1:
         raise ValueError("Cannot handle multiple stages of treatments together!")
     if A.shape[0] != Xs.shape[0]:
+        print("A.shape, Xs.shape: ", A.shape, Xs.shape)
         raise ValueError("A and Xs do not match in dimension!")
     if len(np.unique(A)) <= 1:
         raise ValueError("Treatment options are insufficient!")
@@ -218,9 +246,12 @@ def M_propen(A, Xs, stage):
         col_names = ['pi_10', 'pi_11', 'pi_12']
     else:
         col_names = ['pi_20', 'pi_21', 'pi_22']
-    probs_df = pd.DataFrame(s_p, columns=col_names)
+        
+    #probs_df = pd.DataFrame(s_p, columns=col_names)
+    #probs_df = {name: s_p[:, idx] for idx, name in enumerate(col_names)}
+    probs_dict = {name: torch.tensor(s_p[:, idx], dtype=torch.float32) for idx, name in enumerate(col_names)}
 
-    return probs_df
+    return probs_dict
 
 
 
@@ -616,9 +647,9 @@ def plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, n_epoc
     # Save the plot
     # Create the directory if it doesn't exist
     os.makedirs(folder, exist_ok=True)
-    plot_filename = os.path.join(folder, f"{run_name}.png")
+    plot_filename = os.path.join(folder, f"{run_name}_directSearch.png")
     plt.savefig(plot_filename)
-    logging.info(f"TrainVval Plot saved as: {plot_filename}")
+    logging.info(f"TrainVval Plot for Direct search saved as: {plot_filename}")
     plt.close(fig)  # Close the plot to free up memory
 
 
@@ -670,37 +701,32 @@ def plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, run_
     # Save the plot
     # Create the directory if it doesn't exist
     os.makedirs(folder, exist_ok=True)
-    plot_filename = os.path.join(folder, f"{run_name}.png")
+    plot_filename = os.path.join(folder, f"{run_name}_deepQlearning.png")
     plt.savefig(plot_filename)
-    logging.info(f"TrainVval Plot Deep Q Learning saved as: {plot_filename}")
+    logging.info(f"TrainVval Plot for Deep Q Learning saved as: {plot_filename}")
     plt.close(fig)  # Close the plot to free up memory
 
 
+def extract_value_functions_separate(V_replications):
 
-def calculate_accuracies(df, V_replications):
-    """
-    Calculates and returns accuracies for behavioral and predicted actions against optimal actions.
+    # Process predictive values
+    pred_data = V_replications.get('V_replications_M1_pred', defaultdict(list))
 
-    Args:
-        df (pd.DataFrame): DataFrame containing columns for Behavioral, Predicted, and Optimal actions.
-        V_replications (dict): Dictionary containing lists of value functions for further analysis.
+    # Process behavioral values (assuming these are shared across models)
+    behavioral_data = V_replications.get('V_replications_M1_behavioral', [])
 
-    Returns:
-        pd.DataFrame: DataFrame containing calculated accuracies and value functions.
-    """
-    # Create DataFrame for accuracies
-    accuracy_df = pd.DataFrame()
-    accuracy_df["Behavioral Value fn."] = V_replications["V_replications_M1_behavioral"]
-    accuracy_df["Method's Value fn."] = V_replications["V_replications_M1_pred"]
+    # Create DataFrames for each method
+    VF_df_DQL = pd.DataFrame({
+        "Method's Value fn.": pred_data.get('DQL', []), #data_DQL["Method's Value fn."],
+        "Behavioral Value fn.": behavioral_data
+    })
 
-    return accuracy_df
-
-
-
-
-
-
-
+    VF_df_DS = pd.DataFrame({
+        "Method's Value fn.": pred_data.get('DS', []), #data_DS["Method's Value fn."],
+        "Behavioral Value fn.": behavioral_data
+    })
+    
+    return VF_df_DQL, VF_df_DS
 
 
 
@@ -1037,7 +1063,7 @@ def compute_test_outputs(nn, test_input, A_tensor, params, is_stage1=True):
 
     # Determine the optimal action based on the computed outputs
     optimal_actions = torch.argmax(test_outputs, dim=1) + 1
-    return optimal_actions.squeeze().to(params['device']), test_outputs
+    return optimal_actions.squeeze().to(params['device'])
     
 
 
@@ -1157,7 +1183,7 @@ def train_and_validate_W_estimator(model, optimizer, scheduler, train_inputs, tr
         
     # Save the best model parameters after all epochs
     if best_model_params is not None:
-        model_path = os.path.join(model_dir, f'best_model_stage_Q_{stage_number}_{sample_size}_W_estimator.pt')
+        model_path = os.path.join(model_dir, f"best_model_stage_Q_{stage_number}_{sample_size}_W_estimator_{params['f_model']}.pt")
         torch.save(best_model_params, model_path)
 
 
@@ -1221,7 +1247,7 @@ def initialize_and_train_stage(stage, input_tensor, action_tensor, outcome_tenso
     
     # Define the directory and file name for the model
     model_dir = f"models/{params['job_id']}"
-    model_filename = f"best_model_stage_Q_{stage}_{params['sample_size']}_W_estimator.pt"
+    model_filename = f"best_model_stage_Q_{stage}_{params['sample_size']}_W_estimator_{params['f_model']}.pt"
         
     model_path = os.path.join(model_dir, model_filename)
     
@@ -1367,7 +1393,7 @@ def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H
     
     
     model_dir = f"models/{params['job_id']}"
-    model_filename = f"best_model_stage_Q_{2}_{params['sample_size']}_W_estimator.pt"
+    model_filename = f"best_model_stage_Q_{2}_{params['sample_size']}_W_estimator_{params['f_model']}.pt"
     model_path = os.path.join(model_dir, model_filename)
     nn_stage2.load_state_dict(torch.load(model_path, map_location=params['device']))
 
@@ -1392,7 +1418,7 @@ def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H
     
         
     model_dir = f"models/{params['job_id']}"
-    model_filename = f"best_model_stage_Q_{1}_{params['sample_size']}_W_estimator.pt"
+    model_filename = f"best_model_stage_Q_{1}_{params['sample_size']}_W_estimator_{params['f_model']}.pt"
     model_path = os.path.join(model_dir, model_filename)
     nn_stage1.load_state_dict(torch.load(model_path, map_location=params['device']))
 

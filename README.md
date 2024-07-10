@@ -1,20 +1,18 @@
 
-# DirectSearchSim
+# DirectSearchApplication
 
-This repository contains the code for running simulations for Direct Search. Follow the instructions below to set up and run the simulations.
+This repository contains the code for running Application for Direct Search. Follow the instructions below to set up and run the simulations.
 
 ## Directory Structure
 
 ```sh
 DirectSearchSim/
-├── __pycache__/
 ├── config.yaml
 ├── data/
 ├── environment.yml
 ├── models/
 ├── README.md
-├── SimulationDSGridSearch.py
-├── test.py
+├── DSApp.py
 └── utils.py
 ```
 
@@ -29,8 +27,8 @@ Ensure you have [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [
 Clone the repository using the following command:
 
 ```sh
-git clone https://github.com/nilson01/DirectSearchSim.git
-cd DirectSearchSim
+git clone https://github.com/nilson01/ApplicationDirectSearch.git
+cd ApplicationDirectSearch
 ```
 
 ### Install Dependencies
@@ -44,28 +42,28 @@ cd DirectSearchSim
 2. **Activate the environment:**
 
    ```sh
-   conda activate DirectSearchSim
+   conda activate DirectSearchApplication
    ```
 
 ## Configuration
 
 Before running the simulations, you need to edit the `config.yaml` file according to the setup you want to check.
 
-## Running the Simulation
+## Running the Application
 
-The main simulation code is in the `SimulationDSGridSearch.py` file. This file also includes parallelization for efficient execution.
+The main Application code is in the `DSApp.py` file. This file also includes parallelization for efficient execution.
 
 ### Run with Parallelization
 
 To run the simulation with parallelization, use:
 
 ```sh
-python SimulationDSGridSearch.py
+python DSApp.py
 ```
 
 ### Run a Simple Single Simulation
 
-If you don't want parallelization or want to run a simple single simulation, you can edit the `SimulationDSGridSearch.py` file to disable or modify the parallelization settings.
+If you don't want parallelization or want to run a simple single simulation, you can edit the `DSApp.py` file to disable or modify the parallelization settings.
 
 ### Utility Functions
 
@@ -79,7 +77,7 @@ Utility functions required for the simulations are available in the `utils.py` f
 
 2. **Run the simulation**:
    ```sh
-   python SimulationDSGridSearch.py
+   python DSApp.py
    ```
 
 3. **Check the logs**:

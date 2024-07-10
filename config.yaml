@@ -5,12 +5,12 @@ surrogate_num: 1  # Indicates the surrogate model configuration number
 option_sur: 4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
 noiseless: True  # Boolean flag to indicate if noise should be excluded in simulations
-sample_size: 30000  # Number of samples to be used
+sample_size: 15000  # Number of samples to be used
 num_replications: 3
 job_id: tao
 
 training_validation_prop: 0.7  # Proportion of data for training vs validation
-n_epoch: 150  # Number of training epochs
+n_epoch: 60 # 150  # Number of training epochs
 batch_size: 3000  # Batch size calculated as a proportion of sample size
 num_networks: 2  # Number of parallel networks or models
 activation_function: relu # elu, relu

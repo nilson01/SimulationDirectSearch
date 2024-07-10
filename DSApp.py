@@ -11,6 +11,8 @@ from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import time 
 from datetime import datetime
+import copy
+from collections import defaultdict
 
 
 class FlushFile:
@@ -52,10 +54,10 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
 
     result1 = A_sim(matrix_pi1, stage=1)
     
-    A1, probs1 = result1['A'], result1['probs']
-#     A1, _ = result1['A'], result1['probs']
-#    # Propensity stage 1
-#     probs1 = M_propen(A1, O1[:, [2, 3]], stage=1)  # multinomial logistic regression with X3, X4
+#     A1, probs1 = result1['A'], result1['probs']
+
+    A1, _ = result1['A'], result1['probs']
+    probs1 = M_propen(A1, O1[[2, 3]].t(), stage=1)  # multinomial logistic regression with X3, X4
         
     A1 += 1
 
@@ -68,11 +70,12 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
     pi_22 = torch.exp(0.5 * x4)
     matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
 
-    result2 = A_sim(matrix_pi2, stage=2)    
-    A2, probs2 = result2['A'], result2['probs']
-#     A2, _ = result2['A'], result2['probs']
-#     # Propensity stage 2
-#     probs2 = M_propen(A2, O1[:, [0, 4]], stage=2)  # multinomial logistic regression with X1, X5
+    result2 = A_sim(matrix_pi2, stage=2)
+    
+#     A2, probs2 = result2['A'], result2['probs']
+
+    A2, _ = result2['A'], result2['probs']
+    probs2 = M_propen(A2, O1[[0, 4]].t(), stage=2)  # multinomial logistic regression with X1, X5
         
     A2 += 1
 
@@ -177,70 +180,128 @@ def DQlearning(tuple_train, tuple_val, params):
 
     train_losses_stage2, val_losses_stage2, epoch_num_model_2 = train_and_validate(nn_stage2, optimizer_2, scheduler_2, train_input_stage2, train_A2, train_Y2, 
                                                                                    val_input_stage2, val_A2, val_Y2, params, 2)
-    # params['batch_size'], device, params['n_epoch'], 2, params['sample_size'], params)
 
     train_Y1_hat = evaluate_model_on_actions(nn_stage2, train_input_stage2, train_A2) + train_Y1
     val_Y1_hat = evaluate_model_on_actions(nn_stage2, val_input_stage2, val_A2) + val_Y1
 
     train_losses_stage1, val_losses_stage1, epoch_num_model_1 = train_and_validate(nn_stage1, optimizer_1, scheduler_1, train_input_stage1, train_A1, train_Y1_hat, 
                                                                                    val_input_stage1, val_A1, val_Y1_hat, params, 1)
-    # params['batch_size'], device, params['n_epoch'], 1, params['sample_size'])
 
     return (nn_stage1, nn_stage2, (train_losses_stage1, train_losses_stage2, val_losses_stage1, val_losses_stage2))
 
 
 
-
-def eval_DTR(V_replications, num_replications, nn_stage1, nn_stage2, df, params):
+def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_stage1_DS, nn_stage2_DS, df_DQL, df_DS, params_dql, params_ds):
 
     # Generate and preprocess data for evaluation
-    processed_result = generate_and_preprocess_data(params, replication_seed=num_replications, run='test')
+    processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications, run='test')
     test_input_stage1, test_input_stage2, Ci_tensor, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2  = processed_result
+    
 
-    nn_stage1 = initialize_and_load_model(1, params['sample_size'] , params)
-    nn_stage2 = initialize_and_load_model(2, params['sample_size'] , params)
+    # Initialize and load models for DQL
+    nn_stage1_DQL = initialize_and_load_model(1, params_dql['sample_size'], params_dql)
+    nn_stage2_DQL = initialize_and_load_model(2, params_dql['sample_size'], params_dql)
 
-    # Calculate test outputs for all networks in stage 1
-    A1, test_outputs_stage1 = compute_test_outputs(nn = nn_stage1, test_input = test_input_stage1, A_tensor = A1_tensor_test, params=params, is_stage1=True)
+    # Initialize and load models for DS
+    nn_stage1_DS = initialize_and_load_model(1, params_ds['sample_size'], params_ds)
+    nn_stage2_DS = initialize_and_load_model(2, params_ds['sample_size'], params_ds)
+    
+    # Calculate test outputs for all networks in stage 1 for DQL
+    A1_DQL = compute_test_outputs(nn = nn_stage1_DQL, 
+                                test_input = test_input_stage1, 
+                                A_tensor = A1_tensor_test, 
+                                params = params_dql, 
+                                is_stage1 = True)
 
-    # Calculate test outputs for all networks in stage 2
-    A2, test_outputs_stage2 = compute_test_outputs(nn = nn_stage2, test_input = test_input_stage2, A_tensor = A2_tensor_test, params=params, is_stage1=False)
+    # Calculate test outputs for all networks in stage 2 for DQL
+    A2_DQL = compute_test_outputs(nn = nn_stage2_DQL, 
+                                test_input = test_input_stage2, 
+                                A_tensor = A2_tensor_test, 
+                                params = params_dql, 
+                                is_stage1 = False)
 
-    # Append to DataFrame
-    new_row = {
+    # Calculate test outputs for all networks in stage 1 for DS
+    A1_DS = compute_test_outputs(nn = nn_stage1_DS, 
+                                test_input = test_input_stage1, 
+                                A_tensor = A1_tensor_test, 
+                                params = params_ds, 
+                                is_stage1 = True)
+
+    # Calculate test outputs for all networks in stage 2 for DS
+    A2_DS = compute_test_outputs(nn = nn_stage2_DS, 
+                                test_input = test_input_stage2, 
+                                A_tensor = A2_tensor_test, 
+                                params = params_ds, 
+                                is_stage1 = False)
+
+    # Append to DataFrame for DQL
+    new_row_DQL = {
         'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
         'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
-        'Predicted_A1': A1.cpu().numpy().tolist(),
-        'Predicted_A2':  A2.cpu().numpy().tolist()
-        }
-    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-    
+        'Predicted_A1': A1_DQL.cpu().numpy().tolist(),
+        'Predicted_A2': A2_DQL.cpu().numpy().tolist()
+    }
+    df_DQL = pd.concat([df_DQL, pd.DataFrame([new_row_DQL])], ignore_index=True)
+
+    # Append to DataFrame for DS
+    new_row_DS = {
+        'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
+        'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
+        'Predicted_A1': A1_DS.cpu().numpy().tolist(),
+        'Predicted_A2': A2_DS.cpu().numpy().tolist()
+    }
+    df_DS = pd.concat([df_DS, pd.DataFrame([new_row_DS])], ignore_index=True)
+
+
     train_tensors = [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test]
 
 
-    V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, 
-                                                                 params, A1, A2, P_A1_g_H1, P_A2_g_H2)
         
+    # Calculate policy values using the W estimator for DQL
+    V_replications_M1_pred_DQL = calculate_policy_values_W_estimator(train_tensors, params_dql, A1_DQL, A2_DQL, P_A1_g_H1, P_A2_g_H2)
+
+    # Calculate policy values using the W estimator for DS
+    V_replications_M1_pred_DS = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_DS, A2_DS, P_A1_g_H1, P_A2_g_H2)
+    
     # value fn. 
     V_replications["V_replications_M1_behavioral"].append(torch.mean(Y1_tensor + Y2_tensor).cpu().item())  
     
     message = f'\nY1 beh mean: {torch.mean(Y1_tensor)}, Y2 beh mean: {torch.mean(Y2_tensor)}, Y1_beh+Y2_beh mean: {torch.mean(Y1_tensor + Y2_tensor)} \n\n'
     logging.info(message)
     
-   
-    V_replications["V_replications_M1_pred"].append(V_replications_M1_pred)
+    # Append policy values for DQL
+    V_replications["V_replications_M1_pred"]["DQL"].append(V_replications_M1_pred_DQL)
+
+    # Append policy values for DS
+    V_replications["V_replications_M1_pred"]["DS"].append(V_replications_M1_pred_DS)
 
 
-    return V_replications, df
+    return V_replications, df_DQL, df_DS
 
 
 
 
 def simulations(num_replications, V_replications, params):
-    columns = ['Behavioral_A1', 'Behavioral_A2', 'Predicted_A1', 'Predicted_A2', 'Optimal_A1', 'Optimal_A2']
-    df = pd.DataFrame(columns=columns)
-    losses_dict = {}
+
+    columns = ['Behavioral_A1', 'Behavioral_A2', 'Predicted_A1', 'Predicted_A2']
+
+    # Initialize separate DataFrames for DQL and DS
+    df_DQL = pd.DataFrame(columns=columns)
+    df_DS = pd.DataFrame(columns=columns)
+
+    losses_dict = {'DQL': {}, 'DS': {}} 
     epoch_num_model_lst = []
+    
+    # Clone the original config for DQlearning and surr_opt
+    params_DQL = copy.deepcopy(params)
+    params_DS = copy.deepcopy(params)
+    
+    params_DS['f_model'] = 'surr_opt'
+    params_DQL['f_model'] = 'DQlearning'
+    params_DQL['input_dim_stage1'] = 6
+    params_DQL['input_dim_stage2'] = 8
+    params_DQL['num_networks'] = 1  
+
 
     for replication in tqdm(range(num_replications), desc="Replications_M1"):
         logging.info(f"Replication # -------------->>>>>  {replication+1}")
@@ -250,20 +311,27 @@ def simulations(num_replications, V_replications, params):
 
         # Estimate treatment regime : model --> surr_opt
         logging.info("Training started!")
-        if params['f_model'] == 'DQlearning':
-            nn_stage1, nn_stage2, trn_val_loss_tpl = DQlearning(tuple_train, tuple_val, params)
-        else:
-            nn_stage1, nn_stage2, trn_val_loss_tpl, epoch_num_model = surr_opt(tuple_train, tuple_val, params)
-            epoch_num_model_lst.append(epoch_num_model)
-            
-        losses_dict[replication] = trn_val_loss_tpl
+        
+        # Run both models on the same tuple of data
+        nn_stage1_DQL, nn_stage2_DQL, trn_val_loss_tpl_DQL = DQlearning(tuple_train, tuple_val, params_DQL)
+        nn_stage1_DS, nn_stage2_DS, trn_val_loss_tpl_DS, epoch_num_model_DS = surr_opt(tuple_train, tuple_val, params_DS)
+        # Append epoch model results from surr_opt
+        epoch_num_model_lst.append(epoch_num_model_DS)
+        
+        # Store losses in their respective dictionaries
+        losses_dict['DQL'][replication] = trn_val_loss_tpl_DQL
+        losses_dict['DS'][replication] = trn_val_loss_tpl_DS
+        
         
         # eval_DTR
         logging.info("Evaluation started")
-        V_replications, df = eval_DTR(V_replications, replication, nn_stage1, nn_stage2, df, params)
-        
-    return V_replications, df, losses_dict, epoch_num_model_lst
-
+        V_replications, df_DQL, df_DS = eval_DTR(V_replications, replication, 
+                                                 nn_stage1_DQL, nn_stage2_DQL, 
+                                                 nn_stage1_DS, nn_stage2_DS, 
+                                                 df_DQL, df_DS, 
+                                                 params_DQL, params_DS)
+                
+    return V_replications, df_DQL, df_DS, losses_dict, epoch_num_model_lst
 
 
 def run_training(config, config_updates, V_replications, replication_seed):
@@ -271,11 +339,15 @@ def run_training(config, config_updates, V_replications, replication_seed):
     local_config = {**config, **config_updates}  # Create a local config that includes both global settings and updates
     
     # Execute the simulation function using updated settings
-    V_replications, df, losses_dict, epoch_num_model_lst = simulations(local_config['num_replications'], V_replications, local_config)
-    accuracy_df = calculate_accuracies(df, V_replications)
-    return accuracy_df, df, losses_dict, epoch_num_model_lst
+    V_replications, df_DQL, df_DS, losses_dict, epoch_num_model_lst = simulations(local_config['num_replications'], V_replications, local_config)
     
- 
+    if not any(V_replications[key] for key in V_replications):
+        logger.warning("V_replications is empty. Skipping accuracy calculation.")
+    else:
+        VF_df_DQL, VF_df_DS = extract_value_functions_separate(V_replications)
+        return VF_df_DQL, VF_df_DS, df_DQL, df_DS, losses_dict, epoch_num_model_lst
+    
+  
      
         
 # parallelized 
@@ -287,11 +359,15 @@ def run_training_with_params(params):
     config, current_config, V_replications, i = params
     return run_training(config, current_config, V_replications, replication_seed=i)
  
+    
 
 def run_grid_search(config, param_grid):
     # Initialize for storing results and performance metrics
     results = {}
-    all_dfs = pd.DataFrame()  # DataFrames from each run
+    # Initialize separate cumulative DataFrames for DQL and DS
+    all_dfs_DQL = pd.DataFrame()  # DataFrames from each DQL run
+    all_dfs_DS = pd.DataFrame()   # DataFrames from each DS run
+
     all_losses_dicts = []  # Losses from each run
     all_epoch_num_lists = []  # Epoch numbers from each run 
     grid_replications = 1
@@ -307,7 +383,7 @@ def run_grid_search(config, param_grid):
         for current_config in param_combinations:
             for i in range(grid_replications): 
                 V_replications = {
-                    "V_replications_M1_pred": [],
+                    "V_replications_M1_pred": defaultdict(list),
                     "V_replications_M1_behavioral": [],
                 }
                 params = (config, current_config, V_replications, i)
@@ -317,37 +393,170 @@ def run_grid_search(config, param_grid):
         for future in concurrent.futures.as_completed(future_to_params):
             current_config, i = future_to_params[future]
             try:
-                performance, df, losses_dict, epoch_num_model_lst = future.result()
+                # performance, df, losses_dict, epoch_num_model_lst = future.result()
+                
+                performance_DQL, performance_DS, df_DQL, df_DS, losses_dict, epoch_num_model_lst = future.result()
+                
+                
                 logging.info(f'Configuration {current_config}, replication {i} completed successfully.')
                 
-                performances = pd.DataFrame()
-                performances = pd.concat([performances, performance], axis=0)
-                all_dfs = pd.concat([all_dfs, df], axis=0)
+
+                # Processing performance DataFrame for both methods
+                performances_DQL = pd.DataFrame()
+                performances_DQL = pd.concat([performances_DQL, performance_DQL], axis=0)
+
+                performances_DS = pd.DataFrame()
+                performances_DS = pd.concat([performances_DS, performance_DS], axis=0)
+
+                # Update the cumulative DataFrame for DQL with the current DataFrame results
+                all_dfs_DQL = pd.concat([all_dfs_DQL, df_DQL], axis=0, ignore_index=True)
+
+                # Update the cumulative DataFrame for DS with the current DataFrame results
+                all_dfs_DS = pd.concat([all_dfs_DS, df_DS], axis=0, ignore_index=True)
+
                 all_losses_dicts.append(losses_dict)
                 all_epoch_num_lists.append(epoch_num_model_lst)
                 
-                # Store and print average performance across replications for each configuration
-                config_key = json.dumps(current_config, sort_keys=True)
-                if config_key not in results:
-                    results[config_key] = performances.mean()
-                else:
-                    results[config_key] += performances.mean()
             except Exception as exc:
                 logging.error(f'Generated an exception for config {current_config}, replication {i}: {exc}')
 
-        # Average the performances over the number of replications
-        for key in results:
-            results[key] /= grid_replications
-            logging.info('\n\n')
-            logging.info(f'\nPerformances for configuration: \n{key}')
-            logging.info(f'\n{results[key].to_string()}')
 
+        # Store and log average performance across replications for each configuration
+        config_key = json.dumps(current_config, sort_keys=True)
+        
+        # This assumes performances is a DataFrame with columns 'DQL' and 'DS'
+        performance_DQL_mean = performances_DQL["Method's Value fn."].mean()
+        performance_DS_mean = performances_DS["Method's Value fn."].mean()
+        
+        behavioral_DQL_mean = performances_DQL["Behavioral Value fn."].mean()  # Assuming similar structure
+        behavioral_DS_mean = performances_DS["Behavioral Value fn."].mean()
+
+        # Check if the configuration key exists in the results dictionary
+        if config_key not in results:
+            # If not, initialize it with dictionaries for each model containing the mean values
+            results[config_key] = {
+                'DQL': {"Method's Value fn.": performance_DQL_mean, 'Behavioral Value fn.': behavioral_DQL_mean},
+                'DS': {"Method's Value fn.": performance_DS_mean, 'Behavioral Value fn.': behavioral_DS_mean}
+            }
+        else:
+            # Update existing entries with new means
+            results[config_key]['DQL'].update({
+                "Method's Value fn.": performance_DQL_mean,
+                'Behavioral Value fn.': behavioral_DQL_mean
+            })
+            results[config_key]['DS'].update({
+                "Method's Value fn.": performance_DS_mean,
+                'Behavioral Value fn.': behavioral_DS_mean
+            })
+                
+        logging.info("Performances for configuration: %s", config_key)
+        logging.info("performance_DQL_mean: %s", performance_DQL_mean)
+        logging.info("performance_DS_mean: %s", performance_DS_mean)
+        logging.info("\n\n")
+        
     folder = f"data/{config['job_id']}"
-    save_simulation_data(all_dfs, all_losses_dicts, all_epoch_num_lists, results, folder)
+    save_simulation_data(all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder)
     load_and_process_data(config, folder)
 
+        
+        
+        
+        
+        
+
+# # Sequential version  
+
+# def run_grid_search(config, param_grid):
+#     # Initialize for storing results and performance metrics
+#     results = {}
+#     all_dfs_DQL = pd.DataFrame()  # DataFrames from each DQL run
+#     all_dfs_DS = pd.DataFrame()   # DataFrames from each DS run
     
+#     all_losses_dicts = []  # Losses from each run
+#     all_epoch_num_lists = []  # Epoch numbers from each run 
+#     grid_replications = 1
+
+#     for params in product(*param_grid.values()):
+#         current_config = dict(zip(param_grid.keys(), params))
+#         performances = pd.DataFrame()
+
+#         for i in range(grid_replications): 
+#             V_replications = {
+#                     "V_replications_M1_pred": defaultdict(list),
+#                     "V_replications_M1_behavioral": [],
+#                 }
+#             #performance, df, losses_dict, epoch_num_model_lst = run_training(config, current_config, V_replications, replication_seed=i)
+#             performance_DQL, performance_DS, df_DQL, df_DS, losses_dict, epoch_num_model_lst = run_training(config, current_config, 
+#                                                                                                             V_replications, replication_seed=i)
+
+#             #performances = pd.concat([performances, performance], axis=0)
+#             # Processing performance DataFrame for both methods
+#             performances_DQL = pd.DataFrame()
+#             performances_DQL = pd.concat([performances_DQL, performance_DQL], axis=0)
+
+#             performances_DS = pd.DataFrame()
+#             performances_DS = pd.concat([performances_DS, performance_DS], axis=0)
+
+            
+#             #all_dfs = pd.concat([all_dfs, df], axis=0)
+#             # Update the cumulative DataFrame for DQL with the current DataFrame results
+#             all_dfs_DQL = pd.concat([all_dfs_DQL, df_DQL], axis=0, ignore_index=True)
+
+#             # Update the cumulative DataFrame for DS with the current DataFrame results
+#             all_dfs_DS = pd.concat([all_dfs_DS, df_DS], axis=0, ignore_index=True)
+
+                
+#             all_losses_dicts.append(losses_dict)
+#             all_epoch_num_lists.append(epoch_num_model_lst)
+            
+               
+                
+
+#         # Store and log average performance across replications for each configuration
+#         config_key = json.dumps(current_config, sort_keys=True)
+        
+#         # This assumes performances is a DataFrame with columns 'DQL' and 'DS'
+#         performance_DQL_mean = performances_DQL["Method's Value fn."].mean()
+#         performance_DS_mean = performances_DS["Method's Value fn."].mean()
+        
+#         behavioral_DQL_mean = performances_DQL["Behavioral Value fn."].mean()  # Assuming similar structure
+#         behavioral_DS_mean = performances_DS["Behavioral Value fn."].mean()
+
+#         # Check if the configuration key exists in the results dictionary
+#         if config_key not in results:
+#             # If not, initialize it with dictionaries for each model containing the mean values
+#             results[config_key] = {
+#                 'DQL': {"Method's Value fn.": performance_DQL_mean, 'Behavioral Value fn.': behavioral_DQL_mean},
+#                 'DS': {"Method's Value fn.": performance_DS_mean, 'Behavioral Value fn.': behavioral_DS_mean}
+#             }
+#         else:
+#             # Update existing entries with new means
+#             results[config_key]['DQL'].update({
+#                 "Method's Value fn.": performance_DQL_mean,
+#                 'Behavioral Value fn.': behavioral_DQL_mean
+#             })
+#             results[config_key]['DS'].update({
+#                 "Method's Value fn.": performance_DS_mean,
+#                 'Behavioral Value fn.': behavioral_DS_mean
+#             })
+                
+#         logging.info("Performances for configuration: %s", config_key)
+#         logging.info("performance_DQL_mean: %s", performance_DQL_mean)
+#         logging.info("performance_DS_mean: %s", performance_DS_mean)
+#         logging.info("\n\n")
+     
+
+#     folder = f"data/{config['job_id']}"
+#     save_simulation_data(all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder)
+#     load_and_process_data(config, folder)
+    
+    
+    
+    
+    
+        
 def main():
+
     
     # setup_logging
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -371,13 +580,8 @@ def main():
 
     training_validation_prop = config['training_validation_prop']
     train_size = int(training_validation_prop * config['sample_size'])
-    logging.info("Training size: %d", train_size)
-
-    if config['f_model'] != 'surr_opt':
-        config['input_dim_stage1'] = 6
-        config['input_dim_stage2'] = 8 
-        config['num_networks'] = 1
-
+    logging.info("Training size: %d", train_size)    
+    
     
     # Define parameter grid for grid search
     param_grid = {
@@ -386,9 +590,16 @@ def main():
         'learning_rate': [0.007],
         'num_layers': [4]
     }
-    
     # Perform operations whose output should go to the file
     run_grid_search(config, param_grid)
+    
+    
+# if __name__ == '__main__':
+#     start_time = time.time()
+#     main()
+#     end_time = time.time()
+#     logging.info(f'Total time taken: {end_time - start_time:.2f} seconds')
+
     
     
 if __name__ == '__main__':
@@ -399,127 +610,4 @@ if __name__ == '__main__':
     logging.info(f'Total time taken: {end_time - start_time:.2f} seconds')
 
 
-
-
-
-
-
     
-    
-    
-    
-    
-    
-    
-
-
-
-
-# setting = 'tao'
-# f_model = 'DQlearning' #  'DQlearning', 'surr_opt'
-# print("\n")
-
-# sample_size = 15000  # 500, 1000 are the cases to check
-# num_replications = 3
-# n_epoch = 150 # 150
-
-# training_validation_prop = 0.5 #0.95 #0.01
-# train_size = int(training_validation_prop * sample_size)
-# print("Training size: ", train_size)
-
-# # batch_prop = 0.2 #0.07, 0.2
-# batch_size = 3456 # 64, 128, 256, 512, 3000
-# print("Mini-batch size: ", batch_size)
-
-
-# noiseless = True # True False. # no noise
-# tree_type =  True # True False
-
-# surrogate_num = 1 # 1 - old multiplicative one  2- new one
-# option_sur = 2 # 2, 4 # if surrogate_num = 1 then from 1-5 options, if surrogate_num = 2 then 1-> assymetric, 2 -> symmetric
-
-
-# # Set the device
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-
-    
-
-# config = {
-    
-#   'f_model' : f_model, 
-#   'setting': setting,
-#   'device':device,
-#   'noiseless':noiseless,   # Boolean flag to indicate if the noise
-#   'sample_size':sample_size,
-#   'batch_size': batch_size, # math.ceil(batch_prop*sample_size), #int(0.038*sample_size),
-#   'training_validation_prop':training_validation_prop,
-#   'n_epoch': n_epoch,
-#   'job_id':'taoV',
-    
-#   'num_networks': 2,
-#   'input_dim_stage1': 5, # [O1] --> [x1,...x5]
-#   'output_dim_stage1': 1,
-#   'input_dim_stage2': 7, # [O1, A1, Y1, O2]
-#   'output_dim_stage2': 1,
-#   'hidden_dim_stage1': 20, #20
-#   'hidden_dim_stage2': 20, #20
-#   'dropout_rate': 0.4, #0.3, 0.43
-#   'activation_function':'relu',
-#   'num_layers': 2,
-
-#   'optimizer_type': 'adam',  # Can be 'adam' or 'rmsprop'
-#   'optimizer_lr': 0.07, # 0.07, 0.007
-#   'optimizer_weight_decay': 0.001,  #1e-4,  Default: 0. Weight decay (L2 regularization) helps prevent overfitting by penalizing large weights.
-
-#   'use_scheduler': True, # True False
-#   'scheduler_type': 'reducelronplateau',  # Can be 'reducelronplateau', 'steplr', or 'cosineannealing'
-#   'scheduler_step_size': 30, # optim.lr_scheduler.StepLR
-#   'scheduler_gamma': 0.8,
-
-#   'initializer': 'he', # he, custon # He initialization (aka Kaiming initialization)
-
-#   # 'f_model': 'surr_opt',
-#   'surrogate_num': surrogate_num,
-#   'option_sur': option_sur, # if surrogate_num = 1 then 5 options, if surrogate_num = 2 then 1-> assymetric, 2 -> symmetric
-# }
-
-
-# if config['f_model'] != 'surr_opt':
-#     config['input_dim_stage1'] = 6
-#     config['input_dim_stage2'] = 8 
-#     config['num_networks'] = 1
-
-# # Get the SLURM_JOB_ID from environment variables
-# job_id = os.getenv('SLURM_JOB_ID')
-
-# # If job_id is None, set it to the current date and time formatted as a string
-# if job_id is None:
-#     job_id = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
-    
-# config['job_id'] = job_id
-
-
-# # Initialize V_replications dictionary
-# V_replications = {"V_replications_M1_pred": [], "V_replications_M1_behavioral": []}
-
-# print('DGP Setting: ' , setting)
-# print("f_model: ", f_model)
-
-# # Run the simulation
-# V_replications, df, losses_dict, epoch_num_model_lst = simulations(num_replications, V_replications, config)
-# # summarize_v_values(V_replications, num_replications)
-# accuracy_df = calculate_accuracies(df, V_replications)
-# print(accuracy_df)
-
-# run_name = f"Simulation run trainVval"
-# selected_indices = [i for i in range(num_replications)]
-# folder = f"data/{config['job_id']}"
-
-# if  config['f_model'] == 'surr_opt' : 
-#     plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, n_epoch, run_name, folder)
-# else:
-#     plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, run_name, folder)
-
-
-
