@@ -14,25 +14,14 @@ import copy
 from collections import defaultdict
 
 
-class FlushFile:
-    """File-like wrapper that flushes on every write."""
-    def __init__(self, f):
-        self.f = f
 
-    def write(self, x):
-        self.f.write(x)
-        self.f.flush()  # Flush output after write
 
-    def flush(self):
-        self.f.flush()
-        
 
-        
 # Generate Data
 def generate_and_preprocess_data(params, replication_seed, run='train'):
 
     # torch.manual_seed(replication_seed)
-    sample_size = params['sample_size'] 
+    sample_size = params['sample_size']
     device = params['device']
 
     # Simulate baseline covariates
@@ -45,6 +34,10 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         Z2.fill_(0)
 
     # Stage 1 data simulation
+        
+    # Input preparation
+    input_stage1 = O1.t()
+    
     x1, x2, x3, x4, x5 = O1[0], O1[1], O1[2], O1[3], O1[4]
     pi_10 = torch.ones(sample_size, device=device)
     pi_11 = torch.exp(0.5 - 0.5 * x3)
@@ -53,28 +46,37 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
 
     result1 = A_sim(matrix_pi1, stage=1)
     
-#     A1, probs1 = result1['A'], result1['probs']
+    if  params['use_m_propen']:
+        A1, _ = result1['A'], result1['probs']
+#         probs1 = M_propen(A1, O1[[2, 3]].t(), stage=1)  # multinomial logistic regression with X3, X4
+        probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
+    else:         
+        A1, probs1 = result1['A'], result1['probs']
 
-    A1, _ = result1['A'], result1['probs']
-    probs1 = M_propen(A1, O1[[2, 3]].t(), stage=1)  # multinomial logistic regression with X3, X4
-        
     A1 += 1
 
     g1_opt = ((x1 > -1).float() * ((x2 > -0.5).float() + (x2 > 0.5).float())) + 1
     Y1 = torch.exp(1.5 - torch.abs(1.5 * x1 + 2) * (A1 - g1_opt).pow(2)) + Z1
+    
+    
+    # Input preparation
+    input_stage2 = torch.cat([O1.t(), A1.unsqueeze(1), Y1.unsqueeze(1)], dim=1)
 
     # Stage 2 data simulation
     pi_20 = torch.ones(sample_size, device=device)
     pi_21 = torch.exp(0.2 * Y1 - 1)
     pi_22 = torch.exp(0.5 * x4)
     matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
-
+    
     result2 = A_sim(matrix_pi2, stage=2)
     
-#     A2, probs2 = result2['A'], result2['probs']
-
-    A2, _ = result2['A'], result2['probs']
-    probs2 = M_propen(A2, O1[[0, 4]].t(), stage=2)  # multinomial logistic regression with X1, X5
+    
+    if  params['use_m_propen']:
+        A2, _ = result2['A'], result2['probs']
+#         probs2 = M_propen(A2, O1[[0, 4]].t(), stage=2)  # multinomial logistic regression with X1, X5
+        probs2 = M_propen(A2, input_stage2, stage=2)  # multinomial logistic regression with H2
+    else:         
+        A2, probs2 = result2['A'], result2['probs']
         
     A2 += 1
 
@@ -84,7 +86,7 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
     Y2 = torch.exp(1.26 - torch.abs(1.5 * x3 - 2) * (A2 - g2_opt).pow(2)) + Z2
 
     if run != 'test':
-      # transform Y for direct search 
+      # transform Y for direct search
       Y1, Y2 = transform_Y(Y1, Y2)
 
     # Propensity score stack
@@ -100,10 +102,6 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
 
     # Calculate Ci tensor
     Ci = (Y1 + Y2) / (P_A1_given_H1_tensor * P_A2_given_H2_tensor)
-
-    # Input preparation
-    input_stage1 = O1.t()
-    input_stage2 = torch.cat([O1.t(), A1.unsqueeze(1), Y1.unsqueeze(1)], dim=1)
 
     if run == 'test':
         return input_stage1, input_stage2, Ci, Y1, Y2, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor, g1_opt, g2_opt, Z1, Z2
@@ -422,7 +420,7 @@ def run_grid_search(config, param_grid):
                 performance_DQL_mean = performances_DQL["Method's Value fn."].mean()
                 performance_DS_mean = performances_DS["Method's Value fn."].mean()
 
-                behavioral_DQL_mean = performances_DQL["Behavioral Value fn."].mean()  # Assuming similar structure
+                behavioral_DQL_mean = performances_DQL["Behavioral Value fn."].mean()  
                 behavioral_DS_mean = performances_DS["Behavioral Value fn."].mean()
 
                 # Check if the configuration key exists in the results dictionary
@@ -559,7 +557,6 @@ def main():
 
     # Load configuration and set up the device
     config = load_config()
-    print("Model used: %s", config['f_model'])
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     config['device'] = device    
@@ -572,6 +569,8 @@ def main():
         job_id = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
     
     config['job_id'] = job_id
+    
+    print("Job ID: ", job_id)
 
     training_validation_prop = config['training_validation_prop']
     train_size = int(training_validation_prop * config['sample_size'])

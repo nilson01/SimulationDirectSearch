@@ -11,7 +11,6 @@ import pickle
 import yaml
 import matplotlib.pyplot as plt
 from collections import Counter
-import logging
 import torch.nn.functional as F
 from collections import defaultdict
 
