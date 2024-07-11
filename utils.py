@@ -967,7 +967,7 @@ def process_batches_DQL(model, inputs, actions, targets, params, optimizer, is_t
 
 
 
-def train_and_validate(model, optimizer, scheduler, train_inputs, train_actions, train_targets, val_inputs, val_actions, val_targets, params, stage_number):
+def train_and_validate(config_number, model, optimizer, scheduler, train_inputs, train_actions, train_targets, val_inputs, val_actions, val_targets, params, stage_number):
 
     batch_size, device, n_epoch, sample_size = params['batch_size'], params['device'], params['n_epoch'], params['sample_size']
     train_losses, val_losses = [], []
@@ -999,7 +999,7 @@ def train_and_validate(model, optimizer, scheduler, train_inputs, train_actions,
         
     # Save the best model parameters after all epochs
     if best_model_params is not None:
-        model_path = os.path.join(model_dir, f'best_model_stage_Q_{stage_number}_{sample_size}.pt')
+        model_path = os.path.join(model_dir, f'best_model_stage_Q_{stage_number}_{sample_size}_config_number_{config_number}.pt')
         torch.save(best_model_params, model_path)
         
     return train_losses, val_losses, epoch_num_model
@@ -1096,16 +1096,17 @@ def compute_test_outputs(nn, test_input, A_tensor, params, is_stage1=True):
     
 
 
-def initialize_and_load_model(stage, sample_size, params):
+
+def initialize_and_load_model(stage, sample_size, params, config_number):
     # Initialize the neural network model
     nn_model = initialize_nn(params, stage).to(params['device'])
     
     # Define the directory and file name for the model
     model_dir = f"models/{params['job_id']}"
     if params['f_model']=="surr_opt":
-        model_filename = f'best_model_stage_surr_{stage}_{sample_size}.pt'
+        model_filename = f'best_model_stage_surr_{stage}_{sample_size}_config_number_{config_number}.pt'
     else:
-        model_filename = f'best_model_stage_Q_{stage}_{sample_size}.pt'
+        model_filename = f'best_model_stage_Q_{stage}_{sample_size}_config_number_{config_number}.pt'
         
     model_path = os.path.join(model_dir, model_filename)
     
@@ -1124,10 +1125,9 @@ def initialize_and_load_model(stage, sample_size, params):
 
 
 
-
 # utils value function estimator
 
-def train_and_validate_W_estimator(model, optimizer, scheduler, train_inputs, train_actions, train_targets, val_inputs, val_actions, val_targets, batch_size, device, n_epoch, stage_number, sample_size, params):
+def train_and_validate_W_estimator(config_number, model, optimizer, scheduler, train_inputs, train_actions, train_targets, val_inputs, val_actions, val_targets, batch_size, device, n_epoch, stage_number, sample_size, params):
     train_losses, val_losses = [], []
     best_val_loss = float('inf')
     best_model_params = None
@@ -1158,7 +1158,7 @@ def train_and_validate_W_estimator(model, optimizer, scheduler, train_inputs, tr
         
     # Save the best model parameters after all epochs
     if best_model_params is not None:
-        model_path = os.path.join(model_dir, f"best_model_stage_Q_{stage_number}_{sample_size}_W_estimator_{params['f_model']}.pt")
+        model_path = os.path.join(model_dir, f"best_model_stage_Q_{stage_number}_{sample_size}_W_estimator_{params['f_model']}_config_number_{config_number}.pt")
         torch.save(best_model_params, model_path)
 
 
@@ -1194,7 +1194,7 @@ def valFn_estimate(Qhat1_H1d1, Qhat2_H2d2, Qhat1_H1A1, Qhat2_H2A2, A1_tensor, A2
 
 
 
-def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor):
+def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor, config_number):
 
     train_size = int(params['training_validation_prop'] * params['sample_size'])
     train_test_tensors = [tensor[:train_size] for tensor in train_tens ]
@@ -1224,11 +1224,15 @@ def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H
           })
     
     nn_stage2, optimizer_2, scheduler_2 = initialize_model_and_optimizer(param_W, 2)
-    train_losses_stage2, val_losses_stage2, epoch_num_model_2 = train_and_validate_W_estimator(nn_stage2, optimizer_2, scheduler_2, test_input_stage2, train_A2, train_Y2, val_input_stage2, val_A2, val_Y2, params['batch_size'], device, params['n_epoch'], 2, params['sample_size'], params)
+    train_losses_stage2, val_losses_stage2, epoch_num_model_2 = train_and_validate_W_estimator(config_number, nn_stage2, optimizer_2, scheduler_2,
+                                                                                               test_input_stage2, train_A2, train_Y2,
+                                                                                               val_input_stage2, val_A2, val_Y2, 
+                                                                                               params['batch_size'], device, params['n_epoch'], 2,
+                                                                                               params['sample_size'], params)
     
     
     model_dir = f"models/{params['job_id']}"
-    model_filename = f"best_model_stage_Q_{2}_{params['sample_size']}_W_estimator_{params['f_model']}.pt"
+    model_filename = f"best_model_stage_Q_{2}_{params['sample_size']}_W_estimator_{params['f_model']}_config_number_{config_number}.pt"
     model_path = os.path.join(model_dir, model_filename)
     nn_stage2.load_state_dict(torch.load(model_path, map_location=params['device']))
     nn_stage2.eval()
@@ -1245,14 +1249,14 @@ def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H
     
 
     nn_stage1, optimizer_1, scheduler_1 = initialize_model_and_optimizer(param_W, 1)
-    train_losses_stage1, val_losses_stage1, epoch_num_model_1 = train_and_validate_W_estimator(nn_stage1, optimizer_1, scheduler_1, 
+    train_losses_stage1, val_losses_stage1, epoch_num_model_1 = train_and_validate_W_estimator(config_number, nn_stage1, optimizer_1, scheduler_1, 
                                                                                                test_input_stage1, train_A1, train_Y1_hat, 
                                                                                                val_input_stage1, val_A1, val_Y1_hat, 
                                                                                                params['batch_size'], device, 
                                                                                                params['n_epoch'], 1, 
                                                                                                params['sample_size'], params)    
     model_dir = f"models/{params['job_id']}"
-    model_filename = f"best_model_stage_Q_{1}_{params['sample_size']}_W_estimator_{params['f_model']}.pt"
+    model_filename = f"best_model_stage_Q_{1}_{params['sample_size']}_W_estimator_{params['f_model']}_config_number_{config_number}.pt"
     model_path = os.path.join(model_dir, model_filename)
     nn_stage1.load_state_dict(torch.load(model_path, map_location=params['device']))
     nn_stage1.eval()
