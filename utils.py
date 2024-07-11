@@ -24,7 +24,6 @@ import warnings
 
 # Set the device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-logger = logging.getLogger(__name__)
 
 
 # 0. Simulation utils
@@ -46,7 +45,7 @@ def extract_unique_treatment_values(df, columns_to_process, name):
             unique_values[key][col] = set(all_values)
 
     log_message = f"\nUnique values for {name}:\n" + "\n".join(f"{k}: {v}" for k, v in unique_values.items()) + "\n"
-    logger.info(log_message)
+    print(log_message)
     
     return unique_values
 
@@ -77,7 +76,7 @@ def save_simulation_data(all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_nu
     with open(results_path, 'wb') as f:
         pickle.dump(results, f)
 
-    logger.info("Data saved successfully in the folder: %s", folder)
+    print("Data saved successfully in the folder: %s", folder)
 
 
 def save_results_to_dataframe(results, folder):
@@ -164,27 +163,29 @@ def load_and_process_data(params, folder):
         plot_simulation_surLoss_losses_in_grid(selected_indices, method_losses_dicts['DS'], params['n_epoch'], run_name, folder)
 
     # Print results for each configuration
-    logger.info("\n\n")
+    print("\n\n")
     for config_key, performance in results.items():
-        logger.info("Configuration: %s\nAverage Performance:\n %s\n", config_key, json.dumps(performance, indent=4))
+        print("<<<<<<<<<<<<<<<<<<<<<<<<<<<--------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        print("<<<<<<<<<<<<<<<<<<<<<<<<-----------------------FINAL RESULTS------------------------>>>>>>>>>>>>>>>>>>>>>>>")
+        print("<<<<<<<<<<<<<<<<<<<<<<<<<<<--------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        print("Configuration: %s\nAverage Performance:\n %s\n", config_key, json.dumps(performance, indent=4))
     
     # Call the function to plot value functions
     df = save_results_to_dataframe(results, folder)
 
 
     
-    
-    
+        
 
 # 1. DGP utils
 
 def A_sim(matrix_pi, stage):
     N, K = matrix_pi.shape  # sample size and treatment options
     if N <= 1 or K <= 1:
-        logger.error("Sample size or treatment options are insufficient! N: %d, K: %d", N, K)
+        warnings.warn("Sample size or treatment options are insufficient! N: %d, K: %d", N, K)
         raise ValueError("Sample size or treatment options are insufficient!")
     if torch.any(matrix_pi < 0):
-        logger.error("Treatment probabilities should not be negative!")
+        warnings.warn("Treatment probabilities should not be negative!")
         raise ValueError("Treatment probabilities should not be negative!")
 
     # Normalize probabilities to add up to 1 and simulate treatment A for each row
@@ -607,7 +608,7 @@ def plot_epoch_frequency(epoch_num_model_lst, n_epoch, run_name, folder='data'):
     # Save the plot
     plot_filename = os.path.join(folder, f"{run_name}.png")
     plt.savefig(plot_filename)
-    logging.info(f"plot_epoch_frequency Plot saved as: {plot_filename}")
+    print(f"plot_epoch_frequency Plot saved as: {plot_filename}")
     plt.close()  # Close the plot to free up memory
 
 
@@ -649,7 +650,7 @@ def plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, n_epoc
     os.makedirs(folder, exist_ok=True)
     plot_filename = os.path.join(folder, f"{run_name}_directSearch.png")
     plt.savefig(plot_filename)
-    logging.info(f"TrainVval Plot for Direct search saved as: {plot_filename}")
+    print(f"TrainVval Plot for Direct search saved as: {plot_filename}")
     plt.close(fig)  # Close the plot to free up memory
 
 
@@ -703,7 +704,7 @@ def plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, run_
     os.makedirs(folder, exist_ok=True)
     plot_filename = os.path.join(folder, f"{run_name}_deepQlearning.png")
     plt.savefig(plot_filename)
-    logging.info(f"TrainVval Plot for Deep Q Learning saved as: {plot_filename}")
+    print(f"TrainVval Plot for Deep Q Learning saved as: {plot_filename}")
     plt.close(fig)  # Close the plot to free up memory
 
 
@@ -744,7 +745,7 @@ def compute_phi(x, option):
     elif option == 5:
         return torch.where(x >= 0, torch.tensor(1.0), torch.tensor(0.0))
     else:
-        logger.error("Invalid phi option: %s", option)
+        warnings.warn("Invalid phi option: %s", option)
         raise ValueError("Invalid phi option")
 
 
@@ -880,7 +881,7 @@ def initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params):
     elif params['optimizer_type'] == 'rmsprop':
         optimizer = optim.RMSprop(combined_params, lr=params['optimizer_lr'], weight_decay=params['optimizer_weight_decay'])
     else:
-        logging.warning("No valid optimizer type found in params['optimizer_type'], defaulting to Adam.")
+        warnings.warn("No valid optimizer type found in params['optimizer_type'], defaulting to Adam.")
         optimizer = optim.Adam(combined_params, lr=params['optimizer_lr'])  # Default to Adam if none specified
 
     # Initialize scheduler only if use_scheduler is True
@@ -894,7 +895,7 @@ def initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params):
             T_max = (params['sample_size'] // params['batch_size']) * params['n_epoch']
             scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=T_max, eta_min=0.0001)
         else:
-            logging.warning("No valid scheduler type found in params['scheduler_type'], defaulting to StepLR.")
+            warnings.warn("No valid scheduler type found in params['scheduler_type'], defaulting to StepLR.")
             scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=params['scheduler_step_size'], gamma=params['scheduler_gamma'])  # Default to StepLR if none specified
 
     return optimizer, scheduler
@@ -903,7 +904,7 @@ def initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params):
 def update_scheduler(scheduler, params, val_loss=None):
 
     if scheduler is None:
-        logging.warning("Scheduler is not initialized but update_scheduler was called.")
+        warnings.warn("Scheduler is not initialized but update_scheduler was called.")
         return
     
     # Check the type of scheduler and step accordingly
@@ -912,7 +913,7 @@ def update_scheduler(scheduler, params, val_loss=None):
         if val_loss is not None:
             scheduler.step(val_loss)
         else:
-            logging.warning("Validation loss required for ReduceLROnPlateau but not provided.")
+            warnings.warn("Validation loss required for ReduceLROnPlateau but not provided.")
     else:
         # Other schedulers like StepLR or CosineAnnealingLR do not use the validation loss
         scheduler.step()
@@ -1080,13 +1081,9 @@ def initialize_and_load_model(stage, sample_size, params):
         
     model_path = os.path.join(model_dir, model_filename)
     
-    # Set up logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-    
     # Check if the model file exists before attempting to load
     if not os.path.exists(model_path):
-        logger.error(f"No model file found at {model_path}. Please check the file path and model directory.")
+        warnings.warn(f"No model file found at {model_path}. Please check the file path and model directory.")
         return None  # or handle the error as needed
     
     # Load the model's state dictionary from the file
@@ -1253,7 +1250,7 @@ def initialize_and_train_stage(stage, input_tensor, action_tensor, outcome_tenso
     
     # Check if the model file exists before attempting to load
     if not os.path.exists(model_path):
-        logger.error(f"No model file found at {model_path}. Please check the file path and model directory.")
+        warnings.warn(f"No model file found at {model_path}. Please check the file path and model directory.")
         return None  # or handle the error as needed
     
     # Load the model's state dictionary from the file

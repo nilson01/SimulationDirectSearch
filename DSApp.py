@@ -2,7 +2,6 @@ import os
 import sys
 from tqdm import tqdm
 from tqdm.notebook import tqdm
-import logging
 import json
 from itertools import product
 from utils import *
@@ -267,7 +266,7 @@ def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_
     V_replications["V_replications_M1_behavioral"].append(torch.mean(Y1_tensor + Y2_tensor).cpu().item())  
     
     message = f'\nY1 beh mean: {torch.mean(Y1_tensor)}, Y2 beh mean: {torch.mean(Y2_tensor)}, Y1_beh+Y2_beh mean: {torch.mean(Y1_tensor + Y2_tensor)} \n\n'
-    logging.info(message)
+    print(message)
     
     # Append policy values for DQL
     V_replications["V_replications_M1_pred"]["DQL"].append(V_replications_M1_pred_DQL)
@@ -304,13 +303,13 @@ def simulations(num_replications, V_replications, params):
 
 
     for replication in tqdm(range(num_replications), desc="Replications_M1"):
-        logging.info(f"Replication # -------------->>>>>  {replication+1}")
+        print(f"Replication # -------------->>>>>  {replication+1}")
 
         # Generate and preprocess data for training
         tuple_train, tuple_val = generate_and_preprocess_data(params, replication_seed=replication, run='train')
 
         # Estimate treatment regime : model --> surr_opt
-        logging.info("Training started!")
+        print("Training started!")
         
         # Run both models on the same tuple of data
         nn_stage1_DQL, nn_stage2_DQL, trn_val_loss_tpl_DQL = DQlearning(tuple_train, tuple_val, params_DQL)
@@ -324,7 +323,7 @@ def simulations(num_replications, V_replications, params):
         
         
         # eval_DTR
-        logging.info("Evaluation started")
+        print("Evaluation started")
         V_replications, df_DQL, df_DS = eval_DTR(V_replications, replication, 
                                                  nn_stage1_DQL, nn_stage2_DQL, 
                                                  nn_stage1_DS, nn_stage2_DS, 
@@ -342,7 +341,7 @@ def run_training(config, config_updates, V_replications, replication_seed):
     V_replications, df_DQL, df_DS, losses_dict, epoch_num_model_lst = simulations(local_config['num_replications'], V_replications, local_config)
     
     if not any(V_replications[key] for key in V_replications):
-        logger.warning("V_replications is empty. Skipping accuracy calculation.")
+        warnings.warn("V_replications is empty. Skipping accuracy calculation.")
     else:
         VF_df_DQL, VF_df_DS = extract_value_functions_separate(V_replications)
         return VF_df_DQL, VF_df_DS, df_DQL, df_DS, losses_dict, epoch_num_model_lst
@@ -353,12 +352,10 @@ def run_training(config, config_updates, V_replications, replication_seed):
 # parallelized 
     
 def run_training_with_params(params):
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger(__name__) 
-
     config, current_config, V_replications, i = params
     return run_training(config, current_config, V_replications, replication_seed=i)
  
+    
     
 
 def run_grid_search(config, param_grid):
@@ -376,7 +373,7 @@ def run_grid_search(config, param_grid):
     param_combinations = [dict(zip(param_grid.keys(), param)) for param in product(*param_grid.values())]
 
     num_workers = multiprocessing.cpu_count()
-    logging.info(f'{num_workers} available workers for ProcessPoolExecutor.')
+    print(f'{num_workers} available workers for ProcessPoolExecutor.')
 
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
         future_to_params = {}
@@ -398,7 +395,7 @@ def run_grid_search(config, param_grid):
                 performance_DQL, performance_DS, df_DQL, df_DS, losses_dict, epoch_num_model_lst = future.result()
                 
                 
-                logging.info(f'Configuration {current_config}, replication {i} completed successfully.')
+                print(f'Configuration {current_config}, replication {i} completed successfully.')
                 
 
                 # Processing performance DataFrame for both methods
@@ -417,42 +414,45 @@ def run_grid_search(config, param_grid):
                 all_losses_dicts.append(losses_dict)
                 all_epoch_num_lists.append(epoch_num_model_lst)
                 
-            except Exception as exc:
-                logging.error(f'Generated an exception for config {current_config}, replication {i}: {exc}')
-
-
-        # Store and log average performance across replications for each configuration
-        config_key = json.dumps(current_config, sort_keys=True)
-        
-        # This assumes performances is a DataFrame with columns 'DQL' and 'DS'
-        performance_DQL_mean = performances_DQL["Method's Value fn."].mean()
-        performance_DS_mean = performances_DS["Method's Value fn."].mean()
-        
-        behavioral_DQL_mean = performances_DQL["Behavioral Value fn."].mean()  # Assuming similar structure
-        behavioral_DS_mean = performances_DS["Behavioral Value fn."].mean()
-
-        # Check if the configuration key exists in the results dictionary
-        if config_key not in results:
-            # If not, initialize it with dictionaries for each model containing the mean values
-            results[config_key] = {
-                'DQL': {"Method's Value fn.": performance_DQL_mean, 'Behavioral Value fn.': behavioral_DQL_mean},
-                'DS': {"Method's Value fn.": performance_DS_mean, 'Behavioral Value fn.': behavioral_DS_mean}
-            }
-        else:
-            # Update existing entries with new means
-            results[config_key]['DQL'].update({
-                "Method's Value fn.": performance_DQL_mean,
-                'Behavioral Value fn.': behavioral_DQL_mean
-            })
-            results[config_key]['DS'].update({
-                "Method's Value fn.": performance_DS_mean,
-                'Behavioral Value fn.': behavioral_DS_mean
-            })
                 
-        logging.info("Performances for configuration: %s", config_key)
-        logging.info("performance_DQL_mean: %s", performance_DQL_mean)
-        logging.info("performance_DS_mean: %s", performance_DS_mean)
-        logging.info("\n\n")
+                # Store and log average performance across replications for each configuration
+                config_key = json.dumps(current_config, sort_keys=True)
+
+                # This assumes performances is a DataFrame with columns 'DQL' and 'DS'
+                performance_DQL_mean = performances_DQL["Method's Value fn."].mean()
+                performance_DS_mean = performances_DS["Method's Value fn."].mean()
+
+                behavioral_DQL_mean = performances_DQL["Behavioral Value fn."].mean()  # Assuming similar structure
+                behavioral_DS_mean = performances_DS["Behavioral Value fn."].mean()
+
+                # Check if the configuration key exists in the results dictionary
+                if config_key not in results:
+                    # If not, initialize it with dictionaries for each model containing the mean values
+                    results[config_key] = {
+                        'DQL': {"Method's Value fn.": performance_DQL_mean, 'Behavioral Value fn.': behavioral_DQL_mean},
+                        'DS': {"Method's Value fn.": performance_DS_mean, 'Behavioral Value fn.': behavioral_DS_mean}
+                    }
+                else:
+                    # Update existing entries with new means
+                    results[config_key]['DQL'].update({
+                        "Method's Value fn.": performance_DQL_mean,
+                        'Behavioral Value fn.': behavioral_DQL_mean
+                    })
+                    results[config_key]['DS'].update({
+                        "Method's Value fn.": performance_DS_mean,
+                        'Behavioral Value fn.': behavioral_DS_mean
+                    })
+
+                print("Performances for configuration: %s", config_key)
+                print("performance_DQL_mean: %s", performance_DQL_mean)
+                print("performance_DS_mean: %s", performance_DS_mean)
+                print("\n\n")
+        
+                
+            except Exception as exc:
+                warnings.warn(f'Generated an exception for config {current_config}, replication {i}: {exc}')
+
+
         
     folder = f"data/{config['job_id']}"
     save_simulation_data(all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder)
@@ -540,10 +540,10 @@ def run_grid_search(config, param_grid):
 #                 'Behavioral Value fn.': behavioral_DS_mean
 #             })
                 
-#         logging.info("Performances for configuration: %s", config_key)
-#         logging.info("performance_DQL_mean: %s", performance_DQL_mean)
-#         logging.info("performance_DS_mean: %s", performance_DS_mean)
-#         logging.info("\n\n")
+#         print("Performances for configuration: %s", config_key)
+#         print("performance_DQL_mean: %s", performance_DQL_mean)
+#         print("performance_DS_mean: %s", performance_DS_mean)
+#         print("\n\n")
      
 
 #     folder = f"data/{config['job_id']}"
@@ -557,14 +557,9 @@ def run_grid_search(config, param_grid):
         
 def main():
 
-    
-    # setup_logging
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger(__name__) 
-
     # Load configuration and set up the device
     config = load_config()
-    logging.info("Model used: %s", config['f_model'])
+    print("Model used: %s", config['f_model'])
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     config['device'] = device    
@@ -580,13 +575,13 @@ def main():
 
     training_validation_prop = config['training_validation_prop']
     train_size = int(training_validation_prop * config['sample_size'])
-    logging.info("Training size: %d", train_size)    
+    print("Training size: %d", train_size)    
     
     
     # Define parameter grid for grid search
     param_grid = {
         'activation_function': ['relu'],
-        'batch_size': [3072],
+        'batch_size': [3072, 7000],
         'learning_rate': [0.007],
         'num_layers': [4]
     }
@@ -598,7 +593,7 @@ def main():
 #     start_time = time.time()
 #     main()
 #     end_time = time.time()
-#     logging.info(f'Total time taken: {end_time - start_time:.2f} seconds')
+#     print(f'Total time taken: {end_time - start_time:.2f} seconds')
 
     
     
@@ -607,7 +602,7 @@ if __name__ == '__main__':
     start_time = time.time()
     main()
     end_time = time.time()
-    logging.info(f'Total time taken: {end_time - start_time:.2f} seconds')
+    print(f'Total time taken: {end_time - start_time:.2f} seconds')
 
 
     
