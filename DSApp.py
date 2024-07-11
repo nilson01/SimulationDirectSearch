@@ -587,7 +587,20 @@ def main():
     # Perform operations whose output should go to the file
     run_grid_search(config, param_grid)
     
-    
+
+class FlushFile:
+    """File-like wrapper that flushes on every write."""
+    def __init__(self, f):
+        self.f = f
+
+    def write(self, x):
+        self.f.write(x)
+        self.f.flush()  # Flush output after write
+
+    def flush(self):
+        self.f.flush()
+
+
 # if __name__ == '__main__':
 #     start_time = time.time()
 #     main()
@@ -595,13 +608,27 @@ def main():
 #     print(f'Total time taken: {end_time - start_time:.2f} seconds')
 
     
+   
     
 if __name__ == '__main__':
     multiprocessing.set_start_method('spawn', force=True)
+    
+    # Record the start time
     start_time = time.time()
+    start_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
+    print(f'Start time: {start_time_str}')
+    
+    sys.stdout = FlushFile(sys.stdout)
     main()
+    
+    # Record the end time
     end_time = time.time()
-    print(f'Total time taken: {end_time - start_time:.2f} seconds')
+    end_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))
+    print(f'End time: {end_time_str}')
+    
+    # Calculate and log the total time taken
+    total_time = end_time - start_time
+    print(f'Total time taken: {total_time:.2f} seconds')
 
 
     
