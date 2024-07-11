@@ -149,6 +149,8 @@ def load_and_process_data(params, folder):
 
     unique_values_DQL = extract_unique_treatment_values(global_df_DQL, columns_to_process, name = "DQL")
     unique_values_DS = extract_unique_treatment_values(global_df_DS, columns_to_process, name = "DS")
+    
+    train_size = int(params['training_validation_prop'] * params['sample_size'])
 
     # Process and plot results from all simulations
     for i, method_losses_dicts in enumerate(all_losses_dicts):
@@ -156,10 +158,10 @@ def load_and_process_data(params, folder):
         selected_indices = [i for i in range(params['num_replications'])]  
 
         # Pass the appropriate sub-dictionary for DQL
-        plot_simulation_Qlearning_losses_in_grid(selected_indices, method_losses_dicts['DQL'], run_name, folder)
+        plot_simulation_Qlearning_losses_in_grid(selected_indices, method_losses_dicts['DQL'], train_size, run_name, folder)
 
         # Pass the appropriate sub-dictionary for DS
-        plot_simulation_surLoss_losses_in_grid(selected_indices, method_losses_dicts['DS'], params['n_epoch'], run_name, folder)
+        plot_simulation_surLoss_losses_in_grid(selected_indices, method_losses_dicts['DS'], train_size, run_name, folder)
 
     # Print results for each configuration
     print("\n\n")
@@ -612,7 +614,7 @@ def plot_epoch_frequency(epoch_num_model_lst, n_epoch, run_name, folder='data'):
 
 
 
-def plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, n_epoch, run_name, folder, cols=3):
+def plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, train_size, run_name, folder, cols=3):
     # Ensure the directory exists
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -622,7 +624,7 @@ def plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, n_epoc
 
     # Create a figure and a set of subplots
     fig, axes = plt.subplots(rows, cols, figsize=(5*cols, 4*rows))  # Adjust figure size as needed
-    fig.suptitle(f'Training and Validation Loss for Selected Simulations @ n_epoch = {n_epoch}')
+    fig.suptitle(f'Training and Validation Loss for Selected Simulations @ train_size = {train_size}')
 
     # Flatten the axes array for easy indexing, in case of a single row or column
     axes = axes.flatten()
@@ -653,7 +655,7 @@ def plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, n_epoc
     plt.close(fig)  # Close the plot to free up memory
 
 
-def plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, run_name, folder, cols=3):
+def plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, train_size, run_name, folder, cols=3):
 
     all_losses = {
         'train_losses_stage1': {},
@@ -674,7 +676,7 @@ def plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, run_
     
     rows = len(selected_indices) // cols + (len(selected_indices) % cols > 0)
     fig, axes = plt.subplots(rows, cols, figsize=(5*cols, 4*rows))
-    fig.suptitle('Training and Validation Loss for Selected Simulations')
+    fig.suptitle(f'Training and Validation Loss for Selected Simulations @ train_size = {train_size}')
 
     axes = axes.flatten()
 
