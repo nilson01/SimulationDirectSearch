@@ -297,8 +297,8 @@ def simulations(num_replications, V_replications, params):
     
     params_DS['f_model'] = 'surr_opt'
     params_DQL['f_model'] = 'DQlearning'
-    params_DQL['input_dim_stage1'] = 6
-    params_DQL['input_dim_stage2'] = 8
+    params_DQL['input_dim_stage1'] = params['input_dim_stage1'] + 1 # 5 + 1 = 6 # (H_1, A_1)
+    params_DQL['input_dim_stage2'] = params['input_dim_stage2'] + 1 # 7 + 1 = 8 # (H_2, A_2)
     params_DQL['num_networks'] = 1  
 
 
