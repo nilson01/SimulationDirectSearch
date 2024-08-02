@@ -254,12 +254,13 @@ def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_
 
     train_tensors = [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test]
 
-
         
-    # Calculate policy values using the W estimator for DQL
+    # Calculate policy values using the DR estimator for DQL
+    # print("DQL estimator: ")
     V_replications_M1_pred_DQL = calculate_policy_values_W_estimator(train_tensors, params_dql, A1_DQL, A2_DQL, P_A1_g_H1, P_A2_g_H2, config_number)
 
-    # Calculate policy values using the W estimator for DS
+    # print("DS estimator: ")
+    # Calculate policy values using the DR estimator for DS
     V_replications_M1_pred_DS = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_DS, A2_DS, P_A1_g_H1, P_A2_g_H2, config_number)
     
     # value fn. 
@@ -423,28 +424,40 @@ def run_grid_search(config, param_grid):
                 # Store and log average performance across replications for each configuration
                 config_key = json.dumps(current_config, sort_keys=True)
 
-                # This assumes performances is a DataFrame with columns 'DQL' and 'DS'
+                # performances is a DataFrame with columns 'DQL' and 'DS'
                 performance_DQL_mean = performances_DQL["Method's Value fn."].mean()
                 performance_DS_mean = performances_DS["Method's Value fn."].mean()
 
                 behavioral_DQL_mean = performances_DQL["Behavioral Value fn."].mean()  
                 behavioral_DS_mean = performances_DS["Behavioral Value fn."].mean()
+                
+                
+                # Calculating the standard deviation for "Method's Value fn."
+                performance_DQL_std = performances_DQL["Method's Value fn."].std()
+                performance_DS_std = performances_DS["Method's Value fn."].std()
+
 
                 # Check if the configuration key exists in the results dictionary
                 if config_key not in results:
                     # If not, initialize it with dictionaries for each model containing the mean values
                     results[config_key] = {
-                        'DQL': {"Method's Value fn.": performance_DQL_mean, 'Behavioral Value fn.': behavioral_DQL_mean},
-                        'DS': {"Method's Value fn.": performance_DS_mean, 'Behavioral Value fn.': behavioral_DS_mean}
+                        'DQL': {"Method's Value fn.": performance_DQL_mean, 
+                                "Method's Value fn. SD": performance_DQL_std, 
+                                'Behavioral Value fn.': behavioral_DQL_mean},
+                        'DS': {"Method's Value fn.": performance_DS_mean, 
+                               "Method's Value fn. SD": performance_DS_std,
+                               'Behavioral Value fn.': behavioral_DS_mean}
                     }
                 else:
                     # Update existing entries with new means
                     results[config_key]['DQL'].update({
-                        "Method's Value fn.": performance_DQL_mean,
+                        "Method's Value fn.": performance_DQL_mean,                                 
+                        "Method's Value fn. SD": performance_DQL_std, 
                         'Behavioral Value fn.': behavioral_DQL_mean
                     })
                     results[config_key]['DS'].update({
                         "Method's Value fn.": performance_DS_mean,
+                        "Method's Value fn. SD": performance_DS_std,
                         'Behavioral Value fn.': behavioral_DS_mean
                     })
 
@@ -456,7 +469,6 @@ def run_grid_search(config, param_grid):
                 
             except Exception as exc:
                 warnings.warn(f'Generated an exception for config {current_config}, replication {i}: {exc}')
-
 
         
     folder = f"data/{config['job_id']}"
@@ -586,10 +598,11 @@ def main():
     
     # Define parameter grid for grid search
     param_grid = {
-        'activation_function': ['relu', 'elu'],
-        'batch_size': [8000],
-        'learning_rate': [0.007],
-        'num_layers': [2]
+        'activation_function': ['elu'],
+        'batch_size': [7000, 8000],
+        'learning_rate': [0.07],
+        'num_layers': [2],
+#         'noiseless': [True, False]
     }
     # Perform operations whose output should go to the file
     run_grid_search(config, param_grid)
