@@ -3,6 +3,7 @@ venv/
 *.pkl
 rough_checks.ipynb
 data/
+DSApp_testing.py
 test.py
 models/
 .DS_Store

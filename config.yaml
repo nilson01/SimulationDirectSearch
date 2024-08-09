@@ -5,8 +5,8 @@ surrogate_num: 1  # Indicates the surrogate model configuration number
 option_sur: 4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
 noiseless: True  # Boolean flag to indicate if noise should be excluded in simulations
-sample_size: 20000 # 30000  # Number of samples to be used
-num_replications: 30 # 100
+sample_size: 15000 # 30000  # Number of samples to be used
+num_replications: 3 # 30, 100
 job_id: tao
 use_m_propen: True # True, False
 
@@ -32,3 +32,5 @@ scheduler_type: reducelronplateau  # Type of learning rate scheduler, can be 're
 scheduler_step_size: 30  # Step size for StepLR, defines the number of epochs before the next LR decay
 scheduler_gamma: 0.8  # Decay rate for learning rate under StepLR
 initializer: he  # He initialization method (Kaiming initialization)
+
+contrast: 1

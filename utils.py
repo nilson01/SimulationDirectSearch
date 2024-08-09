@@ -104,7 +104,6 @@ def save_results_to_dataframe(results, folder):
     df.sort_values(by=["Configuration", "Model"], ascending=[True, False], inplace=True)
 
     # Ensure the folder exists
-    import os
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -220,9 +219,18 @@ def transform_Y(Y1, Y2):
     return Y1_trans, Y2_trans
 
 
+
 def M_propen(A, Xs, stage):
     """Estimate propensity scores using logistic or multinomial regression."""
-    A = np.asarray(A).reshape(-1, 1)
+    
+    if isinstance(A, torch.Tensor):
+        A = A.cpu().numpy()  # Convert to CPU and then to NumPy
+    A = A.reshape(-1, 1)  # Ensure A is a column vector
+    
+    if isinstance(Xs, torch.Tensor):
+        Xs = Xs.cpu().numpy()  # Convert tensor to NumPy if necessary
+
+    # A = np.asarray(A).reshape(-1, 1)
     if A.shape[1] != 1:
         raise ValueError("Cannot handle multiple stages of treatments together!")
     if A.shape[0] != Xs.shape[0]:
@@ -254,9 +262,6 @@ def M_propen(A, Xs, stage):
     probs_dict = {name: torch.tensor(s_p[:, idx], dtype=torch.float32) for idx, name in enumerate(col_names)}
 
     return probs_dict
-
-
-
 
 
 # Neural networks utils
@@ -648,7 +653,9 @@ def plot_simulation_surLoss_losses_in_grid(selected_indices, losses_dict, train_
 
     # Save the plot
     # Create the directory if it doesn't exist
-    os.makedirs(folder, exist_ok=True)
+    if not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
+        
     plot_filename = os.path.join(folder, f"{run_name}_directSearch.png")
     plt.savefig(plot_filename)
     print(f"TrainVval Plot for Direct search saved as: {plot_filename}")
@@ -727,8 +734,13 @@ def extract_value_functions_separate(V_replications):
         "Method's Value fn.": pred_data.get('DS', []), #data_DS["Method's Value fn."],
         "Behavioral Value fn.": behavioral_data
     })
-    
-    return VF_df_DQL, VF_df_DS
+
+
+    VF_df_Tao = pd.DataFrame({
+        "Method's Value fn.": pred_data.get('Tao', []), #data_Tao["Method's Value fn."],
+        "Behavioral Value fn.": behavioral_data
+    })    
+    return VF_df_DQL, VF_df_DS, VF_df_Tao
 
 
 
@@ -1344,7 +1356,6 @@ def train_and_evaluate(train_data, val_data, test_data, params, config_number, r
     nn_stage2.load_state_dict(torch.load(model_path, map_location=params['device']))
     nn_stage2.eval()
     
-
     combined_inputs2 = torch.cat((train_input_stage2, A2_train.unsqueeze(-1)), dim=1)
     test_tr_outputs_stage2 = nn_stage2(combined_inputs2)[0]  
     train_Y1_hat = test_tr_outputs_stage2.squeeze(1) + train_Y1 # pseudo outcome
