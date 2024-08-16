@@ -296,12 +296,15 @@ def evaluate_tao(test_input_stage1, d1_star, d2_star, params_ds, config_number):
     ro.r('source("ACWL_tao.R")')
 
     # Call the R function with the parameters
-    results = ro.globalenv['test_ACWL'](x1, x2, x3, x4, x5, d1_star.cpu().numpy(), d2_star.cpu().numpy(), 
+    results = ro.globalenv['test_ACWL'](test_input_np, x1, x2, x3, x4, x5, d1_star.cpu().numpy(), d2_star.cpu().numpy(), 
                                       params_ds['noiseless'], config_number, params_ds['job_id'], method="tao")
+    
+
 
     # Extract the decisions and convert to PyTorch tensors on the specified device
     A1_Tao = torch.tensor(np.array(results.rx2('g1.a1')), dtype=torch.float32).to(params_ds['device'])
     A2_Tao = torch.tensor(np.array(results.rx2('g2.a1')), dtype=torch.float32).to(params_ds['device'])
+
 
     return A1_Tao, A2_Tao
 
@@ -439,6 +442,8 @@ def adaptive_contrast_tao(all_data, contrast, config_number, job_id):
 
     train_input_np = train_input_stage1.cpu().numpy()
 
+    print("train_input_np shape: ", train_input_np.shape)
+
     x1 = train_input_np[:, 0]
     x2 = train_input_np[:, 1]
     x3 = train_input_np[:, 2]
@@ -450,7 +455,8 @@ def adaptive_contrast_tao(all_data, contrast, config_number, job_id):
 
 
     # Call the R function with the numpy arrays
-    results = ro.globalenv['train_ACWL'](job_id, x1, x2, x3, x4, x5, A1, probs1, A2, probs2, R1, R2, g1_opt, g2_opt, config_number, contrast, method="tao")
+    results = ro.globalenv['train_ACWL'](train_input_np, job_id, x1, x2, x3, x4, x5, A1, probs1, A2, probs2, R1, R2, g1_opt, g2_opt, config_number, contrast, method="tao")
+    # results = ro.globalenv['train_ACWL'](train_input_np, job_id, A1, probs1, A2, probs2, R1, R2, g1_opt, g2_opt, config_number, contrast, method="tao")
 
     # Extract results
     select2 = results.rx2('select2')[0]
@@ -461,7 +467,7 @@ def adaptive_contrast_tao(all_data, contrast, config_number, job_id):
 
     return select2, select1, selects
 
-
+    
 
 
 def simulations(V_replications, params, config_number):

@@ -5,7 +5,7 @@ surrogate_num: 1  # Indicates the surrogate model configuration number
 option_sur: 4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
 noiseless: True  # Boolean flag to indicate if noise should be excluded in simulations
-sample_size: 15000 # 30000  # Number of samples to be used
+sample_size: 3000 # 30000  # Number of samples to be used
 num_replications: 3 # 30, 100
 job_id: tao
 use_m_propen: True # True, False
