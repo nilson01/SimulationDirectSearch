@@ -1,4 +1,6 @@
 # Network parameters configuration
+setting: 'tao' # 'linear', 'tao', 'scheme_i'
+
 f_model: DQlearning  # DQlearning, surr_opt # Model function or optimization strategy
 setting: tao  # Experimental setting identifier
 surrogate_num: 1  # Indicates the surrogate model configuration number

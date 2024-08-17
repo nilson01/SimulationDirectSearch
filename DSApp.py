@@ -26,67 +26,236 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
     sample_size = params['sample_size']
     device = params['device']
 
-    # Simulate baseline covariates
-    O1 = torch.randn(5, sample_size, device=device)
-    Z1 = torch.randn(sample_size, device=device)
-    Z2 = torch.randn(sample_size, device=device)
 
-    if params['noiseless']:
-        Z1.fill_(0)
-        Z2.fill_(0)
 
-    # Stage 1 data simulation
+    if params['setting'] == 'linear':
+        # Generate data using PyTorch
+        O1 = torch.randn(sample_size, 2, device=device)
+        O2 = torch.randn(sample_size, device=device)
+        # A1 = torch.randint(1, 4, (sample_size,), device=device)
+        # A2 = torch.randint(1, 4, (sample_size,), device=device)
+        Z1 = torch.randn(sample_size, device=device) 
+        Z2 = torch.randn(sample_size, device=device) 
+
+        # Probability value when there are 3 treatments
+        pi_value = torch.full((sample_size,), 1 / 3, device=device)
+        pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
+
+        input_stage1 = O1.t()
+
+
+        matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
+        result1 = A_sim(matrix_pi1, stage=1)
+
+        if  params['use_m_propen']:
+            A1, _ = result1['A'], result1['probs']
+            probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
+        else:         
+            A1, probs1 = result1['A'], result1['probs']
+
+        A1 += 1
+
+        # Input preparation
+        input_stage2 = torch.cat([O1.t(), A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2], dim=1)
+
+        matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
         
-    # Input preparation
-    input_stage1 = O1.t()
-    
-    x1, x2, x3, x4, x5 = O1[0], O1[1], O1[2], O1[3], O1[4]
-    pi_10 = torch.ones(sample_size, device=device)
-    pi_11 = torch.exp(0.5 - 0.5 * x3)
-    pi_12 = torch.exp(0.5 * x4)
-    matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
-
-    result1 = A_sim(matrix_pi1, stage=1)
-    
-    if  params['use_m_propen']:
-        A1, _ = result1['A'], result1['probs']
-        # probs1 = M_propen(A1, O1[[2, 3]].t(), stage=1)  # multinomial logistic regression with X3, X4
-        probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
-    else:         
-        A1, probs1 = result1['A'], result1['probs']
-
-    A1 += 1
-
-    g1_opt = ((x1 > -1).float() * ((x2 > -0.5).float() + (x2 > 0.5).float())) + 1
-    Y1 = torch.exp(1.5 - torch.abs(1.5 * x1 + 2) * (A1 - g1_opt).pow(2)) + Z1
-    
-    
-    # Input preparation
-    input_stage2 = torch.cat([O1.t(), A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device)], dim=1)
-
-
-    # Stage 2 data simulation
-    pi_20 = torch.ones(sample_size, device=device)
-    pi_21 = torch.exp(0.2 * Y1 - 1)
-    pi_22 = torch.exp(0.5 * x4)
-    matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
-    
-    result2 = A_sim(matrix_pi2, stage=2)
-    
-    
-    if  params['use_m_propen']:
-        A2, _ = result2['A'], result2['probs']
-        # probs2 = M_propen(A2, O1[[0, 4]].t(), stage=2)  # multinomial logistic regression with X1, X5
-        probs2 = M_propen(A2, input_stage2, stage=2)  # multinomial logistic regression with H2
-    else:         
-        A2, probs2 = result2['A'], result2['probs']
+        result2 = A_sim(matrix_pi2, stage=2)
         
-    A2 += 1
+        if  params['use_m_propen']:
+            A2, _ = result2['A'], result2['probs']
+            probs2 = M_propen(A2, input_stage2, stage=2)  # multinomial logistic regression with H2
+        else:         
+            A2, probs2 = result2['A'], result2['probs']
+            
+        A2 += 1
 
-    Y1_opt = torch.exp(torch.tensor(1.5, device=device)) + Z1
-    g2_opt = (x3 > -1).float() * ((Y1_opt > 0.5).float() + (Y1_opt > 3).float()) + 1
 
-    Y2 = torch.exp(1.26 - torch.abs(1.5 * x3 - 2) * (A2 - g2_opt).pow(2)) + Z2
+        # Compute Y1 and Y2 using PyTorch operations
+        Y1 = 15 + A1 + O1.sum(dim=1) + O1.prod(dim=1) + Z1
+        Y2 = 15 + O2 + A2 * (1 - O2 + A1 + O1.sum(dim=1)) + Z2
+
+        # Compute optimal policy decisions for 'linear', updated for combined O1 tensor
+        g1_opt = torch.full((sample_size,), 3, device=device)  # Assuming the optimal policy for stage 1 is to always choose action 3
+        g2_opt = torch.where((1 - O2 + g1_opt + O1.sum(dim=1)) > 0, torch.tensor(3, device=device), torch.tensor(1, device=device))
+
+
+
+    elif params['setting'] == 'tao':
+        # Simulate baseline covariates
+        O1 = torch.randn(5, sample_size, device=device)
+        Z1 = torch.randn(sample_size, device=device)
+        Z2 = torch.randn(sample_size, device=device)
+
+        if params['noiseless']:
+            Z1.fill_(0)
+            Z2.fill_(0)
+
+        # Stage 1 data simulation
+            
+        # Input preparation
+        input_stage1 = O1.t()
+        
+        x1, x2, x3, x4, x5 = O1[0], O1[1], O1[2], O1[3], O1[4]
+        pi_10 = torch.ones(sample_size, device=device)
+        pi_11 = torch.exp(0.5 - 0.5 * x3)
+        pi_12 = torch.exp(0.5 * x4)
+        matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
+
+        result1 = A_sim(matrix_pi1, stage=1)
+        
+        if  params['use_m_propen']:
+            A1, _ = result1['A'], result1['probs']
+            # probs1 = M_propen(A1, O1[[2, 3]].t(), stage=1)  # multinomial logistic regression with X3, X4
+            probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
+        else:         
+            A1, probs1 = result1['A'], result1['probs']
+
+        A1 += 1
+
+        g1_opt = ((x1 > -1).float() * ((x2 > -0.5).float() + (x2 > 0.5).float())) + 1
+        Y1 = torch.exp(1.5 - torch.abs(1.5 * x1 + 2) * (A1 - g1_opt).pow(2)) + Z1
+        
+        # Input preparation
+        input_stage2 = torch.cat([O1.t(), A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device)], dim=1)
+
+        # Stage 2 data simulation
+        pi_20 = torch.ones(sample_size, device=device)
+        pi_21 = torch.exp(0.2 * Y1 - 1)
+        pi_22 = torch.exp(0.5 * x4)
+        matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
+        
+        result2 = A_sim(matrix_pi2, stage=2)
+        
+        
+        if  params['use_m_propen']:
+            A2, _ = result2['A'], result2['probs']
+            # probs2 = M_propen(A2, O1[[0, 4]].t(), stage=2)  # multinomial logistic regression with X1, X5
+            probs2 = M_propen(A2, input_stage2, stage=2)  # multinomial logistic regression with H2
+        else:         
+            A2, probs2 = result2['A'], result2['probs']
+            
+        A2 += 1
+
+        Y1_opt = torch.exp(torch.tensor(1.5, device=device)) + Z1
+        g2_opt = (x3 > -1).float() * ((Y1_opt > 0.5).float() + (Y1_opt > 3).float()) + 1
+
+        Y2 = torch.exp(1.26 - torch.abs(1.5 * x3 - 2) * (A2 - g2_opt).pow(2)) + Z2
+
+
+    elif params['setting'] == 'scheme_5':
+        # Generate data using PyTorch
+        O1 = torch.randn(sample_size, 3, device=device) * 10  # Adjusted scale
+        Z1, Z2 = torch.randn(sample_size, device=device), torch.randn(sample_size, device=device)
+        O2 = torch.randn(sample_size, device=device)
+
+        # Probabilities for treatments, assuming uniform distribution across 3 treatments
+        pi_value = torch.full((sample_size,), 1 / 3, device=device)
+        pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
+
+        # Input preparation for Stage 1
+        input_stage1 = O1.t()
+        matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
+
+        # Simulating actions based on probabilities using A_sim function for Stage 1
+        result1 = A_sim(matrix_pi1, stage=1)
+        if params['use_m_propen']:
+            A1, _ = result1['A'], result1['probs']
+            probs1 = M_propen(A1, input_stage1, stage=1)  # Multinomial logistic regression with O1
+        else:
+            A1, probs1 = result1['A'], result1['probs']
+
+        A1 += 1
+
+        # Constants C1, C2, beta, and cnst
+        C1, C2, beta, cnst = 1.0, 2.0, 0.5, 1.5  # Example constants
+
+        # Compute Y1 using g(O1) and A1
+        def g(O1):
+            return O1.sum(dim=1)  # Example function g
+        Y1 = A1 * g(O1) + C1 + Z1
+
+        # Input preparation for Stage 2
+        input_stage2 = torch.cat([O1.t(), A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+        matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
+
+        # Simulating actions for Stage 2
+        result2 = A_sim(matrix_pi2, stage=2)
+        if params['use_m_propen']:
+            A2, _ = result2['A'], result2['probs']
+            probs2 = M_propen(A2, input_stage2, stage=2)  # Multinomial logistic regression with combined inputs
+        else:
+            A2, probs2 = result2['A'], result2['probs']
+
+        A2 += 1
+
+        # Compute Y2 using indexing by A2 and function f_i
+        index = torch.arange(O1.size(0), device=device)
+        f_i_O1_A2 = O1[index, A2 - 1] ** 2
+        Y2 = f_i_O1_A2 * cnst + O2 * beta + C2 + Z2
+
+        # Computing optimal policy decisions (just placeholders here)
+        sums = O1.sum(dim=1)
+        g1_opt = 3.0 * (sums > 0).float() + 1.0 * (sums < 0).float()
+        g2_opt = torch.argmax(O1**2, dim=1) + 1
+
+
+
+    elif params['setting'] == 'scheme_i':
+        # Generate data using PyTorch
+        O1 = torch.randn(sample_size, 3, device=device)
+        Z1, Z2 = torch.randn(sample_size, device=device), torch.randn(sample_size, device=device)
+        O2 = torch.randn(sample_size, device=device)
+
+        # Probabilities for treatments, assuming it's the same as linear case
+        pi_value = torch.full((sample_size,), 1 / 3, device=device)
+        pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
+
+        # Input preparation for Stage 1
+        input_stage1 = O1.t()
+        matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
+
+        # Simulating actions based on probabilities using A_sim function
+        result1 = A_sim(matrix_pi1, stage=1)
+        if params['use_m_propen']:
+            A1, _ = result1['A'], result1['probs']
+            probs1 = M_propen(A1, input_stage1, stage=1)  # Multinomial logistic regression with O1
+        else:
+            A1, probs1 = result1['A'], result1['probs']
+
+        A1 += 1
+
+        # Constants C1, C2 and beta
+        C1, C2, beta = 1.0, 2.0, 0.5  # Example constants
+
+        # Compute Y1 using g(O1) and A1
+        def g(O1):
+            return O1.sum(dim=1)  # Example g function
+        Y1 = A1 * g(O1) + C1 + Z1
+
+        # Input preparation for Stage 2
+        input_stage2 = torch.cat([O1.t(), A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+        matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
+
+        # Simulating actions for Stage 2
+        result2 = A_sim(matrix_pi2, stage=2)
+        if params['use_m_propen']:
+            A2, _ = result2['A'], result2['probs']
+            probs2 = M_propen(A2, input_stage2, stage=2)  # Multinomial logistic regression with combined Stage 1 and 2 inputs
+        else:
+            A2, probs2 = result2['A'], result2['probs']
+
+        A2 += 1
+
+        # Define f_i function (example assuming some functionality, adjust as needed)
+        def f_i_scheme1(O1, A1, i):
+            return 1.5 * A1 * O1[:, i - 1] + A1 * (O1[:, i - 1] ** 2) / 2
+
+        # Compute Y2 using f_i and other inputs
+        Y2 = sum(f_i_scheme1(O1, A1, i) * (A2 == i).float() for i in range(1, 4)) + O2 * beta + C2 + Z2
+
+
+
 
     if run != 'test':
       # transform Y for direct search
@@ -216,6 +385,40 @@ def evaluate_tao(test_input_stage1, test_input_stage2, d1_star, d2_star, params_
     return A1_Tao, A2_Tao
 
 
+def evaluate_method(method_name, params, config_number, df, test_input_stage1, A1_tensor_test, test_input_stage2, A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2):
+    # Initialize and load models for the method
+    nn_stage1 = initialize_and_load_model(1, params['sample_size'], params, config_number)
+    nn_stage2 = initialize_and_load_model(2, params['sample_size'], params, config_number)
+
+    # Calculate test outputs for all networks in stage 1
+    A1 = compute_test_outputs(nn=nn_stage1, 
+                              test_input=test_input_stage1, 
+                              A_tensor=A1_tensor_test, 
+                              params=params, 
+                              is_stage1=True)
+
+    # Calculate test outputs for all networks in stage 2
+    A2 = compute_test_outputs(nn=nn_stage2, 
+                              test_input=test_input_stage2, 
+                              A_tensor=A2_tensor_test, 
+                              params=params, 
+                              is_stage1=False)
+
+    # Append to DataFrame
+    new_row = {
+        'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
+        'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
+        'Predicted_A1': A1.cpu().numpy().tolist(),
+        'Predicted_A2': A2.cpu().numpy().tolist()
+    }
+    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+
+    # Calculate policy values using the DR estimator
+    V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
+
+    # print(f"{method_name} estimator: ")
+
+    return df, V_replications_M1_pred
 
 def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_stage1_DS, nn_stage2_DS, df_DQL, df_DS, df_Tao, params_dql, params_ds, config_number):
 
@@ -223,6 +426,8 @@ def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_
     processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications, run='test')
     test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2  = processed_result
     train_tensors = [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test]
+
+
 
 
     # Evaluation phase using Tao's method
@@ -238,80 +443,95 @@ def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_
     }
     df_Tao = pd.concat([df_Tao, pd.DataFrame([new_row_Tao])], ignore_index=True)
 
-    # print("Tao estimator: ")
     # Calculate policy values using the Tao estimator for Tao's method
-    V_replications_M1_pred_Tao = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_Tao, A2_Tao, P_A1_g_H1, P_A2_g_H2, config_number)
+    # print("Tao's method estimator: ")
+    V_rep_Tao = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_Tao, A2_Tao, P_A1_g_H1, P_A2_g_H2, config_number)
     
-    # Append policy values for Tao
-    V_replications["V_replications_M1_pred"]["Tao"].append(V_replications_M1_pred_Tao)
-
-
-    # Evaluation phase using DQL and DS methods
-
-    # Initialize and load models for DQL
-    nn_stage1_DQL = initialize_and_load_model(1, params_dql['sample_size'], params_dql, config_number)
-    nn_stage2_DQL = initialize_and_load_model(2, params_dql['sample_size'], params_dql, config_number)
-
-    # Initialize and load models for DS
-    nn_stage1_DS = initialize_and_load_model(1, params_ds['sample_size'], params_ds, config_number)
-    nn_stage2_DS = initialize_and_load_model(2, params_ds['sample_size'], params_ds, config_number)
     
-    # Calculate test outputs for all networks in stage 1 for DQL
-    A1_DQL = compute_test_outputs(nn = nn_stage1_DQL, 
-                                test_input = test_input_stage1, 
-                                A_tensor = A1_tensor_test, 
-                                params = params_dql, 
-                                is_stage1 = True)
+    # Evaluation phase using DQL & DS method
+    df_DQL, V_rep_DQL = evaluate_method('DQL', params_dql, config_number, df_DQL, test_input_stage1, A1_tensor_test, test_input_stage2, A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2)
+    df_DS, V_rep_DS = evaluate_method('DS', params_ds, config_number, df_DS, test_input_stage1, A1_tensor_test, test_input_stage2, A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2)
 
-    # Calculate test outputs for all networks in stage 2 for DQL
-    A2_DQL = compute_test_outputs(nn = nn_stage2_DQL, 
-                                test_input = test_input_stage2, 
-                                A_tensor = A2_tensor_test, 
-                                params = params_dql, 
-                                is_stage1 = False)
 
-    # Calculate test outputs for all networks in stage 1 for DS
-    A1_DS = compute_test_outputs(nn = nn_stage1_DS, 
-                                test_input = test_input_stage1, 
-                                A_tensor = A1_tensor_test, 
-                                params = params_ds, 
-                                is_stage1 = True)
 
-    # Calculate test outputs for all networks in stage 2 for DS
-    A2_DS = compute_test_outputs(nn = nn_stage2_DS, 
-                                test_input = test_input_stage2, 
-                                A_tensor = A2_tensor_test, 
-                                params = params_ds, 
-                                is_stage1 = False)
+    # # Evaluation phase using DQL method
 
-    # Append to DataFrame for DQL
-    new_row_DQL = {
-        'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
-        'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
-        'Predicted_A1': A1_DQL.cpu().numpy().tolist(),
-        'Predicted_A2': A2_DQL.cpu().numpy().tolist()
-    }
-    df_DQL = pd.concat([df_DQL, pd.DataFrame([new_row_DQL])], ignore_index=True)
+    # # Initialize and load models for DQL
+    # nn_stage1_DQL = initialize_and_load_model(1, params_dql['sample_size'], params_dql, config_number)
+    # nn_stage2_DQL = initialize_and_load_model(2, params_dql['sample_size'], params_dql, config_number)
+
+    # # Calculate test outputs for all networks in stage 1 for DQL
+    # A1_DQL = compute_test_outputs(nn = nn_stage1_DQL, 
+    #                             test_input = test_input_stage1, 
+    #                             A_tensor = A1_tensor_test, 
+    #                             params = params_dql, 
+    #                             is_stage1 = True)
+
+    # # Calculate test outputs for all networks in stage 2 for DQL
+    # A2_DQL = compute_test_outputs(nn = nn_stage2_DQL, 
+    #                             test_input = test_input_stage2, 
+    #                             A_tensor = A2_tensor_test, 
+    #                             params = params_dql, 
+    #                             is_stage1 = False)
     
-    # Append to DataFrame for DS
-    new_row_DS = {
-        'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
-        'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
-        'Predicted_A1': A1_DS.cpu().numpy().tolist(),
-        'Predicted_A2': A2_DS.cpu().numpy().tolist()
-    }
-    df_DS = pd.concat([df_DS, pd.DataFrame([new_row_DS])], ignore_index=True) 
 
-
-
+    # # Append to DataFrame for DQL
+    # new_row_DQL = {
+    #     'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
+    #     'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
+    #     'Predicted_A1': A1_DQL.cpu().numpy().tolist(),
+    #     'Predicted_A2': A2_DQL.cpu().numpy().tolist()
+    # }
+    # df_DQL = pd.concat([df_DQL, pd.DataFrame([new_row_DQL])], ignore_index=True)
+    
         
-    # Calculate policy values using the DR estimator for DQL
-    # print("DQL estimator: ")
-    V_replications_M1_pred_DQL = calculate_policy_values_W_estimator(train_tensors, params_dql, A1_DQL, A2_DQL, P_A1_g_H1, P_A2_g_H2, config_number)
+    # # Calculate policy values using the DR estimator for DQL
+    # # print("DQL estimator: ")
+    # V_rep_DQL = calculate_policy_values_W_estimator(train_tensors, params_dql, A1_DQL, A2_DQL, P_A1_g_H1, P_A2_g_H2, config_number)
 
-    # print("DS estimator: ")
-    # Calculate policy values using the DR estimator for DS
-    V_replications_M1_pred_DS = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_DS, A2_DS, P_A1_g_H1, P_A2_g_H2, config_number)
+
+
+
+
+    # # Evaluation phase using DQL method
+
+    # # Initialize and load models for DS
+    # nn_stage1_DS = initialize_and_load_model(1, params_ds['sample_size'], params_ds, config_number)
+    # nn_stage2_DS = initialize_and_load_model(2, params_ds['sample_size'], params_ds, config_number)
+    
+
+
+    # # Calculate test outputs for all networks in stage 1 for DS
+    # A1_DS = compute_test_outputs(nn = nn_stage1_DS, 
+    #                             test_input = test_input_stage1, 
+    #                             A_tensor = A1_tensor_test, 
+    #                             params = params_ds, 
+    #                             is_stage1 = True)
+
+    # # Calculate test outputs for all networks in stage 2 for DS
+    # A2_DS = compute_test_outputs(nn = nn_stage2_DS, 
+    #                             test_input = test_input_stage2, 
+    #                             A_tensor = A2_tensor_test, 
+    #                             params = params_ds, 
+    #                             is_stage1 = False)
+
+
+    # # Append to DataFrame for DS
+    # new_row_DS = {
+    #     'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
+    #     'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
+    #     'Predicted_A1': A1_DS.cpu().numpy().tolist(),
+    #     'Predicted_A2': A2_DS.cpu().numpy().tolist()
+    # }
+    # df_DS = pd.concat([df_DS, pd.DataFrame([new_row_DS])], ignore_index=True) 
+
+    # # print("DS estimator: ")
+    # # Calculate policy values using the DR estimator for DS
+    # V_rep_DS = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_DS, A2_DS, P_A1_g_H1, P_A2_g_H2, config_number)
+
+
+
+
     
     # value fn. 
     V_replications["V_replications_M1_behavioral"].append(torch.mean(Y1_tensor + Y2_tensor).cpu().item())  
@@ -319,11 +539,14 @@ def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_
     message = f'\nY1 beh mean: {torch.mean(Y1_tensor)}, Y2 beh mean: {torch.mean(Y2_tensor)}, Y1_beh+Y2_beh mean: {torch.mean(Y1_tensor + Y2_tensor)} \n\n'
     print(message)
     
+    # Append policy values for Tao
+    V_replications["V_replications_M1_pred"]["Tao"].append(V_rep_Tao)
+
     # Append policy values for DQL
-    V_replications["V_replications_M1_pred"]["DQL"].append(V_replications_M1_pred_DQL)
+    V_replications["V_replications_M1_pred"]["DQL"].append(V_rep_DQL)
 
     # Append policy values for DS
-    V_replications["V_replications_M1_pred"]["DS"].append(V_replications_M1_pred_DS)
+    V_replications["V_replications_M1_pred"]["DS"].append(V_rep_DS)
 
 
     return V_replications, df_DQL, df_DS, df_Tao
