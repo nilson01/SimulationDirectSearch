@@ -173,36 +173,26 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   g2.opt <- ensure_vector(g2.opt)
 
   colnames_O1= paste("x", 1:ncol(O1), sep="")
-  # colnames_O2= paste("x", 1:ncol(O2), sep="")
+  # colnames_O2= paste("x", 1:ncol(O2), sep="") # DONT REMOVE
 
   ############### stage 2 Estimation #####################
   # Stage 2 Estimation (Backward induction) : estimate conditional means by regression
 
+  ####### ACWL-Contrast #########
   # O2 will possibly be in this estimation also in H = cbind(O1, R1, O2) # DISCUSS **********************************************
-  REG2 <- Reg.mu(Y = R2, As = cbind(A1, A2), H = cbind(O1, R1))
-  mus2.reg <- REG2$mus.reg
-  CLs2.a <- CL.AIPW(Y = R2, A = A2, pis.hat = probs2, mus.reg = mus2.reg)
+  REG2.a1 <- Reg.mu(Y = R2, As = cbind(A1, A2), H = cbind(O1, R1))
+  mus2.reg.a1 <- REG2.a1$mus.reg
+  CLs2.a1 <- CL.AIPW(Y = R2, A = A2, pis.hat = probs2, mus.reg = mus2.reg.a1)
 
   # main difference betwen two contrasts here!!!  
-  C2.a1<-CLs2.a$C.a1 
+  C2.a1<-CLs2.a1$C.a1 
   if(contrast == 2){
-      C2.a1<-CLs2.a$C.a2
+      C2.a1<-CLs2.a1$C.a2
   }
-  l2.a<-CLs2.a$l.a
+  l2.a1<-CLs2.a1$l.a
     
- 
-  # ################################    STRAIGHT regression / Q learning  ################################
-  # # contrasts C and working order l.reg
-  # l2.reg<-rep(NA,N)
-  # for(j in 1:N){
-  #   # straight reg, similar to Q-learning
-  #   l2.reg[j]<-which(mus2.reg[j,]==max(mus2.reg[j,]))
-  # }
-    
-
   # Weighted classification using CART
-  # fit2.a1 <- rpart(l2.a ~ x1 + x2 + x3 + x4 + x5 + A1 + R1, weights = C2.a1, method = "class")
-
+  # fit2.a1 <- rpart(l2.a1 ~ x1 + x2 + x3 + x4 + x5 + A1 + R1, weights = C2.a1, method = "class")
   # Convert matrix to a data frame
   train_input_df <- as.data.frame(O1)
   names(train_input_df) <- colnames_O1 # c("x1", "x2", "x3", "x4", "x5")  
@@ -213,32 +203,19 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   # train_input_df$O2 <- O2 # O2 will go here if we have one    # DISCUSS **********************************************
 
   # Fit the model
-  fit2.a1 <- rpart(l2.a ~ ., data = train_input_df, weights = C2.a1, method = "class")
+  fit2.a1 <- rpart(l2.a1 ~ ., data = train_input_df, weights = C2.a1, method = "class")
   g2.a1 <- as.numeric(predict(fit2.a1, type = "class")) # - 1
     
   ############### stage 1 Estimation #####################
   # Stage 1 Estimation : expected optimal stage 2 outcome
-    
-  # E.R2.reg<-rep(NA, N) #    STRAIGHT regression / Q learning
-
   E.R2.a1 <- rep(NA, N)
-    
   for (m in 1:N){
-      # E.R2.reg[m]<-R2[m] + mus2.reg[m,l2.reg[m]]-mus2.reg[m,A2[m]]  #    STRAIGHT regression / Q learning
-      E.R2.a1[m] <- R2[m] + mus2.reg[m, g2.a1[m]] - mus2.reg[m,A2[m]]
+      E.R2.a1[m] <- R2[m] + mus2.reg.a1[m, g2.a1[m]] - mus2.reg.a1[m, A2[m]]
   }
     
   # calculate pseudo outcome (PO)
-  # PO.reg<- R1 + E.R2.reg  # STRAIGHT regression / Q learning
   PO.a1 <- R1 + E.R2.a1
-    
-  # ########### straight regression / Linear Q-learning #########
-  # REG1<-Reg.mu(Y=PO.reg,As=A1,H=O1)
-  # mus1.reg<-REG1$mus.reg
-  # l1.reg<-rep(NA,N)
-  # for(j in 1:N) l1.reg[j]<-which(mus1.reg[j,]==max(mus1.reg[j,]))
-    
-    
+
   ####### ACWL-Contrast #########
   REG1.a1 <- Reg.mu(Y = PO.a1, As = A1, H = O1)
   mus1.reg.a1 <- REG1.a1$mus.reg
@@ -258,16 +235,7 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   fit1.a1 <- rpart(l1.a1 ~ ., data = train_input, weights = C1.a1, method = "class")
   g1.a1 <- as.numeric(predict(fit1.a1, type = "class")) # - 1
     
-    
-  # if(method=="linear"){
-  #     select2 <- mean(l2.reg == g2.opt)
-  #     select1 <- mean(l1.reg == g1.opt)
-  #     selects <- mean(l1.reg == g1.opt & l2.reg == g2.opt)}
-  # else{
-  #     select2 <- mean(g2.a1 == g2.opt)
-  #     select1 <- mean(g1.a1 == g1.opt)
-  #     selects <- mean(g1.a1 == g1.opt & g2.a1 == g2.opt)}
-
+  
   select2 <- mean(g2.a1 == g2.opt)
   select1 <- mean(g1.a1 == g1.opt)
   selects <- mean(g1.a1 == g1.opt & g2.a1 == g2.opt)
@@ -279,12 +247,6 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
     dir.create(model_dir)
   }
 
-   
-  # # Define and save the file paths for the first set of regression models
-  # file_path_fit1_reg <- sprintf("%s/best_model_ACWL_stage1_tao_fit1_reg_config_number_%d.rds", model_dir, config_number)
-  # file_path_fit2_reg <- sprintf("%s/best_model_ACWL_stage2_tao_fit2_reg_config_number_%d.rds", model_dir, config_number)
-  # saveRDS(REG1, file = file_path_fit1_reg)
-  # saveRDS(REG2, file = file_path_fit2_reg)
   
   # Define and save the file paths for the second set of models
   file_path_fit1 <- sprintf("%s/best_model_ACWL_stage1_tao_fit1_config_number_%d.rds", model_dir, config_number)
@@ -312,19 +274,13 @@ test_ACWL <- function(O1, O2, x1, x2, x3, x4, x5, g1k, g2k, noiseless, config_nu
  
   # Initializing vectors for storage
   g1.a1 <- g2.a1 <- R1.a1 <- R2.a1 <- numeric(ni)
-  g1.reg <- g2.reg <- R1.reg <- R2.reg <- numeric(ni)
 
   model_dir <- sprintf("models/%s", job_id)
 
   # Loading saved models with config number in the file names
-  # fit1.reg <- readRDS(sprintf("%s/best_model_ACWL_stage1_tao_fit1_reg_config_number_%d.rds", model_dir, config_number))
-  # fit2.reg <- readRDS(sprintf("%s/best_model_ACWL_stage2_tao_fit2_reg_config_number_%d.rds", model_dir, config_number))
   fit1.a1 <- readRDS(sprintf("%s/best_model_ACWL_stage1_tao_fit1_config_number_%d.rds", model_dir, config_number))
   fit2.a1 <- readRDS(sprintf("%s/best_model_ACWL_stage2_tao_fit2_config_number_%d.rds", model_dir, config_number))
         
-  # # straight regression models
-  # fit1.reg<-fit1.reg$RegModel
-  # fit2.reg<-fit2.reg$RegModel
 
   colnames_O1 = paste("x", 1:ncol(O1), sep="")
 
@@ -334,26 +290,6 @@ test_ACWL <- function(O1, O2, x1, x2, x3, x4, x5, g1k, g2k, noiseless, config_nu
 
     z1 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
     z2 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
-    
-    ################################    STRAIGHT regression / Linear Q learning  ################################
-    # # Estimate outcomes under different treatments
-    # mu10.reg<-sum(c(1,X0.k,0,0,X0.k*0,X0.k*0)*coef(fit1.reg))
-    # mu11.reg<-sum(c(1,X0.k,1,0,X0.k*1,X0.k*0)*coef(fit1.reg))
-    # mu12.reg<-sum(c(1,X0.k,0,1,X0.k*0,X0.k*1)*coef(fit1.reg))
-    # mus1.reg<-c(mu10.reg,mu11.reg,mu12.reg)
-    # g1.reg[k]<-which(mus1.reg==max(mus1.reg)) #-1
-    # R1.reg[k]<- exp(1.5 - abs(1.5 * x1[k] + 2) * (g1.reg[k] - g1k[k])^2) + z1                
-      
-    # X1.k <- c(X0.k, R1.reg[k])
-    # l1.bi <- c(I(g1.reg[k]==1),I(g1.reg[k]==2))
-                          
-    # # straight regression method
-    # mu20.reg<-sum(c(1,X1.k,l1.bi,0,0,X1.k*0,X1.k*0,l1.bi*0,l1.bi*0)*coef(fit2.reg))
-    # mu21.reg<-sum(c(1,X1.k,l1.bi,1,0,X1.k*1,X1.k*0,l1.bi*1,l1.bi*0)*coef(fit2.reg))
-    # mu22.reg<-sum(c(1,X1.k,l1.bi,0,1,X1.k*0,X1.k*1,l1.bi*0,l1.bi*1)*coef(fit2.reg))
-    # mus2.reg <- c(mu20.reg,mu21.reg,mu22.reg)
-    # g2.reg[k] <- which(mus2.reg == max(mus2.reg))
-    # R2.reg[k] <- exp(1.26 - abs(1.5 * x3[k] - 2) * (g2.reg[k] - g2k[k])^2) + z2 
 
     ################################    ACWL  ################################
 
@@ -370,21 +306,6 @@ test_ACWL <- function(O1, O2, x1, x2, x3, x4, x5, g1k, g2k, noiseless, config_nu
     R2.a1[k] <- exp(1.26 - abs(1.5 * x3[k] - 2) * (g2.a1[k] - g2k[k])^2) + z2
   }
   
-  # if (method == "linear") {
-  #   R1.a1 <- R1.reg
-  #   R2.a1 <- R2.reg
-  #   g1.a1 <- g1.reg
-  #   g2.a1 <- g2.reg
-  #   select2 <- mean(g2.reg == g2k)
-  #   select1 <- mean(g1.reg == g1k)
-  #   selects <- mean(g1.reg == g1k & g2.reg == g2k)
-  # } else {
-  #   select2 <- mean(g2.a1 == g2k)
-  #   select1 <- mean(g1.a1 == g1k)
-  #   selects <- mean(g1.a1 == g1k & g2.a1 == g2k)
-  # }
-
-
   select2 <- mean(g2.a1 == g2k)
   select1 <- mean(g1.a1 == g1k)
   selects <- mean(g1.a1 == g1k & g2.a1 == g2k)
