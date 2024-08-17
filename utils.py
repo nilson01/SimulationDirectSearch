@@ -835,11 +835,12 @@ def main_loss_gamma(stage1_outputs, stage2_outputs, A1, A2, Ci, option, surrogat
 
 
 
-
 def process_batches(model1, model2, data, params, optimizer, is_train=True):
     batch_size = params['batch_size']
     total_loss = 0
     num_batches = (data['input1'].shape[0] + batch_size - 1) // batch_size
+
+    # print("num_batches DS: =============> ", num_batches)
 
     if is_train:
         model1.train()
@@ -870,7 +871,7 @@ def process_batches(model1, model2, data, params, optimizer, is_train=True):
     return avg_loss
 
 
-def initialize_and_prepare_model(stage, params, sample_size):
+def initialize_and_prepare_model(stage, params):
     model = initialize_nn(params, stage).to(params['device'])
     
     # Check for the initializer type in params and apply accordingly
@@ -905,7 +906,7 @@ def initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params):
         elif params['scheduler_type'] == 'steplr':
             scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=params['scheduler_step_size'], gamma=params['scheduler_gamma'])
         elif params['scheduler_type'] == 'cosineannealing':
-            T_max = (params['sample_size'] // params['batch_size']) * params['n_epoch']
+            T_max = (params['sample_size'] // params['batch_size']) * params['n_epoch']         # need to use the updated sample size 
             scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=T_max, eta_min=0.0001)
         else:
             warnings.warn("No valid scheduler type found in params['scheduler_type'], defaulting to StepLR.")
@@ -933,21 +934,15 @@ def update_scheduler(scheduler, params, val_loss=None):
 
 
 
-
-
-
-
-
-
-
-
 # 3. Q learning utils
-
 
 def process_batches_DQL(model, inputs, actions, targets, params, optimizer, is_train=True):
     batch_size = params['batch_size']
     total_loss = 0
     num_batches = (inputs.shape[0] + batch_size - 1) // batch_size
+
+    # print("num_batches DQL: =============> ", num_batches)
+
 
     if is_train:
         model.train()
@@ -1173,7 +1168,6 @@ def train_and_validate_W_estimator(config_number, model, optimizer, scheduler, t
         model_path = os.path.join(model_dir, f"best_model_stage_Q_{stage_number}_{sample_size}_W_estimator_{params['f_model']}_config_number_{config_number}_result_{resNum}.pt")
         torch.save(best_model_params, model_path)
 
-
     return train_losses, val_losses, epoch_num_model
 
 
@@ -1196,122 +1190,12 @@ def valFn_estimate(Qhat1_H1d1, Qhat2_H2d2, Qhat1_H1A1, Qhat2_H2A2, A1_tensor, A2
     # term_2 = (Y2_tensor- Qhat2_H2A2.squeeze(1) ) * ((A2_tensor == A2)/P_A2_given_H2_tensor)
     # return torch.mean(Qhat1_H1d1.squeeze(1)  + term_1 + term_2).item()   
   
-    # corrected term in email
+    # corrected doubly robust IPW estimator term by prof. 
     indicator1 = ((A1_tensor == A1)/P_A1_given_H1_tensor)
     indicator2 = ((A2_tensor == A2)/P_A2_given_H2_tensor)
     term_1 = (Y1_tensor - Qhat1_H1A1.squeeze(1) + Qhat2_H2d2.squeeze(1) ) * indicator1
     term_2 = (Y2_tensor - Qhat2_H2A2.squeeze(1) ) * indicator1 * indicator2
     return torch.mean(Qhat1_H1d1.squeeze(1) ).item() + torch.mean(term_1 + term_2).item() 
-
-
-
-
-# def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor, config_number):
-
-#     train_size = int(params['training_validation_prop'] * params['sample_size'])
-#     train_test_tensors = [tensor[:train_size] for tensor in train_tens ]
-#     val_test_tensors = [tensor[train_size:] for tensor in train_tens]
-    
-
-#     test_input_stage1, test_input_stage2,  train_Y1, train_Y2, train_A1, train_A2 = train_test_tensors
-#     val_input_stage1, val_input_stage2, val_Y1, val_Y2, val_A1, val_A2 = val_test_tensors
-
-
-#     A1_tr, A2_tr = [tensor[:train_size] for tensor in [A1, A2] ] # actions from chosen policy
-#     A1_val, A2_val = [tensor[train_size:] for tensor in [A1, A2]] # actions from chosen policy
-
-
-
-#     # Duplicate the params dictionary
-#     param_W = params.copy()
-
-#     # Update specific values in param_W
-#     param_W.update({
-#       'num_networks': 1,
-#     })
-        
-#     if params["f_model"]!="DQlearning":
-#         param_W.update({
-#               'input_dim_stage1': params['input_dim_stage1'] + 1, # (H_1, A_1)
-#               'input_dim_stage2': params['input_dim_stage2'] + 1, # (H_2, A_2)
-#           })
-    
-#     nn_stage2, optimizer_2, scheduler_2 = initialize_model_and_optimizer(param_W, 2)
-#     train_losses_stage2, val_losses_stage2, epoch_num_model_2 = train_and_validate_W_estimator(config_number, nn_stage2, optimizer_2, scheduler_2,
-#                                                                                                test_input_stage2, train_A2, train_Y2,
-#                                                                                                val_input_stage2, val_A2, val_Y2, 
-#                                                                                                params['batch_size'], device, params['n_epoch'], 2,
-#                                                                                                params['sample_size'], params)
-    
-    
-#     model_dir = f"models/{params['job_id']}"
-#     model_filename = f"best_model_stage_Q_{2}_{params['sample_size']}_W_estimator_{params['f_model']}_config_number_{config_number}.pt"
-#     model_path = os.path.join(model_dir, model_filename)
-#     nn_stage2.load_state_dict(torch.load(model_path, map_location=params['device']))
-#     nn_stage2.eval()
-    
-
-#     combined_inputs2 = torch.cat((test_input_stage2, A2_tr.unsqueeze(-1)), dim=1)
-#     test_tr_outputs_stage2 = nn_stage2(combined_inputs2)[0]  
-#     train_Y1_hat = test_tr_outputs_stage2.squeeze(1) + train_Y1 # pseudo outcome
-
-
-#     combined_inputs2val = torch.cat((val_input_stage2, A2_val.unsqueeze(-1)), dim=1)
-#     test_val_outputs_stage2 = nn_stage2(combined_inputs2val)[0]  
-#     val_Y1_hat = test_val_outputs_stage2.squeeze() + val_Y1 # pseudo outcome
-    
-
-#     nn_stage1, optimizer_1, scheduler_1 = initialize_model_and_optimizer(param_W, 1)
-#     train_losses_stage1, val_losses_stage1, epoch_num_model_1 = train_and_validate_W_estimator(config_number, nn_stage1, optimizer_1, scheduler_1, 
-#                                                                                                test_input_stage1, train_A1, train_Y1_hat, 
-#                                                                                                val_input_stage1, val_A1, val_Y1_hat, 
-#                                                                                                params['batch_size'], device, 
-#                                                                                                params['n_epoch'], 1, 
-#                                                                                                params['sample_size'], params)    
-#     model_dir = f"models/{params['job_id']}"
-#     model_filename = f"best_model_stage_Q_{1}_{params['sample_size']}_W_estimator_{params['f_model']}_config_number_{config_number}.pt"
-#     model_path = os.path.join(model_dir, model_filename)
-#     nn_stage1.load_state_dict(torch.load(model_path, map_location=params['device']))
-#     nn_stage1.eval()
-
-
-    
-    
-    
-    
-    
-    
-    
-
-#     [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor, A2_tensor] =   train_tens
-
-#     combined_inputs2 = torch.cat((test_input_stage2, A2.unsqueeze(-1)), dim=1)
-#     Qhat2_H2d2 = nn_stage2(combined_inputs2)[0]  
-
-#     combined_inputs1 = torch.cat((test_input_stage1, A1.unsqueeze(-1)), dim=1)
-#     Qhat1_H1d1 = nn_stage1(combined_inputs1)[0]  
-
-
-#     combined_inputs2 = torch.cat((test_input_stage2, A2_tensor.unsqueeze(-1)), dim=1)
-#     Qhat2_H2A2 = nn_stage2(combined_inputs2)[0]  
-
-#     combined_inputs1 = torch.cat((test_input_stage1, A1_tensor.unsqueeze(-1)), dim=1)
-#     Qhat1_H1A1 = nn_stage1(combined_inputs1)[0] 
-    
-
-#     V_replications_M1_pred = valFn_estimate(Qhat1_H1d1, Qhat2_H2d2, 
-#                                             Qhat1_H1A1, Qhat2_H2A2, 
-#                                             A1_tensor, A2_tensor, 
-#                                             A1, A2, 
-#                                             Y1_tensor, Y2_tensor, 
-#                                             P_A1_given_H1_tensor, P_A2_given_H2_tensor)
-
-#     return V_replications_M1_pred
-    
-
-
-
-
 
 
 def train_and_evaluate(train_data, val_data, test_data, params, config_number, resNum):
@@ -1446,17 +1330,6 @@ def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H
     print("calculate_policy_values_W_estimator: ", result1, result2)
     
     return (result1+result2)/2
-
-
-
-
-
-
-
-
-
-
-
 
 
 

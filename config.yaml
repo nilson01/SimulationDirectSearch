@@ -12,7 +12,7 @@ use_m_propen: True # True, False
 
 training_validation_prop: 0.7  # Proportion of data for training vs validation
 n_epoch: 60 # 150  # Number of training epochs
-batch_size: 7000  # Batch size calculated as a proportion of sample size
+batch_size: 800 #7000  # Batch size calculated as a proportion of sample size
 num_networks: 2  # Number of parallel networks or models
 activation_function: elu # elu, relu
 input_dim_stage1: 5  # Input dimension for stage 1, [O1] --> [x1, x2, x3, x4, x5]

@@ -153,14 +153,16 @@ ensure_vector <- function(var) {
 
 
 # Work with  actions 1, 2, 3,  
-train_ACWL <- function(O1, job_id, x1, x2, x3, x4, x5, A1, probs1, A2, probs2, R1, R2, g1.opt, g2.opt, config_number, contrast = 1, method = "tao") {
+train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g2.opt, config_number, contrast = 1, method = "tao") {
   cat("Train model: ", method, "\n")
-  N <- length(x1)  
+
+  # N <- length(x1)  
+  N <- nrow(O1) 
+  cat("Number of row in O1 is: ", nrow(O1), "\n ")
            
+  # cat("Debug: Dimensions of train_input_np are", dim(O1), "and the data type is", class(O1), "\n")
+
   # Directly call ensure_vector for each variable and update 
-  cat("Debug: Dimensions of train_input_np are", dim(O1), "and the data type is", class(O1), "\n")
-
-
   # x1 <- ensure_vector(x1)
   # x2 <- ensure_vector(x2)
   # x3 <- ensure_vector(x3)
@@ -173,7 +175,9 @@ train_ACWL <- function(O1, job_id, x1, x2, x3, x4, x5, A1, probs1, A2, probs2, R
   R2 <- ensure_vector(R2)
   g1.opt <- ensure_vector(g1.opt)
   g2.opt <- ensure_vector(g2.opt)
-    
+
+  colnames_O1= paste("x", 1:ncol(O1), sep="")
+  # colnames_O2= paste("x", 1:ncol(O2), sep="")
 
   ############### stage 2 Estimation #####################
   # Stage 2 Estimation (Backward induction) : estimate conditional means by regression
@@ -191,10 +195,7 @@ train_ACWL <- function(O1, job_id, x1, x2, x3, x4, x5, A1, probs1, A2, probs2, R
   }
   l2.a<-CLs2.a$l.a
     
-    
-    
-    
-    
+ 
   ################################    STRAIGHT regression / Q learning  ################################
   # contrasts C and working order l.reg
   l2.reg<-rep(NA,N)
@@ -212,14 +213,12 @@ train_ACWL <- function(O1, job_id, x1, x2, x3, x4, x5, A1, probs1, A2, probs2, R
 
   # Convert matrix to a data frame
   train_input_df <- as.data.frame(O1)
-  names(train_input_df) <- c("x1", "x2", "x3", "x4", "x5")  
+  names(train_input_df) <- colnames_O1 # c("x1", "x2", "x3", "x4", "x5")  
 
   # Add additional variables
   train_input_df$A1 <- A1
   train_input_df$R1 <- R1
-
   # train_input_df$O2 <- O2 # O2 will go here if we have one    # DISCUSS **********************************************
-
 
 
   # Fit the model
@@ -265,14 +264,10 @@ train_ACWL <- function(O1, job_id, x1, x2, x3, x4, x5, A1, probs1, A2, probs2, R
   l1.a1<-CLs1.a1$l.a
 
   # fit1.a1 <- rpart(l1.a1 ~ x1 + x2 + x3 + x4 + x5, weights = C1.a1, method = "class")
-  
+
   # Convert matrix to a data frame
   train_input <- as.data.frame(O1)
-  #names(train_input) <- c("x1", "x2", "x3", "x4", "x5")  
-
-  # Generate column names dynamically based on the number of columns in the data frame
-  names(train_input) <-  paste("x", 1:ncol(train_input), sep="")
-
+  names(train_input) <-  colnames_O1 # paste("x", 1:ncol(train_input), sep="")
 
   fit1.a1 <- rpart(l1.a1 ~ ., data = train_input, weights = C1.a1, method = "class")
 
@@ -319,25 +314,12 @@ train_ACWL <- function(O1, job_id, x1, x2, x3, x4, x5, A1, probs1, A2, probs2, R
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-test_ACWL <- function(test_input, x1, x2, x3, x4, x5, g1k, g2k, noiseless, config_number, job_id, method= "tao") {
+test_ACWL <- function(O1, O2, x1, x2, x3, x4, x5, g1k, g2k, noiseless, config_number, job_id, method= "tao") {
   cat("Test model: ", method, "\n")
-  ni <- length(x1)
+  # ni <- length(x1)
+  ni <- nrow(O1) 
+  cat("Number of row in O1 is: ", nrow(O1), "\n ")
+
   E0.yi <- matrix(NA, ni, 2)  # a matrix of estimated counterfactual mean by different methods
  
   # Initializing vectors for storage
@@ -356,12 +338,12 @@ test_ACWL <- function(test_input, x1, x2, x3, x4, x5, g1k, g2k, noiseless, confi
   fit1.reg<-fit1.reg$RegModel
   fit2.reg<-fit2.reg$RegModel
 
-  colnames_test_input = paste("x", 1:ncol(test_input), sep="")
+  colnames_O1 = paste("x", 1:ncol(O1), sep="")
 
 
   # Predicting the optimal g and plug in the true outcome model for counterfactual mean
   for (k in 1:ni) {
-    X0.k <- test_input[k, ] #c(x1[k], x2[k], x3[k], x4[k], x5[k])
+    X0.k <- O1[k, ] #c(x1[k], x2[k], x3[k], x4[k], x5[k])
     # X0.k <- c(x1[k], x2[k], x3[k], x4[k], x5[k])
 
     z1 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
@@ -392,15 +374,13 @@ test_ACWL <- function(test_input, x1, x2, x3, x4, x5, g1k, g2k, noiseless, confi
     g2.reg[k] <- which(mus2.reg == max(mus2.reg))
     R2.reg[k] <- exp(1.26 - abs(1.5 * x3[k] - 2) * (g2.reg[k] - g2k[k])^2) + z2 # 15 + O2[k] + g2.reg[k] * (1 - O2[k] + g1.reg[k] + x1[k] + x2[k]) + z2
 
-                     
-                       
-    
+                         
     ################################    ACWL  ################################
     # newdata1 <- data.frame(x1=x1[k], x2=x2[k], x3=x3[k], x4=x4[k], x5=x5[k])
-    # newdata1 <- as.data.frame(t(test_input[k, ]), stringsAsFactors = FALSE)
+    # newdata1 <- as.data.frame(t(O1[k, ]), stringsAsFactors = FALSE)
 
-    newdata1 <- data.frame(t(test_input[k, ] ))
-    colnames(newdata1) <- colnames_test_input
+    newdata1 <- data.frame(t(O1[k, ] ))
+    colnames(newdata1) <- colnames_O1
     
 
 

@@ -19,29 +19,6 @@ from rpy2.robjects import numpy2ri
 numpy2ri.activate()
 
 
-# # from rpy2.rinterface_lib import openrlib
-# # # Setting environment variable for R
-# # with openrlib.rlock:
-# #     ro.r('Sys.setenv(R_MAX_VSIZE=32000000000)')  # Adjust the number as needed
-    
-# from rpy2.robjects.packages import importr, isinstalled
-
-# def ensure_r_packages(packages):
-#     for package in packages:
-#         if not isinstalled(package):
-#             utils = importr('utils')
-#             utils.install_packages(package)
-
-# # List of R packages required by your script
-# required_packages = ['rpart', 'nnet']
-
-# # Ensure all required packages are installed
-# ensure_r_packages(required_packages)
-
-
-
-
-
 # Generate Data
 def generate_and_preprocess_data(params, replication_seed, run='train'):
 
@@ -131,7 +108,7 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
     Ci = (Y1 + Y2) / (P_A1_given_H1_tensor * P_A2_given_H2_tensor)
 
     if run == 'test':
-        return input_stage1, input_stage2, Ci, Y1, Y2, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor, g1_opt, g2_opt, Z1, Z2
+        return input_stage1, input_stage2, Y1, Y2, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor, g1_opt, g2_opt, Z1, Z2
 
     # Splitting data into training and validation sets
     train_size = int(params['training_validation_prop'] * sample_size)
@@ -139,7 +116,7 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
     val_tensors = [tensor[train_size:] for tensor in [input_stage1, input_stage2, Ci, Y1, Y2, A1, A2]]
 
     # return tuple(train_tensors), tuple(val_tensors)
-    return tuple(train_tensors), tuple(val_tensors), tuple([input_stage1, input_stage2, Ci, Y1, Y2, A1, A2, pi_tensor_stack, g1_opt, g2_opt])
+    return tuple(train_tensors), tuple(val_tensors), tuple([input_stage1, input_stage2, Y1, Y2, A1, A2, pi_tensor_stack, g1_opt, g2_opt])
 
 
 def surr_opt(tuple_train, tuple_val, params, config_number):
@@ -149,8 +126,8 @@ def surr_opt(tuple_train, tuple_val, params, config_number):
     train_losses, val_losses = [], []
     best_val_loss, best_model_stage1_params, best_model_stage2_params, epoch_num_model = float('inf'), None, None, 0
 
-    nn_stage1 = initialize_and_prepare_model(1, params, sample_size)
-    nn_stage2 = initialize_and_prepare_model(2, params, sample_size)
+    nn_stage1 = initialize_and_prepare_model(1, params)
+    nn_stage2 = initialize_and_prepare_model(2, params)
 
     optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
 
@@ -216,95 +193,25 @@ def DQlearning(tuple_train, tuple_val, params, config_number):
     return (nn_stage1, nn_stage2, (train_losses_stage1, train_losses_stage2, val_losses_stage1, val_losses_stage2))
 
 
+def evaluate_tao(test_input_stage1, test_input_stage2, d1_star, d2_star, params_ds, config_number):
 
-
-# def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_stage1_DS, nn_stage2_DS, df_DQL, df_DS, df_Tao, params_dql, params_ds, config_number):
-
-#     # Generate and preprocess data for evaluation
-#     processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications, run='test')
-#     test_input_stage1, test_input_stage2, Ci_tensor, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2  = processed_result
-#     train_tensors = [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test]
-
-
-#     # Evaluation for Tao's method
-#     test_input_np = test_input_stage1.cpu().numpy()
-#     x1 = test_input_np[:, 0]
-#     x2 = test_input_np[:, 1]
-#     x3 = test_input_np[:, 2]
-#     x4 = test_input_np[:, 3]
-#     x5 = test_input_np[:, 4]
-
-#     # Load the R script containing the function
-#     ro.r('source("ACWL_tao.R")')
-
-#     # Call the R function
-#     results = ro.globalenv['test_ACWL'](x1, x2, x3, x4, x5, d1_star.cpu().numpy(), d2_star.cpu().numpy(), params_ds['noiseless'], config_number, params_ds['job_id'], method= "tao")
-    
-#     A1_Tao = torch.tensor(np.array(results.rx2('g1.a1')), dtype=torch.float32).to(params_dql['device'])
-#     A2_Tao = torch.tensor(np.array(results.rx2('g2.a1')), dtype=torch.float32).to(params_dql['device'])
-
-#     # Append to DataFrame
-#     new_row_Tao = {
-#         'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
-#         'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
-#         'Predicted_A1': A1_Tao.cpu().numpy().tolist(),
-#         'Predicted_A2': A2_Tao.cpu().numpy().tolist()
-#     }
-#     df_Tao = pd.concat([df_Tao, pd.DataFrame([new_row_Tao])], ignore_index=True)
-
-#     # print("Tao estimator: ")
-#     # Calculate policy values using the Tao estimator for Tao's method
-#     V_replications_M1_pred_Tao = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_Tao, A2_Tao, P_A1_g_H1, P_A2_g_H2, config_number)
-    
-#     # Append policy values for Tao
-#     V_replications["V_replications_M1_pred"]["Tao"].append(V_replications_M1_pred_Tao)
-
-
-    
-
-#     # # Extract results
-#     # select2_test = results.rx2('select2')[0]
-#     # select1_test = results.rx2('select1')[0]
-#     # selects_test = results.rx2('selects')[0]
-
-#     # print(f"TEST: Select1: {select1_test}, Select2: {select2_test}, Selects: {selects_test}")
-
-#     # # Extracting each component of the results and convert them to tensors
-#     # Y1_pred_R = torch.tensor(np.array(results.rx2('R1.a1')), dtype=torch.float32)
-#     # Y2_pred_R = torch.tensor(np.array(results.rx2('R2.a1')), dtype=torch.float32)
-
-#     # Y1_stats_R = [torch.min(Y1_pred_R), torch.max(Y1_pred_R), torch.mean(Y1_pred_R)]
-#     # message = f"Y1_pred_R [min, max, mean]: {Y1_stats_R}"
-#     # tqdm.write(message)
-#     # message = f"Y2_pred_R [min, max, mean]: [{torch.min(Y2_pred_R)}, {torch.max(Y2_pred_R)}, {torch.mean(Y2_pred_R)}]"
-#     # tqdm.write(message)
-
-#     # # torch.mean(Y1_pred + Y2_pred): 4.660262107849121
-#     # message = f'torch.mean(Y1_pred_R + Y2_pred_R): {torch.mean(Y1_pred_R + Y2_pred_R)} \n'
-#     # tqdm.write(message)
-
-#     return V_replications, df_DQL, df_DS, df_Tao
-
-
-def evaluate_tao(test_input_stage1, d1_star, d2_star, params_ds, config_number):
-
-    # Convert test input from PyTorch tensor to numpy array and retrieve individual components
-    test_input_np = test_input_stage1.cpu().numpy()
-    x1, x2, x3, x4, x5 = test_input_np[:, 0], test_input_np[:, 1], test_input_np[:, 2], test_input_np[:, 3], test_input_np[:, 4]
+    # Convert test input from PyTorch tensor to numpy array
+    O1 = test_input_stage1.cpu().numpy()
+    O2 = test_input_stage2.cpu().numpy()
 
     # Load the R script that contains the required function
     ro.r('source("ACWL_tao.R")')
 
-    # Call the R function with the parameters
-    results = ro.globalenv['test_ACWL'](test_input_np, x1, x2, x3, x4, x5, d1_star.cpu().numpy(), d2_star.cpu().numpy(), 
-                                      params_ds['noiseless'], config_number, params_ds['job_id'], method="tao")
-    
+    # Convert test input from PyTorch tensor to numpy array and retrieve individual components
+    x1, x2, x3, x4, x5 = O1[:, 0], O1[:, 1], O1[:, 2], O1[:, 3], O1[:, 4]
 
+    # Call the R function with the parameters
+    results = ro.globalenv['test_ACWL'](O1, O2, x1, x2, x3, x4, x5, d1_star.cpu().numpy(), d2_star.cpu().numpy(), params_ds['noiseless'], 
+                                        config_number, params_ds['job_id'], method="tao")
 
     # Extract the decisions and convert to PyTorch tensors on the specified device
     A1_Tao = torch.tensor(np.array(results.rx2('g1.a1')), dtype=torch.float32).to(params_ds['device'])
     A2_Tao = torch.tensor(np.array(results.rx2('g2.a1')), dtype=torch.float32).to(params_ds['device'])
-
 
     return A1_Tao, A2_Tao
 
@@ -314,11 +221,12 @@ def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_
 
     # Generate and preprocess data for evaluation
     processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications, run='test')
-    test_input_stage1, test_input_stage2, Ci_tensor, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2  = processed_result
+    test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2  = processed_result
     train_tensors = [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test]
 
 
-    A1_Tao, A2_Tao = evaluate_tao(test_input_stage1, d1_star, d2_star, params_ds, config_number)
+    # Evaluation phase using Tao's method
+    A1_Tao, A2_Tao = evaluate_tao(test_input_stage1, test_input_stage2, d1_star, d2_star, params_ds, config_number)
 
     
     # Append to DataFrame
@@ -337,6 +245,8 @@ def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_
     # Append policy values for Tao
     V_replications["V_replications_M1_pred"]["Tao"].append(V_replications_M1_pred_Tao)
 
+
+    # Evaluation phase using DQL and DS methods
 
     # Initialize and load models for DQL
     nn_stage1_DQL = initialize_and_load_model(1, params_dql['sample_size'], params_dql, config_number)
@@ -390,7 +300,7 @@ def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_
         'Predicted_A1': A1_DS.cpu().numpy().tolist(),
         'Predicted_A2': A2_DS.cpu().numpy().tolist()
     }
-    df_DS = pd.concat([df_DS, pd.DataFrame([new_row_DS])], ignore_index=True)  # Assuming df_DS is defined similarly to df_DQL
+    df_DS = pd.concat([df_DS, pd.DataFrame([new_row_DS])], ignore_index=True) 
 
 
 
@@ -422,8 +332,7 @@ def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_
 
 
 def adaptive_contrast_tao(all_data, contrast, config_number, job_id):
-    train_input_stage1, train_input_stage2, train_Ci, train_Y1, train_Y2, train_A1, train_A2, pi_tensor_stack, g1_opt, g2_opt = all_data
-
+    train_input_stage1, train_input_stage2, train_Y1, train_Y2, train_A1, train_A2, pi_tensor_stack, g1_opt, g2_opt = all_data
 
     # Convert all tensors to CPU and then to NumPy
     A1 = train_A1.cpu().numpy()
@@ -438,24 +347,23 @@ def adaptive_contrast_tao(all_data, contrast, config_number, job_id):
     g1_opt = g1_opt.cpu().numpy()
     g2_opt = g2_opt.cpu().numpy()
 
+    O1 = train_input_stage1.cpu().numpy()
+    O2 = train_input_stage2.cpu().numpy()
 
-
-    train_input_np = train_input_stage1.cpu().numpy()
-
-    print("train_input_np shape: ", train_input_np.shape)
-
-    x1 = train_input_np[:, 0]
-    x2 = train_input_np[:, 1]
-    x3 = train_input_np[:, 2]
-    x4 = train_input_np[:, 3]
-    x5 = train_input_np[:, 4]
+    # train_input_np = train_input_stage1.cpu().numpy()
+    # # print("train_input_np shape: ", train_input_np.shape)
+    # x1 = train_input_np[:, 0]
+    # x2 = train_input_np[:, 1]
+    # x3 = train_input_np[:, 2]
+    # x4 = train_input_np[:, 3]
+    # x5 = train_input_np[:, 4]
 
     # Load the R script containing the function
     ro.r('source("ACWL_tao.R")')
 
 
     # Call the R function with the numpy arrays
-    results = ro.globalenv['train_ACWL'](train_input_np, job_id, x1, x2, x3, x4, x5, A1, probs1, A2, probs2, R1, R2, g1_opt, g2_opt, config_number, contrast, method="tao")
+    results = ro.globalenv['train_ACWL'](job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1_opt, g2_opt, config_number, contrast, method="tao")
     # results = ro.globalenv['train_ACWL'](train_input_np, job_id, A1, probs1, A2, probs2, R1, R2, g1_opt, g2_opt, config_number, contrast, method="tao")
 
     # Extract results
