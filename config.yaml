@@ -1,8 +1,8 @@
 # Network parameters configuration
 setting: 'tao' # 'linear', 'tao', 'scheme_i'
+use_m_propen: False # True, False
 
 f_model: DQlearning  # DQlearning, surr_opt # Model function or optimization strategy
-setting: tao  # Experimental setting identifier
 surrogate_num: 1  # Indicates the surrogate model configuration number
 option_sur: 4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
@@ -10,16 +10,17 @@ noiseless: True  # Boolean flag to indicate if noise should be excluded in simul
 sample_size: 3000 # 30000  # Number of samples to be used
 num_replications: 3 # 30, 100
 job_id: tao
-use_m_propen: True # True, False
 
 training_validation_prop: 0.7  # Proportion of data for training vs validation
 n_epoch: 60 # 150  # Number of training epochs
 batch_size: 800 #7000  # Batch size calculated as a proportion of sample size
 num_networks: 2  # Number of parallel networks or models
 activation_function: elu # elu, relu
-input_dim_stage1: 5  # Input dimension for stage 1, [O1] --> [x1, x2, x3, x4, x5]
+
+# input_dim_stage1: 5 #2 #5  # Input dimension for stage 1, [O1] --> [x1, x2, x3, x4, x5]
+# input_dim_stage2: 7 #5 #7  # Input dimension for stage 2, includes [O1, A1, Y1, O2]
+
 output_dim_stage1: 1  # Output dimension for stage 1
-input_dim_stage2: 7  # Input dimension for stage 2, includes [O1, A1, Y1, O2]
 output_dim_stage2: 1  # Output dimension for stage 2
 hidden_dim_stage1: 20  # Number of neurons in the hidden layer of stage 1
 hidden_dim_stage2: 20  # Number of neurons in the hidden layer of stage 2

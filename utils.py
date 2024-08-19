@@ -278,6 +278,7 @@ def M_propen(A, Xs, stage):
 #     return nn
 
 def initialize_nn(params, stage):
+
     nn = NNClass(
         input_dim=params[f'input_dim_stage{stage}'],
         hidden_dim=params[f'hidden_dim_stage{stage}'],
@@ -958,6 +959,7 @@ def process_batches_DQL(model, inputs, actions, targets, params, optimizer, is_t
             actions_batch = torch.index_select(actions, 0, batch_idx).to(device)
             targets_batch = torch.index_select(targets, 0, batch_idx).to(device)
             combined_inputs = torch.cat((inputs_batch, actions_batch.unsqueeze(-1)), dim=1)
+            # print("combined_inputs shape ================================*****************: ", combined_inputs.shape)
             outputs = model(combined_inputs)
             loss = F.mse_loss(torch.cat(outputs, dim=0).view(-1), targets_batch)
             
@@ -1334,3 +1336,41 @@ def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H
 
 
 
+
+
+
+
+def evaluate_method(method_name, params, config_number, df, test_input_stage1, A1_tensor_test, test_input_stage2, A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2):
+    # Initialize and load models for the method
+    nn_stage1 = initialize_and_load_model(1, params['sample_size'], params, config_number)
+    nn_stage2 = initialize_and_load_model(2, params['sample_size'], params, config_number)
+
+    # Calculate test outputs for all networks in stage 1
+    A1 = compute_test_outputs(nn=nn_stage1, 
+                              test_input=test_input_stage1, 
+                              A_tensor=A1_tensor_test, 
+                              params=params, 
+                              is_stage1=True)
+
+    # Calculate test outputs for all networks in stage 2
+    A2 = compute_test_outputs(nn=nn_stage2, 
+                              test_input=test_input_stage2, 
+                              A_tensor=A2_tensor_test, 
+                              params=params, 
+                              is_stage1=False)
+
+    # Append to DataFrame
+    new_row = {
+        'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
+        'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
+        'Predicted_A1': A1.cpu().numpy().tolist(),
+        'Predicted_A2': A2.cpu().numpy().tolist()
+    }
+    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+
+    # Calculate policy values using the DR estimator
+    V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
+
+    # print(f"{method_name} estimator: ")
+
+    return df, V_replications_M1_pred

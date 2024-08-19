@@ -149,12 +149,12 @@ ensure_vector <- function(var) {
 
 
 # Work with  actions 1, 2, 3,  
-train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g2.opt, config_number, contrast = 1, method = "tao") {
+train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g2.opt, config_number, contrast = 1, method = "tao") {
   cat("Train model: ", method, "\n")
 
   # N <- length(x1)  
-  N <- nrow(O1) 
-  cat("Number of row in O1 is: ", nrow(O1), "\n ")
+  N <- nrow(S1) 
+  cat("Number of row in O1 is: ", N, "\n ")
            
   # cat("Debug: Dimensions of train_input_np are", dim(O1), "and the data type is", class(O1), "\n")
 
@@ -172,7 +172,7 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   g1.opt <- ensure_vector(g1.opt)
   g2.opt <- ensure_vector(g2.opt)
 
-  colnames_O1= paste("x", 1:ncol(O1), sep="")
+  colnames_H1 = paste("x", 1:ncol(S1), sep="")
   # colnames_O2= paste("x", 1:ncol(O2), sep="") # DONT REMOVE
 
   ############### stage 2 Estimation #####################
@@ -180,7 +180,7 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
 
   ####### ACWL-Contrast #########
   # O2 will possibly be in this estimation also in H = cbind(O1, R1, O2) # DISCUSS **********************************************
-  REG2.a1 <- Reg.mu(Y = R2, As = cbind(A1, A2), H = cbind(O1, R1))
+  REG2.a1 <- Reg.mu(Y = R2, As = cbind(A1, A2), H = cbind(S1, R1))
   mus2.reg.a1 <- REG2.a1$mus.reg
   CLs2.a1 <- CL.AIPW(Y = R2, A = A2, pis.hat = probs2, mus.reg = mus2.reg.a1)
 
@@ -194,8 +194,8 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   # Weighted classification using CART
   # fit2.a1 <- rpart(l2.a1 ~ x1 + x2 + x3 + x4 + x5 + A1 + R1, weights = C2.a1, method = "class")
   # Convert matrix to a data frame
-  train_input_df <- as.data.frame(O1)
-  names(train_input_df) <- colnames_O1 # c("x1", "x2", "x3", "x4", "x5")  
+  train_input_df <- as.data.frame(S1)
+  names(train_input_df) <- colnames_H1 # c("x1", "x2", "x3", "x4", "x5")  
 
   # Add additional variables
   train_input_df$A1 <- A1
@@ -217,7 +217,7 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   PO.a1 <- R1 + E.R2.a1
 
   ####### ACWL-Contrast #########
-  REG1.a1 <- Reg.mu(Y = PO.a1, As = A1, H = O1)
+  REG1.a1 <- Reg.mu(Y = PO.a1, As = A1, H = S1)
   mus1.reg.a1 <- REG1.a1$mus.reg
   CLs1.a1 <- CL.AIPW(Y = PO.a1, A = A1, pis.hat = probs1, mus.reg = mus1.reg.a1)
 
@@ -229,8 +229,8 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
 
   # fit1.a1 <- rpart(l1.a1 ~ x1 + x2 + x3 + x4 + x5, weights = C1.a1, method = "class")
   # Convert matrix to a data frame
-  train_input <- as.data.frame(O1)
-  names(train_input) <-  colnames_O1 # paste("x", 1:ncol(train_input), sep="")
+  train_input <- as.data.frame(S1)
+  names(train_input) <-  colnames_H1 # paste("x", 1:ncol(train_input), sep="")
 
   fit1.a1 <- rpart(l1.a1 ~ ., data = train_input, weights = C1.a1, method = "class")
   g1.a1 <- as.numeric(predict(fit1.a1, type = "class")) # - 1
@@ -263,12 +263,12 @@ train_ACWL <- function(job_id, O1, O2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
 
 
 
+test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, method= "tao") {
 
-test_ACWL <- function(O1, O2, x1, x2, x3, x4, x5, g1k, g2k, noiseless, config_number, job_id, method= "tao") {
   cat("Test model: ", method, "\n")
-
-  ni <- nrow(O1) 
-  cat("Number of row in O1 is: ", nrow(O1), "\n ")
+  ni <- nrow(S1) 
+  cat("Number of rows in O1 is: ", ni, "\n")
+  cat("S2: ", class(S2), dim(S2), "\n")
 
   E0.yi <- matrix(NA, ni, 2)  # a matrix of estimated counterfactual mean by different methods
  
@@ -282,28 +282,45 @@ test_ACWL <- function(O1, O2, x1, x2, x3, x4, x5, g1k, g2k, noiseless, config_nu
   fit2.a1 <- readRDS(sprintf("%s/best_model_ACWL_stage2_tao_fit2_config_number_%d.rds", model_dir, config_number))
         
 
-  colnames_O1 = paste("x", 1:ncol(O1), sep="")
+  colnames_H1 = paste("x", 1:ncol(S1), sep="")
 
   # Predicting the optimal g and plug in the true outcome model for counterfactual mean
   for (k in 1:ni) {
-    X0.k <- O1[k, ] #c(x1[k], x2[k], x3[k], x4[k], x5[k])
+    X0.k <- S1[k, ] #c(x1[k], x2[k], x3[k], x4[k], x5[k])
 
     z1 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
     z2 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
 
     ################################    ACWL  ################################
 
-    newdata1 <- data.frame(t(O1[k, ] ))
-    colnames(newdata1) <- colnames_O1
+    newdata1.a1 <- data.frame(t(S1[k, ] ))
+    colnames(newdata1.a1) <- colnames_H1
   
-    g1.a1[k] <- as.numeric(predict(fit1.a1, newdata = newdata1, type = "class")) #- 1
-    R1.a1[k] <- exp(1.5 - abs(1.5 * x1[k] + 2) * (g1.a1[k] - g1k[k])^2) + z1
-                       
-    newdata2.a1 <- data.frame(x1=x1[k], x2=x2[k], x3=x3[k], x4=x4[k], x5=x5[k], A1=g1.a1[k], R1=R1.a1[k])
-    # newdata2.a1 <- data.frame(O1[k, ], A1=g1.a1[k], R1=R1.a1[k])
-    g2.a1[k] <- as.numeric(predict(fit2.a1, newdata = newdata2.a1, type = "class")) #- 1
-                       
-    R2.a1[k] <- exp(1.26 - abs(1.5 * x3[k] - 2) * (g2.a1[k] - g2k[k])^2) + z2
+    g1.a1[k] <- as.numeric(predict(fit1.a1, newdata = newdata1.a1, type = "class")) 
+
+    # R1.a1[k] <- 15 + g1.a1[k] + x1[k] + x2[k] + x1[k] * x2[k] + z1
+    # R1.a1[k] <- exp(1.5 - abs(1.5 * x1[k] + 2) * (g1.a1[k] - g1k[k])^2) + z1
+    R1.a1[k] <- exp(1.5 - abs(1.5 * X0.k[1] + 2) * (g1.a1[k] - g1k[k])^2) + z1
+
+    # newdata2.a1 <- data.frame(x1=x1[k], x2=x2[k], x3=x3[k], x4=x4[k], x5=x5[k], A1=g1.a1[k], R1=R1.a1[k])
+    # newdata2.a1 <- data.frame(S1[k, , drop = FALSE], g1.a1[k], R1.a1[k]) # ADD O2 on this one
+
+    if (dim(S2) == 0) {
+      # Handle the case where S2 is empty
+      newdata2.a1 <- data.frame(S1[k, , drop = FALSE], g1.a1[k], R1.a1[k])     
+      colnames(newdata2.a1) <- c(colnames_H1, "A1", "R1")
+    } else {
+        # Regular case where S2 has data
+        newdata2.a1 <- data.frame(S1[k, , drop = FALSE], g1.a1[k], R1.a1[k], S2[k, , drop = FALSE])     
+        colnames(newdata2.a1) <- c(colnames_H1, "A1", "R1", colnames_H1)
+    }
+
+    g2.a1[k] <- as.numeric(predict(fit2.a1, newdata = newdata2.a1, type = "class")) 
+
+    # R2.a1[k] <- 15 + O2[k] + g2.a1[k] * (1 - O2[k] + g1.a1[k] + x1[k] + x2[k]) + z2
+
+    # R2.a1[k] <- exp(1.26 - abs(1.5 * x3[k] - 2) * (g2.a1[k] - g2k[k])^2) + z2
+    R2.a1[k] <- exp(1.26 - abs(1.5 * X0.k[3] - 2) * (g2.a1[k] - g2k[k])^2) + z2
   }
   
   select2 <- mean(g2.a1 == g2k)
