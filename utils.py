@@ -1004,7 +1004,8 @@ def train_and_validate(config_number, model, optimizer, scheduler, train_inputs,
     model_dir = f"models/{params['job_id']}"
     # Check if the directory exists, if not, create it
     if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
+        os.makedirs(model_dir)     
+        print(f"Directory '{model_dir}' created successfully.")
         
     # Save the best model parameters after all epochs
     if best_model_params is not None:
@@ -1161,9 +1162,12 @@ def train_and_validate_W_estimator(config_number, model, optimizer, scheduler, t
 
     # Define file paths for saving models
     model_dir = f"models/{params['job_id']}"
+
+    
     # Check if the directory exists, if not, create it
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
+        print(f"Directory '{model_dir}' created successfully.")
         
     # Save the best model parameters after all epochs
     if best_model_params is not None:

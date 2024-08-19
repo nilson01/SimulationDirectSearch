@@ -149,21 +149,12 @@ ensure_vector <- function(var) {
 
 
 # Work with  actions 1, 2, 3,  
-train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g2.opt, config_number, contrast = 1, method = "tao") {
-  cat("Train model: ", method, "\n")
-
-  # N <- length(x1)  
+train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g2.opt, config_number, contrast = 1, setting = "tao") {
+  
+  cat("Train model: tao, Setting: ", setting, "\n")
   N <- nrow(S1) 
   cat("Number of row in O1 is: ", N, "\n ")
-           
   # cat("Debug: Dimensions of train_input_np are", dim(O1), "and the data type is", class(O1), "\n")
-
-  # Directly call ensure_vector for each variable and update 
-  # x1 <- ensure_vector(x1)
-  # x2 <- ensure_vector(x2)
-  # x3 <- ensure_vector(x3)
-  # x4 <- ensure_vector(x4)
-  # x5 <- ensure_vector(x5)
 
   A1 <- ensure_vector(A1)
   A2 <- ensure_vector(A2)
@@ -172,15 +163,21 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   g1.opt <- ensure_vector(g1.opt)
   g2.opt <- ensure_vector(g2.opt)
 
-  colnames_H1 = paste("x", 1:ncol(S1), sep="")
-  # colnames_O2= paste("x", 1:ncol(O2), sep="") # DONT REMOVE
+  colnames_S1 = paste("x1", 1:ncol(S1), sep="")
 
-  ############### stage 2 Estimation #####################
+  #################################### STAGE 2 ESTIMATION ##########################################
   # Stage 2 Estimation (Backward induction) : estimate conditional means by regression
 
   ####### ACWL-Contrast #########
-  # O2 will possibly be in this estimation also in H = cbind(O1, R1, O2) # DISCUSS **********************************************
-  REG2.a1 <- Reg.mu(Y = R2, As = cbind(A1, A2), H = cbind(S1, R1))
+    # Weighted classification using CART
+  if (!is.matrix(S2)) {
+    # Handle the case where S2 is empty
+    REG2.a1 <- Reg.mu(Y = R2, As = cbind(A1, A2), H = cbind(S1, R1))
+  } else {
+    # Regular case where S2 has data      
+    REG2.a1 <- Reg.mu(Y = R2, As = cbind(A1, A2), H = cbind(S1, R1, S2))
+  }
+
   mus2.reg.a1 <- REG2.a1$mus.reg
   CLs2.a1 <- CL.AIPW(Y = R2, A = A2, pis.hat = probs2, mus.reg = mus2.reg.a1)
 
@@ -192,22 +189,20 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   l2.a1<-CLs2.a1$l.a
     
   # Weighted classification using CART
-  # fit2.a1 <- rpart(l2.a1 ~ x1 + x2 + x3 + x4 + x5 + A1 + R1, weights = C2.a1, method = "class")
-  # Convert matrix to a data frame
-  train_input_df <- as.data.frame(S1)
-  names(train_input_df) <- colnames_H1 # c("x1", "x2", "x3", "x4", "x5")  
-
-  # Add additional variables
-  train_input_df$A1 <- A1
-  train_input_df$R1 <- R1
-  # train_input_df$O2 <- O2 # O2 will go here if we have one    # DISCUSS **********************************************
-
-  # Fit the model
-  fit2.a1 <- rpart(l2.a1 ~ ., data = train_input_df, weights = C2.a1, method = "class")
-  g2.a1 <- as.numeric(predict(fit2.a1, type = "class")) # - 1
+  if (!is.matrix(S2)) {
+    # Handle the case where S2 is empty
+    train_input_S2 <- setNames(data.frame(S1, A1, R1), c(colnames_S1, "A1", "R1"))
+  } else {
+    # Regular case where S2 has data      
+    colnames_S2= paste("x2", 1:ncol(S2), sep="") 
+    train_input_S2 <- setNames(data.frame(S1, A1, R1, S2), c(colnames_S1, "A1", "R1", colnames_S2))
+  }     
+  fit2.a1 <- rpart(l2.a1 ~ ., data = train_input_S2, weights = C2.a1, method = "class")
+  g2.a1 <- as.numeric(predict(fit2.a1, type = "class")) 
     
-  ############### stage 1 Estimation #####################
-  # Stage 1 Estimation : expected optimal stage 2 outcome
+
+
+  #################################### STAGE 1 ESTIMATION ##########################################
   E.R2.a1 <- rep(NA, N)
   for (m in 1:N){
       E.R2.a1[m] <- R2[m] + mus2.reg.a1[m, g2.a1[m]] - mus2.reg.a1[m, A2[m]]
@@ -221,30 +216,34 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   mus1.reg.a1 <- REG1.a1$mus.reg
   CLs1.a1 <- CL.AIPW(Y = PO.a1, A = A1, pis.hat = probs1, mus.reg = mus1.reg.a1)
 
+  # main difference betwen two contrasts here!!!  
   C1.a1<-CLs1.a1$C.a1
   if(contrast == 2){
       C1.a1<-CLs1.a1$C.a2
   }
   l1.a1<-CLs1.a1$l.a
 
-  # fit1.a1 <- rpart(l1.a1 ~ x1 + x2 + x3 + x4 + x5, weights = C1.a1, method = "class")
-  # Convert matrix to a data frame
-  train_input <- as.data.frame(S1)
-  names(train_input) <-  colnames_H1 # paste("x", 1:ncol(train_input), sep="")
-
-  fit1.a1 <- rpart(l1.a1 ~ ., data = train_input, weights = C1.a1, method = "class")
-  g1.a1 <- as.numeric(predict(fit1.a1, type = "class")) # - 1
+  # Weighted classification using CART
+  train_input_S1 <- setNames(as.data.frame(S1), colnames_S1)
+  fit1.a1 <- rpart(l1.a1 ~ ., data = train_input_S1, weights = C1.a1, method = "class")
+  g1.a1 <- as.numeric(predict(fit1.a1, type = "class")) 
     
-  
   select2 <- mean(g2.a1 == g2.opt)
   select1 <- mean(g1.a1 == g1.opt)
   selects <- mean(g1.a1 == g1.opt & g2.a1 == g2.opt)
 
   cat("Saving Tao's model now \n")
-  # Save models 
+  # Check if the directory exists, if not, create it, including any necessary parent directories
   model_dir <- sprintf("models/%s", job_id)
   if (!dir.exists(model_dir)) {
-    dir.create(model_dir)
+      dir.create(model_dir, recursive = TRUE)
+      if (dir.exists(model_dir)) {
+          cat(sprintf("Directory '%s' created successfully.\n", model_dir))
+      } else {
+          stop(sprintf("Failed to create directory '%s'.", model_dir))
+      }
+  } else {
+      cat(sprintf("Directory '%s' already exists.\n", model_dir))
   }
 
   
@@ -254,7 +253,6 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   saveRDS(fit1.a1, file = file_path_fit1)
   saveRDS(fit2.a1, file = file_path_fit2)
 
-
   # Return the proportions of correct decisions
   return(list(select2 = select2, select1 = select1, selects = selects))
 }
@@ -262,13 +260,13 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
 
 
 
+test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, setting= "tao") {
 
-test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, method= "tao") {
-
-  cat("Test model: ", method, "\n")
+  cat("Test model: tao, Setting: ", setting, "\n")
   ni <- nrow(S1) 
   cat("Number of rows in O1 is: ", ni, "\n")
-  cat("S2: ", class(S2), dim(S2), "\n")
+  cat("S1: ", class(S1), dim(S1), "\n") # S1 is matrix type
+  cat("S2: ", class(S2), dim(S2), "\n") # S2 is array type
 
   E0.yi <- matrix(NA, ni, 2)  # a matrix of estimated counterfactual mean by different methods
  
@@ -282,7 +280,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, method
   fit2.a1 <- readRDS(sprintf("%s/best_model_ACWL_stage2_tao_fit2_config_number_%d.rds", model_dir, config_number))
         
 
-  colnames_H1 = paste("x", 1:ncol(S1), sep="")
+  colnames_S1 = paste("x1", 1:ncol(S1), sep="")
 
   # Predicting the optimal g and plug in the true outcome model for counterfactual mean
   for (k in 1:ni) {
@@ -294,33 +292,60 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, method
     ################################    ACWL  ################################
 
     newdata1.a1 <- data.frame(t(S1[k, ] ))
-    colnames(newdata1.a1) <- colnames_H1
+    colnames(newdata1.a1) <- colnames_S1
   
     g1.a1[k] <- as.numeric(predict(fit1.a1, newdata = newdata1.a1, type = "class")) 
 
-    # R1.a1[k] <- 15 + g1.a1[k] + x1[k] + x2[k] + x1[k] * x2[k] + z1
-    # R1.a1[k] <- exp(1.5 - abs(1.5 * x1[k] + 2) * (g1.a1[k] - g1k[k])^2) + z1
-    R1.a1[k] <- exp(1.5 - abs(1.5 * X0.k[1] + 2) * (g1.a1[k] - g1k[k])^2) + z1
 
-    # newdata2.a1 <- data.frame(x1=x1[k], x2=x2[k], x3=x3[k], x4=x4[k], x5=x5[k], A1=g1.a1[k], R1=R1.a1[k])
-    # newdata2.a1 <- data.frame(S1[k, , drop = FALSE], g1.a1[k], R1.a1[k]) # ADD O2 on this one
+    if (setting == "linear") {
+      R1.a1[k] <- 15 + g1.a1[k] + X0.k[1] + X0.k[2] +X0.k[1] * X0.k[2] + z1
+    } 
+    else if  (setting == "tao") {
+      # R1.a1[k] <- exp(1.5 - abs(1.5 * x1[k] + 2) * (g1.a1[k] - g1k[k])^2) + z1
+      R1.a1[k] <- exp(1.5 - abs(1.5 * X0.k[1] + 2) * (g1.a1[k] - g1k[k])^2) + z1
+    }
+    else if  (setting == "scheme_5") {
+    }
+    else if  (setting == "scheme_i") {
+    }
+    else{
+      cat("Setting not specified...", setting, "\n") 
+    }
 
-    if (dim(S2) == 0) {
+
+
+    if (!is.matrix(S2)) {
       # Handle the case where S2 is empty
       newdata2.a1 <- data.frame(S1[k, , drop = FALSE], g1.a1[k], R1.a1[k])     
-      colnames(newdata2.a1) <- c(colnames_H1, "A1", "R1")
+      colnames(newdata2.a1) <- c(colnames_S1, "A1", "R1")
     } else {
-        # Regular case where S2 has data
+        # Regular case where S2 has data   
+        colnames_S2= paste("x2", 1:ncol(S2), sep="") # DONT REMOVE
         newdata2.a1 <- data.frame(S1[k, , drop = FALSE], g1.a1[k], R1.a1[k], S2[k, , drop = FALSE])     
-        colnames(newdata2.a1) <- c(colnames_H1, "A1", "R1", colnames_H1)
+        colnames(newdata2.a1) <- c(colnames_S1, "A1", "R1", colnames_S2)
     }
 
     g2.a1[k] <- as.numeric(predict(fit2.a1, newdata = newdata2.a1, type = "class")) 
 
-    # R2.a1[k] <- 15 + O2[k] + g2.a1[k] * (1 - O2[k] + g1.a1[k] + x1[k] + x2[k]) + z2
 
-    # R2.a1[k] <- exp(1.26 - abs(1.5 * x3[k] - 2) * (g2.a1[k] - g2k[k])^2) + z2
-    R2.a1[k] <- exp(1.26 - abs(1.5 * X0.k[3] - 2) * (g2.a1[k] - g2k[k])^2) + z2
+    if (setting == "linear") {
+      R2.a1[k] <- 15 + S2[k] + g2.a1[k] * (1 - S2[k] + g1.a1[k] + X0.k[1] + X0.k[2]) + z2
+    } 
+    else if  (setting == "tao") {
+      # R2.a1[k] <- exp(1.26 - abs(1.5 * x3[k] - 2) * (g2.a1[k] - g2k[k])^2) + z2
+      R2.a1[k] <- exp(1.26 - abs(1.5 * X0.k[3] - 2) * (g2.a1[k] - g2k[k])^2) + z2
+    }
+    else if  (setting == "scheme_5") {
+    }
+    else if  (setting == "scheme_i") {
+    }
+    else{
+      cat("Setting not specified...", setting, "\n") 
+    }
+
+
+
+
   }
   
   select2 <- mean(g2.a1 == g2k)

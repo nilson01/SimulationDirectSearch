@@ -100,7 +100,8 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # O1 = torch.randn(5, sample_size, device=device)
         O1 = torch.randn(sample_size, 5, device=device)     
         O2 = torch.tensor([], device=device) 
-
+        # O2 = torch.randn(sample_size, 1, device=device)
+        # O2 = torch.randn(sample_size, 2, device=device)
 
         Z1 = torch.randn(sample_size, device=device)
         Z2 = torch.randn(sample_size, device=device)
@@ -392,6 +393,7 @@ def DQlearning(tuple_train, tuple_val, params, config_number):
     return (train_losses_stage1, train_losses_stage2, val_losses_stage1, val_losses_stage2)
 
 
+
 def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
 
     # Convert test input from PyTorch tensor to numpy array
@@ -401,12 +403,18 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
     # Load the R script that contains the required function
     ro.r('source("ACWL_tao.R")')
 
-    # Convert test input from PyTorch tensor to numpy array and retrieve individual components
-    # x1, x2, x3, x4, x5 = S1[:, 0], S1[:, 1], S1[:, 2], S1[:, 3], S1[:, 4]
+    print("S1: ", S1.shape, type(S1))
+
+    print("S2: ", S2.shape, type(S2)) 
+
+    # Convert S2 to the same data type as S1
+    # S2 = S2.to(S1.dtype)  # for torch objects
+    S2 =   S2.astype(S1.dtype) #  S2.reshape(-1, 1) #
+
 
     # Call the R function with the parameters
     results = ro.globalenv['test_ACWL'](S1, S2, d1_star.cpu().numpy(), d2_star.cpu().numpy(), params_ds['noiseless'], 
-                                        config_number, params_ds['job_id'], method="tao")
+                                        config_number, params_ds['job_id'], setting=params_ds['setting'])
 
     # Extract the decisions and convert to PyTorch tensors on the specified device
     A1_Tao = torch.tensor(np.array(results.rx2('g1.a1')), dtype=torch.float32).to(params_ds['device'])
@@ -484,7 +492,7 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
 
 
 
-def adaptive_contrast_tao(all_data, contrast, config_number, job_id):
+def adaptive_contrast_tao(all_data, contrast, config_number, job_id, setting):
     S1, S2, train_Y1, train_Y2, train_A1, train_A2, pi_tensor_stack, g1_opt, g2_opt = all_data
 
     # Convert all tensors to CPU and then to NumPy
@@ -515,7 +523,7 @@ def adaptive_contrast_tao(all_data, contrast, config_number, job_id):
     ro.r('source("ACWL_tao.R")')
 
     # Call the R function with the numpy arrays
-    results = ro.globalenv['train_ACWL'](job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1_opt, g2_opt, config_number, contrast, method="tao")
+    results = ro.globalenv['train_ACWL'](job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1_opt, g2_opt, config_number, contrast, setting)
     # results = ro.globalenv['train_ACWL'](train_input_np, job_id, A1, probs1, A2, probs2, R1, R2, g1_opt, g2_opt, config_number, contrast, method="tao")
 
     # Extract results
@@ -561,7 +569,7 @@ def simulations(V_replications, params, config_number):
         print("Training started!")
         
         # Run both models on the same tuple of data
-        (select2, select1, selects) = adaptive_contrast_tao(adapC_tao_Data, params["contrast"], config_number, params["job_id"])
+        (select2, select1, selects) = adaptive_contrast_tao(adapC_tao_Data, params["contrast"], config_number, params["job_id"], params["setting"])
 
         # Run both models on the same tuple of data
         # nn_stage1_DQL, nn_stage2_DQL, trn_val_loss_tpl_DQL = DQlearning(tuple_train, tuple_val, params_DQL, config_number)

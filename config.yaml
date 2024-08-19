@@ -1,5 +1,5 @@
 # Network parameters configuration
-setting: 'tao' # 'linear', 'tao', 'scheme_i'
+setting: 'linear' # 'linear', 'tao', 'scheme_i'
 use_m_propen: False # True, False
 
 f_model: DQlearning  # DQlearning, surr_opt # Model function or optimization strategy
