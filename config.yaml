@@ -1,5 +1,5 @@
 # Network parameters configuration
-setting: 'scheme_5' # 'linear', 'tao', 'scheme_5', 'scheme_i'
+setting: 'scheme_7' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_i' 
 noiseless: True # True, False  # Boolean flag to indicate if noise should be excluded in simulations
 
 use_m_propen: False # True, False
@@ -8,7 +8,7 @@ f_model: DQlearning  # DQlearning, surr_opt # Model function or optimization str
 surrogate_num: 1  # Indicates the surrogate model configuration number
 option_sur: 4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
-sample_size: 10000 # 30000  # Number of samples to be used
+sample_size: 15000 # 30000  # Number of samples to be used
 num_replications: 3 # 30, 100
 # job_id: tao
 

@@ -240,7 +240,7 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
 
     elif params['setting'] == 'scheme_6':
 
-        print(" scheme_i DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
+        print(" scheme_6 DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
         # Generate data using PyTorch
         O1 = torch.randn(sample_size, 2, device=device)
         Z1, Z2 = torch.randn(sample_size, device=device), torch.randn(sample_size, device=device)
@@ -281,11 +281,13 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
             # Calculate the condition
             return Xt2 > (Xt1**2 + torch.sin(20 * Xt1**2)).float()  # Apply float to ensure precision
         
-        # Compute Y1 and Y2
-        Y1 = A1 * (2 * in_C(O1) - 1) + C1 + Z1
+        # Compute Y1 and Y2 
+        Y1 = A1 * (2 * in_C(O1) - 1) + C1 + Z1  
 
-        # Input preparation for Stage 2
-        input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+        # Input preparation for Stage 2         
+        input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)
+
+        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
         params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
         matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
 
@@ -304,21 +306,104 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # A2 += 1
 
         # Reward stage 2
-        Y2 = A2 * (2 * in_C(O2) - 1) + C2 + Z2
+        Y2 = A2 * (2 * in_C(O2) - 1) + C2 + Z2 
+
+        # # Computing optimal policy decisions 
+        # def dt_star(Ot):
+        #     # Ot = (Xt1, Xt2)
+        #     Xt1 = Ot[:, 0].float() 
+        #     Xt2 = Ot[:, 1].float()  
+        #     # Check the condition for being in C
+        #     in_C = (Xt2 > (Xt1**2 + torch.sin(20 * Xt1**2))).float()
+        #     return 3 * in_C + 1 * (1 - in_C)  # in_C is 1 if true, so 3*1+1*0=3; otherwise 1  
+        
 
         # Computing optimal policy decisions 
         def dt_star(Ot):
             # Ot = (Xt1, Xt2)
-            Xt1 = Ot[:, 0].float() 
-            Xt2 = Ot[:, 1].float()  
-            # Check the condition for being in C
-            in_C = (Xt2 > (Xt1**2 + torch.sin(20 * Xt1**2))).float()
-            return 3 * in_C + 1 * (1 - in_C)  # in_C is 1 if true, so 3*1+1*0=3; otherwise 1     
+            return 3 * in_C(Ot).int() + 1 * (1 - in_C(Ot).int())  # in_C is 1 if true, so 3*1+1*0=3; otherwise 1     
            
         g1_opt = dt_star(O1)
         g2_opt = dt_star(O2)
 
+    elif params['setting'] == 'scheme_7':
 
+        print(" scheme_i DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
+        # Generate data using PyTorch
+        O1 = torch.randn(sample_size, 3, device=device)
+        Z1, Z2 = torch.randn(sample_size, device=device), torch.randn(sample_size, device=device)
+        O2 = torch.randn(sample_size, 3, device=device)
+
+        # Probabilities for treatments, assuming it's the same as linear case
+        pi_value = torch.full((sample_size,), 1 / 3, device=device)
+        pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
+
+        # Input preparation for Stage 1
+        input_stage1 = O1
+        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
+        matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
+
+        # Approach 1 S1
+        col_names_1 = ['pi_10', 'pi_11', 'pi_12']
+        probs1 = {name: matrix_pi1[:, idx] for idx, name in enumerate(col_names_1)}
+        A1 = torch.randint(1, 4, (sample_size,), device=device)
+
+        # # Approach 2 S1
+        # result1 = A_sim(matrix_pi1, stage=1)
+        # if  params['use_m_propen']:
+        #     A1, _ = result1['A'], result1['probs']
+        #     probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
+        # else:         
+        #     A1, probs1 = result1['A'], result1['probs']
+        # A1 += 1
+
+        # Reward stage 1
+        # Constants C1, C2 and beta
+        C1, C2 = 5.0, 5.0  # Example constants
+        # Compute Y1 using g(O1) and A1
+        def in_C(Ot):     
+            # Extract Xt1 and Xt2 from O1
+            X = Ot[:, 0].float() 
+            Y = Ot[:, 1].float()  
+            Z = Ot[:, 2].float()  
+
+            # Calculate the condition
+            return Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float()   
+        
+        # Compute Y1 and Y2 
+        Y1 = A1 * (2 * in_C(O1).int() - 1) + C1 + Z1  
+
+        # Input preparation for Stage 2         
+        input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)
+
+        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+        params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
+        matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
+
+        # Approach 1 S2
+        col_names_2 = ['pi_20', 'pi_21', 'pi_22']
+        probs2 = {name: matrix_pi2[:, idx] for idx, name in enumerate(col_names_2)}
+        A2 = torch.randint(1, 4, (sample_size,), device=device)
+
+        # # Approach 2 S2
+        # result2 = A_sim(matrix_pi2, stage=2)
+        # if  params['use_m_propen']:
+        #     A2, _ = result2['A'], result2['probs']
+        #     probs2 = M_propen(A2, input_stage2, stage=2)  # multinomial logistic regression with H2
+        # else:         
+        #     A2, probs2 = result2['A'], result2['probs']
+        # A2 += 1
+
+        # Reward stage 2
+        Y2 = A2 * (2 * in_C(O2) - 1) + C2 + Z2 
+
+        # Computing optimal policy decisions 
+        def dt_star(Ot):
+            return 3 * in_C(Ot).int() + 1 * (1 - in_C(Ot).int())  # in_C is 1 if true, so 3*1+1*0=3; otherwise 1     
+           
+        g1_opt = dt_star(O1)
+        g2_opt = dt_star(O2)
+        
     elif params['setting'] == 'scheme_i':
 
         print(" scheme_i DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")

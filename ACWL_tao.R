@@ -288,7 +288,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
 
   # Predicting the optimal g and plug in the true outcome model for counterfactual mean
   for (k in 1:ni) {
-    X0.k <- S1[k, ] 
+    X0.k <- S1[k, ]  
 
     z1 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
     z2 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
@@ -310,7 +310,13 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       sums <- sum(X0.k) 
       R1.a1[k] <- g1.a1[k]*sums + C1 + z1 
     }
-    else if  (setting == "scheme_i") {
+    else if  (setting == "scheme_6") { 
+      in_C1 =  (X0.k[2] > (X0.k[1]^2 + sin(20 * X0.k[1]^2)))
+      Y1 <- g1.a1[k] * (2 * as.numeric( in_C1 ) - 1) + C1 + z1
+    }
+    else if  (setting == "scheme_7") { 
+      in_C1 =  X0.k[3]  > -1.0 + (X0.k[1]**2) + cos(8*X0.k[1]**2+X0.k[2]) + (X0.k[2]**2) + 2*sin(5*X0.k[2]**2)
+      Y1 <- g1.a1[k] * (2 * as.numeric( in_C1 ) - 1) + C1 + z1
     }
     else{
       cat("Setting not specified...", setting, "\n") 
@@ -339,7 +345,13 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
     else if  (setting == "scheme_5") {       
       R2.a1[k] <- X0.k[g2.a1[k]]^2 + S2[k]*beta + C2 + z2 
     }
-    else if  (setting == "scheme_i") {
+    else if  (setting == "scheme_6") {       
+      in_C2 =  (S2[k, ][2] > (S2[k, ][1]^2 + sin(20 * S2[k, ][1]^2))) 
+      Y2 <- g2.a1[k] * (2 * as.numeric(in_C2) - 1) + C2 + z2
+    }
+    else if  (setting == "scheme_7") {       
+      in_C2 =  S2[k, ][3]  > -1.0 + (S2[k, ][1]**2) + cos(8*S2[k, ][1]**2+S2[k, ][2]) + (S2[k, ][2]**2) + 2*sin(5*S2[k, ][2]**2)
+      Y2 <- g2.a1[k] * (2 * as.numeric(in_C2) - 1) + C2 + z2
     }
     else{
       cat("Setting not specified...", setting, "\n") 
