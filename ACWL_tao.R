@@ -265,8 +265,9 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
   cat("Test model: tao, Setting: ", setting, "\n")
   ni <- nrow(S1) 
   cat("Number of rows in O1 is: ", ni, "\n")
-  cat("S1: ", class(S1), dim(S1), "\n") # S1 is matrix type
-  cat("S2: ", class(S2), dim(S2), "\n") # S2 is array type
+
+  # cat("S1: ", class(S1), dim(S1), "\n") # S1 is matrix type
+  # cat("S2: ", class(S2), dim(S2), "\n") # S2 is matrix type
 
   E0.yi <- matrix(NA, ni, 2)  # a matrix of estimated counterfactual mean by different methods
  
@@ -280,11 +281,14 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
   fit2.a1 <- readRDS(sprintf("%s/best_model_ACWL_stage2_tao_fit2_config_number_%d.rds", model_dir, config_number))
         
 
-  colnames_S1 = paste("x1", 1:ncol(S1), sep="")
+  colnames_S1 = paste("x1", 1:ncol(S1), sep="") 
+  C1 = 3.0
+  C2 = 3.0
+  beta = 1.0
 
   # Predicting the optimal g and plug in the true outcome model for counterfactual mean
   for (k in 1:ni) {
-    X0.k <- S1[k, ] #c(x1[k], x2[k], x3[k], x4[k], x5[k])
+    X0.k <- S1[k, ] 
 
     z1 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
     z2 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
@@ -296,15 +300,15 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
   
     g1.a1[k] <- as.numeric(predict(fit1.a1, newdata = newdata1.a1, type = "class")) 
 
-
     if (setting == "linear") {
       R1.a1[k] <- 15 + g1.a1[k] + X0.k[1] + X0.k[2] +X0.k[1] * X0.k[2] + z1
     } 
     else if  (setting == "tao") {
-      # R1.a1[k] <- exp(1.5 - abs(1.5 * x1[k] + 2) * (g1.a1[k] - g1k[k])^2) + z1
       R1.a1[k] <- exp(1.5 - abs(1.5 * X0.k[1] + 2) * (g1.a1[k] - g1k[k])^2) + z1
     }
-    else if  (setting == "scheme_5") {
+    else if  (setting == "scheme_5") {    
+      sums <- sum(X0.k) 
+      R1.a1[k] <- g1.a1[k]*sums + C1 + z1 
     }
     else if  (setting == "scheme_i") {
     }
@@ -312,15 +316,13 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       cat("Setting not specified...", setting, "\n") 
     }
 
-
-
     if (!is.matrix(S2)) {
       # Handle the case where S2 is empty
       newdata2.a1 <- data.frame(S1[k, , drop = FALSE], g1.a1[k], R1.a1[k])     
       colnames(newdata2.a1) <- c(colnames_S1, "A1", "R1")
     } else {
         # Regular case where S2 has data   
-        colnames_S2= paste("x2", 1:ncol(S2), sep="") # DONT REMOVE
+        colnames_S2= paste("x2", 1:ncol(S2), sep="") 
         newdata2.a1 <- data.frame(S1[k, , drop = FALSE], g1.a1[k], R1.a1[k], S2[k, , drop = FALSE])     
         colnames(newdata2.a1) <- c(colnames_S1, "A1", "R1", colnames_S2)
     }
@@ -332,10 +334,10 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       R2.a1[k] <- 15 + S2[k] + g2.a1[k] * (1 - S2[k] + g1.a1[k] + X0.k[1] + X0.k[2]) + z2
     } 
     else if  (setting == "tao") {
-      # R2.a1[k] <- exp(1.26 - abs(1.5 * x3[k] - 2) * (g2.a1[k] - g2k[k])^2) + z2
       R2.a1[k] <- exp(1.26 - abs(1.5 * X0.k[3] - 2) * (g2.a1[k] - g2k[k])^2) + z2
     }
-    else if  (setting == "scheme_5") {
+    else if  (setting == "scheme_5") {       
+      R2.a1[k] <- X0.k[g2.a1[k]]^2 + S2[k]*beta + C2 + z2 
     }
     else if  (setting == "scheme_i") {
     }

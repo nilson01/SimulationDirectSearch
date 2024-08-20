@@ -32,35 +32,39 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         O1 = torch.randn(sample_size, 2, device=device)         
          
         O2 = torch.randn(sample_size, device=device)
-        Z1 = torch.randn(sample_size, device=device) 
-        Z2 = torch.randn(sample_size, device=device) 
+
+        if params['noiseless']:
+            Z1 = torch.zeros(sample_size, device=device)  # No noise, standard deviation is 0
+            Z2 = torch.zeros(sample_size, device=device)
+        else:
+            Z1 = torch.randn(sample_size, device=device)  # Add noise, standard deviation is 1
+            Z2 = torch.randn(sample_size, device=device)
 
         # Probability value when there are 3 treatments
         pi_value = torch.full((sample_size,), 1 / 3, device=device)
         pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
 
         input_stage1 = O1
-        params['input_dim_stage1'] = input_stage1.shape[1] # 2 # (H_1)  for DS
-        # print("params['input_dim_stage1']: ", params['input_dim_stage1'])
+        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
 
         matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
 
-        # result1 = A_sim(matrix_pi1, stage=1)
+        # Approach 1 S1
+        col_names_1 = ['pi_10', 'pi_11', 'pi_12']
+        probs1 = {name: matrix_pi1[:, idx] for idx, name in enumerate(col_names_1)}
+        A1 = torch.randint(1, 4, (sample_size,), device=device)
 
+
+        # # Approach 2 S1
+        # result1 = A_sim(matrix_pi1, stage=1)
         # if  params['use_m_propen']:
         #     A1, _ = result1['A'], result1['probs']
         #     probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
         # else:         
         #     A1, probs1 = result1['A'], result1['probs']
-
         # A1 += 1
 
-        col_names_1 = ['pi_10', 'pi_11', 'pi_12']
-
-        probs1 = {name: matrix_pi1[:, idx] for idx, name in enumerate(col_names_1)}
-
-        A1 = torch.randint(1, 4, (sample_size,), device=device)
-
+        # Reward stage 1
         Y1 = 15 + A1 + O1.sum(dim=1) + O1.prod(dim=1) + Z1
 
         # Input preparation
@@ -71,22 +75,21 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
 
         matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
         
-        # result2 = A_sim(matrix_pi2, stage=2)
+        # Approach 1 S2
+        col_names_2 = ['pi_20', 'pi_21', 'pi_22']
+        probs2 = {name: matrix_pi2[:, idx] for idx, name in enumerate(col_names_2)}
+        A2 = torch.randint(1, 4, (sample_size,), device=device)
         
+        # # Approach 2 S2
+        # result2 = A_sim(matrix_pi2, stage=2)
         # if  params['use_m_propen']:
         #     A2, _ = result2['A'], result2['probs']
         #     probs2 = M_propen(A2, input_stage2, stage=2)  # multinomial logistic regression with H2
         # else:         
         #     A2, probs2 = result2['A'], result2['probs']
-            
         # A2 += 1
 
-        col_names_2 = ['pi_20', 'pi_21', 'pi_22']
-
-        probs2 = {name: matrix_pi2[:, idx] for idx, name in enumerate(col_names_2)}
-        
-        A2 = torch.randint(1, 4, (sample_size,), device=device)
-
+        # Reward stage 2
         Y2 = 15 + O2 + A2 * (1 - O2 + A1 + O1.sum(dim=1)) + Z2
 
         # Compute optimal policy decisions for 'linear', updated for combined O1 tensor
@@ -181,22 +184,26 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
 
         # Input preparation for Stage 1
         input_stage1 = O1
-        params['input_dim_stage1'] = input_stage1.shape[1] # 2 # (H_1)  for DS
+        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
         matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
 
-        # Simulating actions based on probabilities using A_sim function for Stage 1
-        result1 = A_sim(matrix_pi1, stage=1)
-        if params['use_m_propen']:
-            A1, _ = result1['A'], result1['probs']
-            probs1 = M_propen(A1, input_stage1, stage=1)  # Multinomial logistic regression with O1
-        else:
-            A1, probs1 = result1['A'], result1['probs']
+        # Approach 1 S1
+        col_names_1 = ['pi_10', 'pi_11', 'pi_12']
+        probs1 = {name: matrix_pi1[:, idx] for idx, name in enumerate(col_names_1)}
+        A1 = torch.randint(1, 4, (sample_size,), device=device)
 
-        A1 += 1
+        # # Approach 2 S1
+        # result1 = A_sim(matrix_pi1, stage=1)
+        # if  params['use_m_propen']:
+        #     A1, _ = result1['A'], result1['probs']
+        #     probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
+        # else:         
+        #     A1, probs1 = result1['A'], result1['probs']
+        # A1 += 1
 
+        # Reward stage 1
         # Constants C1, C2, beta, and cnst
-        C1, C2, beta, cnst = 1.0, 2.0, 0.5, 1.5  # Example constants
-
+        C1, C2, beta, cnst = 3.0, 3.0, 1, 1  # Example constants
         # Compute Y1 using g(O1) and A1
         def g(O1):
             return O1.sum(dim=1)  # Example function g
@@ -205,29 +212,111 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # Input preparation for Stage 2
         input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
         params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
-
         matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
 
-        # Simulating actions for Stage 2
-        result2 = A_sim(matrix_pi2, stage=2)
-        if params['use_m_propen']:
-            A2, _ = result2['A'], result2['probs']
-            probs2 = M_propen(A2, input_stage2, stage=2)  # Multinomial logistic regression with combined inputs
-        else:
-            A2, probs2 = result2['A'], result2['probs']
+        # Approach 1 S2
+        col_names_2 = ['pi_20', 'pi_21', 'pi_22']
+        probs2 = {name: matrix_pi2[:, idx] for idx, name in enumerate(col_names_2)}
+        A2 = torch.randint(1, 4, (sample_size,), device=device)
+        
+        # # Approach 2 S2
+        # result2 = A_sim(matrix_pi2, stage=2)
+        # if  params['use_m_propen']:
+        #     A2, _ = result2['A'], result2['probs']
+        #     probs2 = M_propen(A2, input_stage2, stage=2)  # multinomial logistic regression with H2
+        # else:         
+        #     A2, probs2 = result2['A'], result2['probs']
+        # A2 += 1
 
-        A2 += 1
-
-        # Compute Y2 using indexing by A2 and function f_i
+        # Reward stage 2
         index = torch.arange(O1.size(0), device=device)
-        f_i_O1_A2 = O1[index, A2 - 1] ** 2
+        f_i_O1_A2 = O1[index, A2 - 1]**2
         Y2 = f_i_O1_A2 * cnst + O2 * beta + C2 + Z2
 
-        # Computing optimal policy decisions (just placeholders here)
+        # Computing optimal policy decisions 
         sums = O1.sum(dim=1)
         g1_opt = 3.0 * (sums > 0).float() + 1.0 * (sums < 0).float()
         g2_opt = torch.argmax(O1**2, dim=1) + 1
 
+    elif params['setting'] == 'scheme_6':
+
+        print(" scheme_i DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
+        # Generate data using PyTorch
+        O1 = torch.randn(sample_size, 2, device=device)
+        Z1, Z2 = torch.randn(sample_size, device=device), torch.randn(sample_size, device=device)
+        O2 = torch.randn(sample_size, 2, device=device)
+
+        # Probabilities for treatments, assuming it's the same as linear case
+        pi_value = torch.full((sample_size,), 1 / 3, device=device)
+        pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
+
+        # Input preparation for Stage 1
+        input_stage1 = O1
+        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
+        matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
+
+        # Approach 1 S1
+        col_names_1 = ['pi_10', 'pi_11', 'pi_12']
+        probs1 = {name: matrix_pi1[:, idx] for idx, name in enumerate(col_names_1)}
+        A1 = torch.randint(1, 4, (sample_size,), device=device)
+
+        # # Approach 2 S1
+        # result1 = A_sim(matrix_pi1, stage=1)
+        # if  params['use_m_propen']:
+        #     A1, _ = result1['A'], result1['probs']
+        #     probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
+        # else:         
+        #     A1, probs1 = result1['A'], result1['probs']
+        # A1 += 1
+
+        # Reward stage 1
+        # Constants C1, C2 and beta
+        C1, C2 = 5.0, 5.0  # Example constants
+        # Compute Y1 using g(O1) and A1
+        def in_C(Ot):     
+            # Extract Xt1 and Xt2 from O1
+            Xt1 = Ot[:, 0].float() 
+            Xt2 = Ot[:, 1].float()  
+
+            # Calculate the condition
+            return Xt2 > (Xt1**2 + torch.sin(20 * Xt1**2)).float()  # Apply float to ensure precision
+        
+        # Compute Y1 and Y2
+        Y1 = A1 * (2 * in_C(O1) - 1) + C1 + Z1
+
+        # Input preparation for Stage 2
+        input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+        params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
+        matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
+
+        # Approach 1 S2
+        col_names_2 = ['pi_20', 'pi_21', 'pi_22']
+        probs2 = {name: matrix_pi2[:, idx] for idx, name in enumerate(col_names_2)}
+        A2 = torch.randint(1, 4, (sample_size,), device=device)
+
+        # # Approach 2 S2
+        # result2 = A_sim(matrix_pi2, stage=2)
+        # if  params['use_m_propen']:
+        #     A2, _ = result2['A'], result2['probs']
+        #     probs2 = M_propen(A2, input_stage2, stage=2)  # multinomial logistic regression with H2
+        # else:         
+        #     A2, probs2 = result2['A'], result2['probs']
+        # A2 += 1
+
+        # Reward stage 2
+        Y2 = A2 * (2 * in_C(O2) - 1) + C2 + Z2
+
+        # Computing optimal policy decisions 
+        def dt_star(Ot):
+            # Ot = (Xt1, Xt2)
+            Xt1 = Ot[:, 0].float() 
+            Xt2 = Ot[:, 1].float()  
+            # Check the condition for being in C
+            in_C = (Xt2 > (Xt1**2 + torch.sin(20 * Xt1**2))).float()
+            return 3 * in_C + 1 * (1 - in_C)  # in_C is 1 if true, so 3*1+1*0=3; otherwise 1     
+           
+        g1_opt = dt_star(O1)
+        g2_opt = dt_star(O2)
 
 
     elif params['setting'] == 'scheme_i':
@@ -403,9 +492,8 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
     # Load the R script that contains the required function
     ro.r('source("ACWL_tao.R")')
 
-    print("S1: ", S1.shape, type(S1))
-
-    print("S2: ", S2.shape, type(S2)) 
+    # print("S1: ", S1.shape, type(S1))
+    # print("S2: ", S2.shape, type(S2)) 
 
     # Convert S2 to the same data type as S1
     # S2 = S2.to(S1.dtype)  # for torch objects
