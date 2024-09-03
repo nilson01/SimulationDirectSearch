@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
-from tqdm.notebook import tqdm
 import numpy as np
 import pandas as pd
 import pickle
@@ -240,15 +239,15 @@ def M_propen(A, Xs, stage):
         raise ValueError("Treatment options are insufficient!")
 
     # Handle multinomial case using Logistic Regression
-    encoder = OneHotEncoder(sparse_output=False)  # Updated parameter name
-    A_encoded = encoder.fit_transform(A)
+    # encoder = OneHotEncoder(sparse_output=False)  # Updated parameter name
+    # A_encoded = encoder.fit_transform(A)
     model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
 
     # Suppressing warnings from the solver, if not converged
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", ConvergenceWarning)
         model.fit(Xs, A.ravel())
-
+        # model.fit(Xs, A_encoded)
     # Predicting probabilities
     s_p = model.predict_proba(Xs)
 
@@ -307,29 +306,46 @@ def batches(N, batch_size, seed=0):
         batch_indices = indices[start_idx:start_idx + batch_size]
         yield batch_indices
 
-        
+
+# The Identity class acts as a no-operation (no-op) activation function.
+#  It simply returns the input it receives without any modification. 
+class Identity(nn.Module):
+    def forward(self, x):
+        return x
+    
 class NNClass(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, num_networks, dropout_rate, activation_fn_name, num_hidden_layers):
         super(NNClass, self).__init__()
         self.networks = nn.ModuleList()
 
         # Map the string name to the actual activation function class
-        if activation_fn_name.lower() == 'elu':
+        activation_fn_name = activation_fn_name.lower()
+        if activation_fn_name == 'elu':
             activation_fn = nn.ELU
-        elif activation_fn_name.lower() == 'relu':
+        elif activation_fn_name == 'relu':
             activation_fn = nn.ReLU
+        elif activation_fn_name == 'sigmoid':
+            activation_fn = nn.Sigmoid
+        elif activation_fn_name == 'tanh':
+            activation_fn = nn.Tanh
+        elif activation_fn_name == 'leakyrelu':
+            activation_fn = nn.LeakyReLU
+        elif activation_fn_name == 'none': # Check for 'none' and use the Identity class
+            activation_fn = Identity
         else:
             raise ValueError(f"Unsupported activation function: {activation_fn_name}")
 
         for _ in range(num_networks):
             layers = []
             layers.append(nn.Linear(input_dim, hidden_dim))
-            layers.append(activation_fn())
+            if activation_fn is not Identity:  # Only add activation if it's not Identity
+                layers.append(activation_fn())            
             layers.append(nn.Dropout(dropout_rate))
             
             for _ in range(num_hidden_layers):  # Adjusting the hidden layers count
                 layers.append(nn.Linear(hidden_dim, hidden_dim))
-                layers.append(activation_fn())
+                if activation_fn is not Identity:  # Only add activation if it's not Identity
+                    layers.append(activation_fn())
                 layers.append(nn.Dropout(dropout_rate))
                 
             layers.append(nn.Linear(hidden_dim, output_dim))
@@ -358,9 +374,7 @@ class NNClass(nn.Module):
                     nn.init.constant_(layer.weight, 0.1)
                     nn.init.constant_(layer.bias, 0.0)
 
-                    
-        
-
+          
 # class NNClass(nn.Module):
 #     def __init__(self, input_dim, hidden_dim, output_dim, num_networks, dropout_rate, activation_fn_name):
 #         super(NNClass, self).__init__()
@@ -717,6 +731,7 @@ def plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, trai
     plt.close(fig)  # Close the plot to free up memory
 
 
+
 def extract_value_functions_separate(V_replications):
 
     # Process predictive values
@@ -727,21 +742,22 @@ def extract_value_functions_separate(V_replications):
 
     # Create DataFrames for each method
     VF_df_DQL = pd.DataFrame({
-        "Method's Value fn.": pred_data.get('DQL', []), #data_DQL["Method's Value fn."],
-        "Behavioral Value fn.": behavioral_data
+        "Method's Value fn.": pred_data.get('DQL', [None] * len(behavioral_data)),
     })
 
     VF_df_DS = pd.DataFrame({
-        "Method's Value fn.": pred_data.get('DS', []), #data_DS["Method's Value fn."],
-        "Behavioral Value fn.": behavioral_data
+        "Method's Value fn.": pred_data.get('DS', [None] * len(behavioral_data)),
     })
 
-
     VF_df_Tao = pd.DataFrame({
-        "Method's Value fn.": pred_data.get('Tao', []), #data_Tao["Method's Value fn."],
-        "Behavioral Value fn.": behavioral_data
-    })    
-    return VF_df_DQL, VF_df_DS, VF_df_Tao
+        "Method's Value fn.": pred_data.get('Tao', [None] * len(behavioral_data)),
+    })   
+
+    VF_df_Beh = pd.DataFrame({
+        "Method's Value fn.": behavioral_data,
+    })       
+    
+    return VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh
 
 
 
@@ -1295,7 +1311,9 @@ def train_and_evaluate(train_data, val_data, test_data, params, config_number, r
     return V_replications_M1_pred 
 
 def split_data(train_tens, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor, params):
-    train_val_size = int(0.5 *  params['sample_size'])
+
+    # print("A1.shape[0]:------------------------>>>>>>>> ", A1.shape[0]) 
+    train_val_size = int(0.5 *  A1.shape[0]) #int(0.5 *  params['sample_size'])
     validation_ratio = 0.20  # 20% of the train_val_size for validation
     
     val_size = int(train_val_size * validation_ratio)
@@ -1339,6 +1357,17 @@ def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H
 
 
 
+
+# def calculate_policy_valuefunc(train_tensors, params, A1_di, A2_di, P_A1_g_H1, P_A2_g_H2, Z1, Z2):
+
+#     _, input_stage2, Y1, Y2, A1, A2 = train_tensors
+#     O1, _, _, O2 = input_stage2 
+
+#     Y1_di = calculateRewardS1(O1, A1_di, Z1)
+#     Y2_di = calculateRewardS2(O1, O2, A1_di, A2_di, Z1, Z2 )
+
+
+#     return torch.mean(Y1_di + Y2_di)
 
 
 

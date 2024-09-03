@@ -107,6 +107,9 @@ CL.AIPW<-function(Y,A,pis.hat,mus.reg){
   for(k in 1:K){
     mus.a[,k]<-(A==class.A[k])*Y/pis.hat[,k]+(1-(A==class.A[k])/pis.hat[,k])*mus.reg[,k]
   }
+
+  # cat("pis.hat: ------------------>>>>>>>>>>>>>>>> ", pis.hat, "\n\n\n")
+
   # C.a1 and C.a2 are AIPW contrasts; l.a is AIPW working order
   C.a1<-C.a2<-l.a<-rep(NA,N)
   for(i in 1:N){
@@ -153,7 +156,9 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
   
   cat("Train model: tao, Setting: ", setting, "\n")
   N <- nrow(S1) 
-  cat("Number of row in O1 is: ", N, "\n ")
+  cat("Number of row in O1 is: ", N, "\n ")   
+  cat("Number of row in S1, R1, S2 is: ", class(S1), dim(S1), class(R1), dim(R1), class(S2), dim(S2), "\n ")
+
   # cat("Debug: Dimensions of train_input_np are", dim(O1), "and the data type is", class(O1), "\n")
 
   A1 <- ensure_vector(A1)
@@ -264,7 +269,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
 
   cat("Test model: tao, Setting: ", setting, "\n")
   ni <- nrow(S1) 
-  cat("Number of rows in O1 is: ", ni, "\n")
+  cat("Number of rows in O1 is: ", ni, "\n") 
 
   # cat("S1: ", class(S1), dim(S1), "\n") # S1 is matrix type
   # cat("S2: ", class(S2), dim(S2), "\n") # S2 is matrix type
@@ -282,8 +287,8 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
         
 
   colnames_S1 = paste("x1", 1:ncol(S1), sep="") 
-  C1 = 3.0
-  C2 = 3.0
+  C1 = 5.0
+  C2 = 5.0
   beta = 1.0
 
   # Predicting the optimal g and plug in the true outcome model for counterfactual mean
@@ -307,16 +312,19 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       R1.a1[k] <- exp(1.5 - abs(1.5 * X0.k[1] + 2) * (g1.a1[k] - g1k[k])^2) + z1
     }
     else if  (setting == "scheme_5") {    
+      C1 = 3.0
+      C2 = 3.0
       sums <- sum(X0.k) 
       R1.a1[k] <- g1.a1[k]*sums + C1 + z1 
     }
     else if  (setting == "scheme_6") { 
-      in_C1 =  (X0.k[2] > (X0.k[1]^2 + sin(20 * X0.k[1]^2)))
-      Y1 <- g1.a1[k] * (2 * as.numeric( in_C1 ) - 1) + C1 + z1
+      in_C1 =  (X0.k[2] > ( 5*sin(5 * X0.k[1]^2)))
+
+      R1.a1[k] <- 5 * (sin(5 * S1[k, ][1]^2))  + g1.a1[k] * (10 * as.numeric( in_C1 ) - 1) + C1 + z1
     }
     else if  (setting == "scheme_7") { 
       in_C1 =  X0.k[3]  > -1.0 + (X0.k[1]**2) + cos(8*X0.k[1]**2+X0.k[2]) + (X0.k[2]**2) + 2*sin(5*X0.k[2]**2)
-      Y1 <- g1.a1[k] * (2 * as.numeric( in_C1 ) - 1) + C1 + z1
+      R1.a1[k] <- g1.a1[k] * (2 * as.numeric( in_C1 ) - 1) + C1 + z1
     }
     else{
       cat("Setting not specified...", setting, "\n") 
@@ -346,19 +354,17 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       R2.a1[k] <- X0.k[g2.a1[k]]^2 + S2[k]*beta + C2 + z2 
     }
     else if  (setting == "scheme_6") {       
-      in_C2 =  (S2[k, ][2] > (S2[k, ][1]^2 + sin(20 * S2[k, ][1]^2))) 
-      Y2 <- g2.a1[k] * (2 * as.numeric(in_C2) - 1) + C2 + z2
+      in_C2 =  (S2[k, ][2] > (S2[k, ][1]^2 + 5*sin(5 * S2[k, ][1]^2))) 
+      # (5 * (O1[:, 0].float()+O2[:, 1].float() )**2)*cot(5 * O2[:, 0].float()**2)
+      R2.a1[k] <- 5* (sin(5 * S2[k, ][1]^2)) + g2.a1[k] * (10 * as.numeric(in_C2) - 1) + C2 + z2
     }
     else if  (setting == "scheme_7") {       
       in_C2 =  S2[k, ][3]  > -1.0 + (S2[k, ][1]**2) + cos(8*S2[k, ][1]**2+S2[k, ][2]) + (S2[k, ][2]**2) + 2*sin(5*S2[k, ][2]**2)
-      Y2 <- g2.a1[k] * (2 * as.numeric(in_C2) - 1) + C2 + z2
+      R2.a1[k] <- g2.a1[k] * (2 * as.numeric(in_C2) - 1) + C2 + z2
     }
     else{
       cat("Setting not specified...", setting, "\n") 
     }
-
-
-
 
   }
   
