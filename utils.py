@@ -1358,22 +1358,99 @@ def calculate_policy_values_W_estimator(train_tens, params, A1, A2, P_A1_given_H
 
 
 
-# def calculate_policy_valuefunc(train_tensors, params, A1_di, A2_di, P_A1_g_H1, P_A2_g_H2, Z1, Z2):
+def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
 
-#     _, input_stage2, Y1, Y2, A1, A2 = train_tensors
-#     O1, _, _, O2 = input_stage2 
+    if params['setting'] == 'linear':
+        Y1 = 15 + A1 + O1.sum(dim=1) + O1.prod(dim=1) + Z1
+    elif params['setting'] == 'tao':
+        Y1 = torch.exp(1.5 - torch.abs(1.5 * O1[:, 0] + 2) * (A1 - g1_opt).pow(2)) + Z1  
+    elif params['setting'] == 'scheme_5':
+        Y1 = A1 * O1.sum(dim=1) + params['C1'] + Z1
+    elif params['setting'] == 'scheme_6':
+        # m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
+        # m1 = O1[:, 0].float()**2 * torch.sin(O1[:, 0].float())  
+        m1 = torch.tan(O1[:, 0].float()**2) + torch.tan(O1[:, 1].float())  * params["cnst"]
+        # m1 = torch.atan(O1[:, 0].float()) + torch.atan(O1[:, 1].float())
+        # m1 = torch.tanh(O1[:, 0].float()**3) + torch.tanh(O1[:, 1].float())
+        # m1 = torch.cosh(O1[:, 0].float()) + torch.cosh(O1[:, 1].float())
 
-#     Y1_di = calculateRewardS1(O1, A1_di, Z1)
-#     Y2_di = calculateRewardS2(O1, O2, A1_di, A2_di, Z1, Z2 )
+        Y1 = m1 + A1 * (10 * (O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1   
+    elif params['setting'] == 'scheme_7':
+
+        # Extract Xt1 and Xt2 from O1
+        X = O1[:, 0].float() 
+        Y = O1[:, 1].float()  
+        Z = O1[:, 2].float()  
+
+        # Calculate the condition
+        in_C1 =  Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float()  
 
 
-#     return torch.mean(Y1_di + Y2_di)
+        # m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
+        # m1 = O1[:, 0].float()**2 * torch.sin(O1[:, 0].float())  
+        m1 = torch.tan(O1[:, 0].float()**2) + torch.tan(O1[:, 1].float())  * params["cnst"]
+        # m1 = torch.atan(O1[:, 0].float()) + torch.atan(O1[:, 1].float())
+        # m1 = torch.tanh(O1[:, 0].float()**3) + torch.tanh(O1[:, 1].float())
+        # m1 = torch.cosh(O1[:, 0].float()) + torch.cosh(O1[:, 1].float())
+ 
+        Y1 =  m1 + A1 * (2 * in_C1.int() - 1) + params['C1'] + Z1  
+    else:
+        # Add more conditions based on different settings or use a default one.
+        Y1 = A1 * O1.sum(dim=1) + Z1  # Example default calculation.
+    return Y1
+
+def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
+
+    if params['setting'] == 'linear':
+        Y2 = 15 + O2 + A2 * (1 - O2 + A1 + O1.sum(dim=1)) + Z2
+    elif params['setting'] == 'tao':
+        Y2 = torch.exp(1.26 - torch.abs(1.5 * O1[:, 2] - 2) * (A2 - g2_opt).pow(2)) + Z2
+    elif params['setting'] == 'scheme_5':
+        Y2 = O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2
+    elif params['setting'] == 'scheme_6':         
+        # m2 =  5*torch.sin(5 * O2[:, 0].float()**2)  
+        # m2 = O2[:, 0].float()**2 * torch.sin(O2[:, 0].float()) 
+        m2 = torch.tan(O2[:, 0].float()) + torch.tan(O2[:, 1].float()**2) * params["cnst"]
+        # m2 = torch.atan(O2[:, 0].float()) + torch.atan(O2[:, 1].float())
+        # m2 = O1[:, 0].float()**2 + torch.tanh(O2[:, 0].float()) + torch.tanh(O2[:, 1].float())
+        # m2 = torch.cosh(O1[:, 0].float()) + torch.cosh(O2[:, 1].float())
+        Y2 = m2 +  A2 * (10 * (O2[:, 1].float()  > (O2[:, 0].float() **2 + 5*torch.sin(5 * O2[:, 0].float() **2)).float() ).int() - 1) + params["C2"] + Z2  
+
+    elif params['setting'] == 'scheme_7':
+
+        # Extract Xt1 and Xt2 from O2
+        X = O2[:, 0].float() 
+        Y = O2[:, 1].float()  
+        Z = O2[:, 2].float()  
+        # Calculate the condition
+        in_C2 =  Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float()   
+
+        # m2 =  5*torch.sin(5 * O2[:, 0].float()**2)  
+        # m2 = O2[:, 0].float()**2 * torch.sin(O2[:, 0].float()) 
+        m2 = torch.tan(O1[:, 1].float()) + torch.tan(O2[:, 1].float()**2) * params["cnst"]
+        # m2 = torch.atan(O2[:, 0].float()) + torch.atan(O2[:, 1].float())
+        # m2 = O1[:, 0].float()**2 + torch.tanh(O2[:, 0].float()) + torch.tanh(O2[:, 1].float())
+        # m2 = torch.cosh(O1[:, 0].float()) + torch.cosh(O2[:, 1].float())
+
+        Y2 = m2 +  A2 * (2 * in_C2.int() - 1) + params['C2'] + Z2  
+    else:
+        # Add more conditions based on different settings or use a default one.
+        Y2 = A2 * (O2.sum(dim=1)) + Z2  # Example default calculation.
+    return Y2
+
+
+def calculate_policy_valuefunc(O1, O2, params, A1_di, A2_di, d1_star, d2_star, Z1, Z2):
+
+    Y1_di = calculate_reward_stage1(O1, A1_di, d1_star, Z1, params) #(O1, A1_di, Z1)
+
+    print(f"O1: {O1.dtype}, A1_di: {A1_di.dtype}, O2: {O2.dtype}, A2_di: {A2_di.dtype}, d2_star: {d2_star.dtype}, Z2: {Z2.dtype}")
+    Y2_di = calculate_reward_stage2(O1, A1_di, O2, A2_di, d2_star, Z2, params) #(O1, O2, A1_di, A2_di, Z1, Z2 )
+
+    return torch.mean(Y1_di + Y2_di)
 
 
 
-
-
-def evaluate_method(method_name, params, config_number, df, test_input_stage1, A1_tensor_test, test_input_stage2, A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2):
+def evaluate_method(method_name, params, config_number, df, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 ):
     # Initialize and load models for the method
     nn_stage1 = initialize_and_load_model(1, params['sample_size'], params, config_number)
     nn_stage2 = initialize_and_load_model(2, params['sample_size'], params, config_number)
@@ -1401,8 +1478,10 @@ def evaluate_method(method_name, params, config_number, df, test_input_stage1, A
     }
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
+    V_replications_M1_pred = calculate_policy_valuefunc(test_input_stage1, test_O2, params, A1, A2,  d1_star, d2_star, Z1, Z2)
+
     # Calculate policy values using the DR estimator
-    V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
+    # V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
 
     # print(f"{method_name} estimator: ")
 

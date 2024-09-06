@@ -21,49 +21,7 @@ ro.r.source("ACWL_tao.R")
 
 
 
-def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
 
-    if params['setting'] == 'linear':
-        Y1 = 15 + A1 + O1.sum(dim=1) + O1.prod(dim=1) + Z1
-    elif params['setting'] == 'tao':
-        Y1 = torch.exp(1.5 - torch.abs(1.5 * O1[:, 0] + 2) * (A1 - g1_opt).pow(2)) + Z1  
-    elif params['setting'] == 'scheme_5':
-        Y1 = A1 * O1.sum(dim=1) + params['C1'] + Z1
-    elif params['setting'] == 'scheme_6':
-        cot = lambda x: torch.sin(x)  #torch.cos(x) / torch.sin(x)
-        # Y1 =  torch.sin(5 * O1[:, 0].float() **2) + 
-        Y1 = 5*cot(5 * O1[:, 0].float() **2) + A1 * (10 * (O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1   
-    # elif params['setting'] == 'scheme_7':
-    #     Y1 =  A1 
-    else:
-        # Add more conditions based on different settings or use a default one.
-        Y1 = A1 * O1.sum(dim=1) + Z1  # Example default calculation.
-    return Y1
-
-def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
-
-    if params['setting'] == 'linear':
-        Y2 = 15 + O2 + A2 * (1 - O2 + A1 + O1.sum(dim=1)) + Z2
-    elif params['setting'] == 'tao':
-        Y2 = torch.exp(1.26 - torch.abs(1.5 * O1[:, 2] - 2) * (A2 - g2_opt).pow(2)) + Z2
-    elif params['setting'] == 'scheme_5':
-        Y2 = O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2
-    elif params['setting'] == 'scheme_6':         
-        cot = lambda x: torch.sin(x) #torch.cos(x) / torch.sin(x)
-
-        # Y2 = torch.sin(5 * O2[:, 0].float() **2) + 
-        # Y2 = cot(5 * O2[:, 0].float()**2) +  A2 * (10 * (O2[:, 1].float()  > (O2[:, 0].float() **2 + 5*torch.sin(5 * O2[:, 0].float() **2)).float() ).int() - 1) + params["C2"] + Z2  
-        Y2 =  5*cot(5 * O2[:, 0].float()**2) +  A2 * (10 * (O2[:, 1].float()  > (O2[:, 0].float() **2 + 5*torch.sin(5 * O2[:, 0].float() **2)).float() ).int() - 1) + params["C2"] + Z2  
-
-    # elif params['setting'] == 'scheme_7':
-    #     Y2 = O1
-    else:
-        # Add more conditions based on different settings or use a default one.
-        Y2 = A2 * (O2.sum(dim=1)) + Z2  # Example default calculation.
-    return Y2
-
-# calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
-# calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params)
 
 # Generate Data
 def generate_and_preprocess_data(params, replication_seed, run='train'):
@@ -230,7 +188,7 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
     elif params['setting'] == 'scheme_5':
         print(" scheme_5 DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
         # Generate data using PyTorch
-        O1 = torch.randn(sample_size, 3, device=device) * 10  # Adjusted scale
+        O1 = torch.randn(sample_size, 3, device=device) * 10 #10  # Adjusted scale
         Z1, Z2 = torch.randn(sample_size, device=device), torch.randn(sample_size, device=device)
         O2 = torch.randn(sample_size, device=device)
 
@@ -299,9 +257,17 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # f_i_O1_A2 = O1[index, A2 - 1]**2
         # Y2 = f_i_O1_A2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2
         # Y2 = O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2
+        
+        print(f"O1: {O1.dtype}, A1: {A1.dtype}, O2: {O2.dtype}, A2: {A2.dtype}, g2_opt: {g2_opt.dtype}, Z2: {Z2.dtype}")
 
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params)
 
+
+        Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
+        Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
+        print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
+        print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
+        print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
 
     elif params['setting'] == 'scheme_6':
 
@@ -314,7 +280,6 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # Probabilities for treatments, assuming it's the same as linear case
         pi_value = torch.full((sample_size,), 1 / 3, device=device)
         pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
-
 
         # Constants C1, C2 and beta
         C1, C2 = 5.0, 5.0  # Example constants
@@ -387,19 +352,28 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # Y2 = A2 * (10 * in_C(O2) - 1) + C2 + Z2                
         # Y2 = A2 * (10 * (O2[:, 1].float()  > (O2[:, 0].float() **2 + 5*torch.sin(5 * O2[:, 0].float() **2)).float() ) - 1) + params["C2"] + Z2          
 
-        Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params)   
+        Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params) 
 
-        # cot = lambda x: 5*(x**2)*torch.sin() #torch.cos(x) / torch.sin(x)
-        cot_o1 = lambda x: torch.sin(x) 
-        Y1_g1_opt = 5 * cot_o1( 5*O1[:, 0].float() **2) + g1_opt * (10 * in_C(O1) - 1) + C1 + Z1 
-        cot = lambda x: torch.sin(x) 
-        # Y2_g2_opt = cot(5 * O2[:, 0].float() **2)   + 
-        Y2_g2_opt = 5*cot(5 * O2[:, 0].float()**2) + g2_opt * (10 * in_C(O2) - 1) + C2 + Z2  # (5 * (O1[:, 0].float()  )**2) 
 
+        
+        Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
+        Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
         print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
         print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
-        
         print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
+  
+
+        # # cot = lambda x: 5*(x**2)*torch.sin() #torch.cos(x) / torch.sin(x)
+        # cot_o1 = lambda x: torch.sin(x) 
+        # Y1_g1_opt = 5 * cot_o1( 5*O1[:, 0].float() **2) + g1_opt * (10 * in_C(O1) - 1) + C1 + Z1 
+        # cot = lambda x: torch.sin(x) 
+        # # Y2_g2_opt = cot(5 * O2[:, 0].float() **2)   + 
+        # Y2_g2_opt = 5*cot(5 * O2[:, 0].float()**2) + g2_opt * (10 * in_C(O2) - 1) + C2 + Z2  # (5 * (O1[:, 0].float()  )**2) 
+
+        # print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
+        # print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
+        
+        # print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
 
     elif params['setting'] == 'scheme_7':
 
@@ -423,6 +397,23 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         probs1 = {name: matrix_pi1[:, idx] for idx, name in enumerate(col_names_1)}
         A1 = torch.randint(1, 4, (sample_size,), device=device)
 
+        # Compute Y1 using g(O1) and A1
+        def in_C(Ot):     
+            # Extract Xt1 and Xt2 from O1
+            X = Ot[:, 0].float() 
+            Y = Ot[:, 1].float()  
+            Z = Ot[:, 2].float()  
+
+            # Calculate the condition
+            return Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float()   
+        
+        # Computing optimal policy decisions 
+        def dt_star(Ot):
+            return 3 * in_C(Ot).int() + 1 * (1 - in_C(Ot).int())  # in_C is 1 if true, so 3*1+1*0=3; otherwise 1     
+           
+        g1_opt = dt_star(O1)
+        g2_opt = dt_star(O2)
+
         # # Approach 2 S1
         # result1 = A_sim(matrix_pi1, stage=1)
         # if  params['use_m_propen']:
@@ -435,23 +426,16 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # Reward stage 1
         # Constants C1, C2 and beta
         C1, C2 = 5.0, 5.0  # Example constants
-        # Compute Y1 using g(O1) and A1
-        def in_C(Ot):     
-            # Extract Xt1 and Xt2 from O1
-            X = Ot[:, 0].float() 
-            Y = Ot[:, 1].float()  
-            Z = Ot[:, 2].float()  
 
-            # Calculate the condition
-            return Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float()   
-        
         # Compute Y1 and Y2 
-        Y1 = A1 * (2 * in_C(O1).int() - 1) + C1 + Z1       
+        # Y1 = A1 * (2 * in_C(O1).int() - 1) + C1 + Z1  
+
         # X = O1[:, 0].float() 
         # Y = O1[:, 1].float()  
         # Z = O1[:, 2].float()  
         # Y1 = A1 * (2 * (Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float() ).int() - 1) + C1 + Z1  
 
+        Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
 
         # Input preparation for Stage 2         
         input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)
@@ -475,21 +459,22 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # A2 += 1
 
         # Reward stage 2
-        Y2 = A2 * (2 * in_C(O2) - 1) + C2 + Z2          
+        # Y2 = A2 * (2 * in_C(O2) - 1) + C2 + Z2     
+
+
         # X = O2[:, 0].float() 
         # Y = O2[:, 1].float()  
         # Z = O2[:, 2].float()  
         # Y2 = A2 * (2 * (Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float() ).int() - 1) + C2 + Z2 
 
-        # Computing optimal policy decisions 
-        def dt_star(Ot):
-            return 3 * in_C(Ot).int() + 1 * (1 - in_C(Ot).int())  # in_C is 1 if true, so 3*1+1*0=3; otherwise 1     
-           
-        g1_opt = dt_star(O1)
-        g2_opt = dt_star(O2)
+        Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params) 
 
-        Y1_g1_opt = g1_opt *  (2 * in_C(O1).int() - 1) + C1 + Z1  
-        Y2_g2_opt = g2_opt * (2 * in_C(O2) - 1) + C2 + Z2 
+    
+        Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
+        Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
+
+        # Y1_g1_opt = g1_opt *  (2 * in_C(O1).int() - 1) + C1 + Z1  
+        # Y2_g2_opt = g2_opt * (2 * in_C(O2) - 1) + C2 + Z2 
 
         print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
         print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
@@ -684,8 +669,11 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
                                         config_number, params_ds['job_id'], setting=params_ds['setting'])
 
     # Extract the decisions and convert to PyTorch tensors on the specified device
-    A1_Tao = torch.tensor(np.array(results.rx2('g1.a1')), dtype=torch.float32).to(params_ds['device'])
-    A2_Tao = torch.tensor(np.array(results.rx2('g2.a1')), dtype=torch.float32).to(params_ds['device'])
+    # A1_Tao = torch.tensor(np.array(results.rx2('g1.a1')), dtype=torch.float32).to(params_ds['device'])
+    # A2_Tao = torch.tensor(np.array(results.rx2('g2.a1')), dtype=torch.float32).to(params_ds['device'])
+
+    A1_Tao = torch.tensor(np.array(results.rx2('g1.a1')), dtype=torch.int64).to(params_ds['device'])
+    A2_Tao = torch.tensor(np.array(results.rx2('g2.a1')), dtype=torch.int64).to(params_ds['device'])
 
     return A1_Tao, A2_Tao
 
@@ -730,7 +718,10 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
         # Calculate policy values fn. using the estimator of Tao's method
         # print("Tao's method estimator: ")
         start_time = time.time()  # Start time recording
-        V_rep_Tao = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_Tao, A2_Tao, P_A1_g_H1, P_A2_g_H2, config_number)
+
+        V_rep_Tao = calculate_policy_valuefunc(test_input_stage1, test_O2, params_ds, A1_Tao, A2_Tao, d1_star, d2_star, Z1, Z2)
+        # V_rep_Tao = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_Tao, A2_Tao, P_A1_g_H1, P_A2_g_H2, config_number)
+
         end_time = time.time()  # End time recording
         print(f"\n\nTotal time taken to run calculate_policy_values_W_estimator_tao: { end_time - start_time} seconds")
                 
@@ -744,8 +735,8 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
     #######################################
     if params_ds.get('run_DQlearning', True):
         start_time = time.time()  # Start time recording
-        df_DQL, V_rep_DQL = evaluate_method('DQL', params_dql, config_number, df_DQL, test_input_stage1, A1_tensor_test, test_input_stage2, 
-                                            A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2)
+        df_DQL, V_rep_DQL = evaluate_method('DQL', params_dql, config_number, df_DQL, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, 
+                                            A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 )
         end_time = time.time()  # End time recording
         print(f"\n\nTotal time taken to run evaluate_method)W_estimator('DQL'): { end_time - start_time} seconds")
         # Append policy values for DQL
@@ -758,8 +749,8 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
     ########################################
     if params_ds.get('run_surr_opt', True):
         start_time = time.time()  # Start time recording
-        df_DS, V_rep_DS = evaluate_method('DS', params_ds, config_number, df_DS, test_input_stage1, A1_tensor_test, test_input_stage2, 
-                                        A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2)
+        df_DS, V_rep_DS = evaluate_method('DS', params_ds, config_number, df_DS, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, 
+                                        A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 )
         end_time = time.time()  # End time recording
         print(f"\n\nTotal time taken to run evaluate_method)W_estimator('DS'): { end_time - start_time} seconds\n\n")
                     
@@ -1151,15 +1142,42 @@ def main():
     train_size = int(training_validation_prop * config['sample_size'])
     print("Training size: %d", train_size)    
     
+
+    # # Define parameter grid for grid search
+    # param_grid = {
+    #     'activation_function': [ 'none'], # elu, relu, sigmoid, tanh, leakyrelu, none
+    #     'batch_size': [10, 25, 200], # 50
+    #     'optimizer_lr': [0.07], # 0.1, 0.01, 0.07, 0.001
+    #     'num_layers': [2, 4], # 1,2,3,4,5,6,7
+    #     # 'n_epoch':[60, 150],
+    #     # "surrogate_num": 1  
+    # }
     
-    # Define parameter grid for grid search
+    # Tao case
+    # param_grid = {
+    #     'activation_function': ['none'], # elu, relu, sigmoid, tanh, leakyrelu, none
+    #     'learning_rate': [0.07],
+    #     'num_layers': [2, 4],
+    #     'batch_size': [500],
+    #     'hidden_dim_stage1': [40],  # Number of neurons in the hidden layer of stage 1
+    #     'hidden_dim_stage2': [10],  # Number of neurons in the hidden layer of stage 2 
+    #     'dropout_rate': [0],  # Dropout rate to prevent overfitting
+    #     'n_epoch': [250]
+    # }
+
+    # Scheme 5 case
     param_grid = {
-        'activation_function': ['elu'],
-        # 'batch_size': [3000],
+        'activation_function': ['leakyrelu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
         'learning_rate': [0.07],
-        'num_layers': [2],
-#         'noiseless': [True, False]
+        'num_layers': [2], # 4
+        'batch_size': [500],
+        'hidden_dim_stage1': [40],  # Number of neurons in the hidden layer of stage 1
+        'hidden_dim_stage2': [10],  # Number of neurons in the hidden layer of stage 2 
+        'dropout_rate': [0],  # Dropout rate to prevent overfitting
+        'n_epoch': [70] #60, 90, 250
     }
+
+
     # Perform operations whose output should go to the file
     run_grid_search(config, param_grid)
     
