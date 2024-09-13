@@ -332,7 +332,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       # m1 = floor(S1[k, 1]) * floor(S1[k, 2]) * exp(S1[k, 1])
 
       sums <- sum(X0.k) 
-      R1.a1[k] <- g1.a1[k]*sums + C1 + z1 
+      R1.a1[k] <- m1 + g1.a1[k]*sums + C1 + z1 
     }
     else if  (setting == "scheme_6") { 
       in_C1 =  m1 + (X0.k[2] > ( 5*sin(5 * X0.k[1]^2))) 

@@ -188,7 +188,7 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
     elif params['setting'] == 'scheme_5':
         print(" scheme_5 DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
         # Generate data using PyTorch
-        O1 = torch.randn(sample_size, 3, device=device) * 10 #10  # Adjusted scale
+        O1 = torch.randn(sample_size, 3, device=device) #* 10 #10  # Adjusted scale
         Z1, Z2 = torch.randn(sample_size, device=device), torch.randn(sample_size, device=device)
         O2 = torch.randn(sample_size, device=device)
 
@@ -813,7 +813,7 @@ def simulations(V_replications, params, config_fixed, config_number):
     epoch_num_model_lst = []
 
 
-        # Clone the updated config for DQlearning and surr_opt
+    # Clone the updated config for DQlearning and surr_opt
     params_DQL_u = copy.deepcopy(params)
     params_DS_u = copy.deepcopy(params)
     
