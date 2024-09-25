@@ -4,7 +4,7 @@
 run_surr_opt: True
 run_DQlearning: True
 run_adaptive_contrast_tao: True 
-setting: 'scheme_5' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_i' 
+setting: 'scheme_5' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8' 
 
 # scheme_5 constants 
 C1: 3.0 
@@ -17,6 +17,13 @@ cnst: 40 # 1, 5, 10, 20, 30, 100
 # C2: 5.0 
 # beta: 1 
 # cnst: 10 #10
+b: 2 # keep this 2 for scheme 8
+
+# scheme 8
+neu: 10
+u: 10
+alpha: 10
+
 
 f_model: 'model_name'  # DQlearning, surr_opt, tao - igore here
 noiseless: True # True, False  # Boolean flag to indicate if noise should be excluded in simulations
@@ -25,7 +32,7 @@ use_m_propen: True # True, False
 surrogate_num: 1  # Indicates the surrogate model configuration number
 option_sur: 4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
-sample_size: 15000 # 30000  # Number of samples to be used 
+sample_size: 5000 # 30000  # Number of samples to be used 
 batch_size: 300 #7000  # Batch size calculated as a proportion of sample size
 num_replications: 3 # 30, 100
 # job_id: tao 
@@ -40,8 +47,8 @@ activation_function: 'elu' # elu, relu, sigmoid, tanh, leakyrelu, none
 
 output_dim_stage1: 1  # Output dimension for stage 1
 output_dim_stage2: 1  # Output dimension for stage 2
-hidden_dim_stage1: 4  # Number of neurons in the hidden layer of stage 1
-hidden_dim_stage2: 4  # Number of neurons in the hidden layer of stage 2 
+hidden_dim_stage1: 20  # Number of neurons in the hidden layer of stage 1
+hidden_dim_stage2: 20  # Number of neurons in the hidden layer of stage 2 
 dropout_rate: 0.4  # Dropout rate to prevent overfitting
 num_layers: 2
 optimizer_type: 'adam'  # Optimizer type, can be 'adam' or 'rmsprop'

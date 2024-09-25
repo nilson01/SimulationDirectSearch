@@ -263,12 +263,6 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params)
 
 
-        Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
-        Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
-        print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
-        print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
-        print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
-
     elif params['setting'] == 'scheme_6':
 
         print(" scheme_6 DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
@@ -356,24 +350,12 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
 
 
         
-        Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
-        Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
-        print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
-        print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
-        print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
-  
-
-        # # cot = lambda x: 5*(x**2)*torch.sin() #torch.cos(x) / torch.sin(x)
-        # cot_o1 = lambda x: torch.sin(x) 
-        # Y1_g1_opt = 5 * cot_o1( 5*O1[:, 0].float() **2) + g1_opt * (10 * in_C(O1) - 1) + C1 + Z1 
-        # cot = lambda x: torch.sin(x) 
-        # # Y2_g2_opt = cot(5 * O2[:, 0].float() **2)   + 
-        # Y2_g2_opt = 5*cot(5 * O2[:, 0].float()**2) + g2_opt * (10 * in_C(O2) - 1) + C2 + Z2  # (5 * (O1[:, 0].float()  )**2) 
-
+        # Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
+        # Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
         # print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
         # print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
-        
         # print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
+  
 
     elif params['setting'] == 'scheme_7':
 
@@ -468,21 +450,71 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # Y2 = A2 * (2 * (Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float() ).int() - 1) + C2 + Z2 
 
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params) 
+    
+        # Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
+        # Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
+        # print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
+        # print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
+        # print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
+
+    elif params['setting'] == 'scheme_8':
+
+        print(" scheme_8 DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
+        # Generate data using PyTorch
+        O1 = torch.randn(sample_size, 3, device=device)
+        Z1, Z2 = torch.randn(sample_size, device=device), torch.randn(sample_size, device=device)
+        O2 = torch.randn(sample_size, 2, device=device)
+
+        # Probabilities for treatments, assuming it's the same as linear case
+        pi_value = torch.full((sample_size,), 1 / 3, device=device)
+        pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
+
+        # Constants C1, C2 and beta 
+        # C1, C2 = 5.0, 5.0  # Example constants
+        # Compute Y1 using g(O1) and A1
+        def in_C(Ot):     
+            # Extract Xt1 and Xt2 from O1
+            Xt1 = Ot[:, 0].float() 
+            Xt2 = Ot[:, 1].float()  
+
+            # Calculate the condition
+            return Xt2 > (Xt1**2 + 5*torch.sin(5 * Xt1**2)).float()  # Apply float to ensure precision
+
+        # Computing optimal policy decisions 
+        def dt_star(Ot):
+            # Ot = (Xt1, Xt2)
+            return 3 * in_C(Ot).int() + 1 * (1 - in_C(Ot).int())  # in_C is 1 if true, so 3*1+1*0=3; otherwise 1     
+           
+        g1_opt = dt_star(O1)
+        g2_opt = torch.argmax(O1**2, dim=1) + 1
+
+        # Input preparation for Stage 1
+        input_stage1 = O1
+        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
+        matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
+
+        # Approach 1 S1
+        col_names_1 = ['pi_10', 'pi_11', 'pi_12']
+        probs1 = {name: matrix_pi1[:, idx] for idx, name in enumerate(col_names_1)}
+        A1 = torch.randint(1, 4, (sample_size,), device=device)
+
+        Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
+
+        # Input preparation for Stage 2         
+        input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)
+
+        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+        params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
+        matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
+
+        # Approach 1 S2
+        col_names_2 = ['pi_20', 'pi_21', 'pi_22']
+        probs2 = {name: matrix_pi2[:, idx] for idx, name in enumerate(col_names_2)}
+        A2 = torch.randint(1, 4, (sample_size,), device=device)
+
+        Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params) 
 
     
-        Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
-        Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
-
-        # Y1_g1_opt = g1_opt *  (2 * in_C(O1).int() - 1) + C1 + Z1  
-        # Y2_g2_opt = g2_opt * (2 * in_C(O2) - 1) + C2 + Z2 
-
-        print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
-        print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
-        
-        print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
-
-
-        
     elif params['setting'] == 'scheme_i':
 
         print(" scheme_i DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
@@ -545,6 +577,13 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
     if run != 'test':
       # transform Y for direct search
       Y1, Y2 = transform_Y(Y1, Y2)
+
+    Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
+    print("calculate_reward_stage2: ", O1, g1_opt, O2, g2_opt, g2_opt, Z2)
+    Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
+    print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
+    print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
+    print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
 
     # Propensity score stack
     pi_tensor_stack = torch.stack([probs1['pi_10'], probs1['pi_11'], probs1['pi_12'], probs2['pi_20'], probs2['pi_21'], probs2['pi_22']])
@@ -1194,8 +1233,21 @@ def main():
         'hidden_dim_stage1': [40],  # Number of neurons in the hidden layer of stage 1
         'hidden_dim_stage2': [10],  # Number of neurons in the hidden layer of stage 2 
         'dropout_rate': [0],  # Dropout rate to prevent overfitting
-        'n_epoch': [70] #60, 90, 250
+        'n_epoch': [70], #60, 90, 250 
+        # 'neu':[2,4,10] 
     }
+
+    # # Scheme 5 case
+    # param_grid = {
+    #     'activation_function': ['relu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
+    #     'learning_rate': [0.07],
+    #     'num_layers': [3], # 4
+    #     'batch_size': [1000],
+    #     'hidden_dim_stage1': [10],  # Number of neurons in the hidden layer of stage 1
+    #     'hidden_dim_stage2': [10],  # Number of neurons in the hidden layer of stage 2 
+    #     'dropout_rate': [0],  # Dropout rate to prevent overfitting
+    #     'n_epoch': [70] #60, 90, 250
+    # }
 
     # Perform operations whose output should go to the file
     run_grid_search(config, config_fixed, param_grid)

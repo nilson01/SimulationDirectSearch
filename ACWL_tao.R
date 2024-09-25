@@ -314,14 +314,14 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
     else if  (setting == "scheme_5") {    
       C1 = 3.0
       cnst = 40
-
+      # neu = 10
 
       # m1 = 5 * sin(5 * S1[k, ][1]^2)  
       # m1 = S1[, 1]^2 * sin(S1[, 1]) 
-      m1 = tan(S1[k, ][1])^2 + tan(S1[k, ][2]) * cnst  # FIX SQUARE ON THIS ONE: TODO
+      # m1 = tan(S1[k, ][1])^2 + tan(S1[k, ][2]) * cnst  # FIX SQUARE ON THIS ONE: TODO
       # m1 = tan(S1[k, ][1]^2) + tan(S1[k, ][2]) * cnst  # FIXed
 
-      # m1 = atan(S1[k, ][1]) + atan(S1[k, ][2])
+      m1 = atan(S1[k, ][1]) + atan(S1[k, ][2])
       # m1 = tanh(S1[, 1]^3) + tanh(S1[, 2])
       # m1 = cosh(S1[, 1]^2) + cosh(S1[, 2]^2)
 
@@ -332,11 +332,10 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       # m1 = floor(S1[k, 1]) * floor(S1[k, 2]) * exp(S1[k, 1])
 
       sums <- sum(X0.k) 
-      R1.a1[k] <- m1 + g1.a1[k]*sums + C1 + z1 
+      R1.a1[k] <- g1.a1[k]*sums + C1 + z1 + m1 #*neu
     }
     else if  (setting == "scheme_6") { 
-      in_C1 =  m1 + (X0.k[2] > ( 5*sin(5 * X0.k[1]^2))) 
-      cnst = 10 #10 
+
 
       # m1 = 5 * sin(5 * S1[k, ][1]^2)  
       # m1 = S1[, 1]^2 * sin(S1[, 1]) 
@@ -350,6 +349,9 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       # m1 = max(S1[k, 1], S1[k, 2]) 
 
       m1 = floor(S1[k, 1]) * floor(S1[k, 2]) * exp(S1[k, 1])
+
+      in_C1 =  (X0.k[2] > ( 5*sin(5 * X0.k[1]^2))) 
+      cnst = 10 #10 
 
       R1.a1[k] <- m1 + g1.a1[k] * (10 * as.numeric( in_C1 ) - 1) + C1 + z1
     }
@@ -366,6 +368,28 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       # m1 = cosh(S1[, 1]^2) + cosh(S1[, 2]^2)
 
       R1.a1[k] <- m1 + g1.a1[k] * (2 * as.numeric( in_C1 ) - 1) + C1 + z1
+    }
+    else if  (setting == "scheme_8") { 
+
+      # m1 = 5 * sin(5 * S1[k, ][1]^2)  
+      m1 = S1[, 1]^2 * sin(S1[, 1]) 
+      # m1 = tan(S1[k, ][1])^2 + tan(S1[k, ][2]) * cnst  # FIX SQUARE ON THIS ONE: TODO
+      # m1 = atan(S1[k, ][1]) + atan(S1[k, ][2])
+      # m1 = tanh(S1[, 1]^3) + tanh(S1[, 2])
+      # m1 = cosh(S1[, 1]^2) + cosh(S1[, 2]^2)
+
+      # m1 = tan(S1[k, ][1]^2) + tan(S1[k, ][2]^2) * cnst  
+      # m1 = which.max(S1[k, 1:2])
+      # m1 = max(S1[k, 1], S1[k, 2]) 
+
+      # m1 = floor(S1[k, 1]) * floor(S1[k, 2]) * exp(S1[k, 1])
+      in_C1 = (X0.k[2] > ( 5*sin(5 * X0.k[1]^2))) 
+      cnst = 10 #10 
+      neu = 10
+      alpha = 10
+      b = 2
+
+      R1.a1[k] <- alpha * g1.a1[k] * ( b * as.numeric( in_C1 ) - 1) + C1 + z1 #+ neu * m1 
     }
     else{
       cat("Setting not specified...", setting, "\n") 
@@ -384,16 +408,17 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
 
     g2.a1[k] <- as.numeric(predict(fit2.a1, newdata = newdata2.a1, type = "class")) 
 
-
     if (setting == "linear") {
       R2.a1[k] <- 15 + S2[k] + g2.a1[k] * (1 - S2[k] + g1.a1[k] + X0.k[1] + X0.k[2]) + z2
     } 
     else if  (setting == "tao") {
+      # m2 = S1[, 1]^2 * sin(g2.a1[k]) 
       R2.a1[k] <- exp(1.26 - abs(1.5 * X0.k[3] - 2) * (g2.a1[k] - g2k[k])^2) + z2
     }
     else if  (setting == "scheme_5") {  
       cnst = 40 #5 #20            
-      C2 = 3.0
+      C2 = 3.0       
+      neu = 2  
 
       # m2 = 5* (sin(5 * S2[k]^2))  
       # m2 = S2[k]^2 * sin(S2[k]) 
@@ -408,8 +433,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       # m2 = max(S1[k, 1], S1[k, 2], S2[k]) 
       # m2 <- floor(S2[k]) * floor(S1[k, 2]) * exp(S2[k])
 
-
-      R2.a1[k] <- m2 + X0.k[g2.a1[k]]^2 * cnst + S2[k]*beta + C2 + z2 
+      R2.a1[k] <-  X0.k[g2.a1[k]]^2 * cnst + S2[k]*beta + C2 + z2 + m2#*neu
     }
     else if  (setting == "scheme_6") {       
       in_C2 =  (S2[k, ][2] > (S2[k, ][1]^2 + 5*sin(5 * S2[k, ][1]^2))) 
@@ -445,6 +469,27 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
 
       R2.a1[k] <- m2 + g2.a1[k] * (2 * as.numeric(in_C2) - 1) + C2 + z2
     }
+    else if  (setting == "scheme_8") {       
+      in_C2 =  (S2[k, ][2] > (S2[k, ][1]^2 + 5*sin(5 * S2[k, ][1]^2))) 
+      cnst = 10 #10 
+      neu = 10
+      u = 10
+
+      # m2 = 5* (sin(5 * S2[k, ][1]^2))  
+      # m2 = S2[, 1]^2 * sin(S2[, 1]) 
+      m2 = tan(S2[k, ][1]) + tan(S2[k, ][2]^2) * cnst 
+      # m2 = atan(S2[k, ][1]) + atan(S2[k, ][2]) 
+      # m2 = S1[, 1]^2 + tanh(S2[, 1]) + tanh(S2[, 2])
+      # m2 = cosh(S1[, 1]^2) + cosh(S2[, 2]^2)
+
+      # m2 = S1[k, ][1] *tan(S1[k, ][2]^2) + S2[k, ][1]*tan(S2[k, ][2]^2) * cnst
+
+      # m2 = which.max( c(S1[k, 1], S1[k, 2], S2[k, 1], S2[k, 2]))
+      # m2 = max(S1[k, 1], S1[k, 2], S2[k, 1], S2[k, 2]) 
+      # m2 <- floor(S2[k, 1]) * floor(S1[k, 2]) * exp(S2[k, 1])
+
+      R2.a1[k] <-  neu*X0.k[g2.a1[k]]^2 * cnst + S2[k]*beta + C2 + z2 + u*m2 
+    }    
     else{
       cat("Setting not specified...", setting, "\n") 
     }

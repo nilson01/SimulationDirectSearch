@@ -1228,20 +1228,29 @@ def train_and_evaluate(train_data, val_data, test_data, params, config_number, r
     val_tensors, A1_val, A2_val = val_data
     test_tensors, A1_test, A2_test, P_A1_given_H1_tensor_test, P_A2_given_H2_tensor_test = test_data
     
-    
     train_input_stage1, train_input_stage2, train_Y1, train_Y2, train_A1, train_A2 = train_tensors
     val_input_stage1, val_input_stage2, val_Y1, val_Y2, val_A1, val_A2 = val_tensors
     test_input_stage1, test_input_stage2, test_Y1, test_Y2, test_A1, test_A2 = test_tensors
 
-
     # Duplicate the params dictionary
     param_W = params.copy()
 
+    fixed_config = load_config()
+
     # Update specific values in param_W
     param_W.update({
-      'num_networks': 1,
-        'activation_function': 'elu', #'elu', 'relu', 'sigmoid', 'tanh', 'leakyrelu', 'none' # comment this if need to parallelize over eval
+        'num_networks': 1,
+        'activation_function': fixed_config['activation_function'], #'elu', 'relu', 'sigmoid', 'tanh', 'leakyrelu', 'none' # comment this if need to parallelize over eval
+        'num_layers':fixed_config['num_layers'],
+        'hidden_dim_stage1':fixed_config['hidden_dim_stage1'],
+        'hidden_dim_stage2':fixed_config['hidden_dim_stage2']
     })
+
+    # config_fixed['num_layers'] = params['num_layers']
+    # config_fixed['hidden_dim_stage1'] = params['hidden_dim_stage1']
+    # config_fixed['hidden_dim_stage2'] = params['hidden_dim_stage2']
+    # config_fixed['activation_function'] = params['activation_function']
+
         
     if params["f_model"]!="DQlearning":
         param_W.update({
@@ -1369,7 +1378,7 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         # m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
         # m1 = O1[:, 0].float()**2 * torch.sin(O1[:, 0].float())  
         # m1 = torch.tan(O1[:, 0].float()**2) + torch.tan(O1[:, 1].float()) * params["cnst"]
-        m1 = torch.atan(O1[:, 0].float()) + torch.atan(O1[:, 1].float())
+        m1 = torch.atan(O1[:, 0].float()) + torch.atan(O1[:, 1].float()) 
         # m1 = torch.tanh(O1[:, 0].float()**3) + torch.tanh(O1[:, 1].float())
         # m1 = torch.cosh(O1[:, 0].float()) + torch.cosh(O1[:, 1].float())         
         # m1 = torch.tan(O1[:, 0].float()**2) + torch.tan(O1[:, 1].float()**2)  * params["cnst"] 
@@ -1381,7 +1390,8 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         # m1 = torch.max(stacked_tensors, dim=0).values 
         # m1 = torch.floor(O1[:, 0].float() ) * torch.floor(O1[:, 1].float() ) * torch.exp(O1[:, 0].float() )
 
-        Y1 = m1 + A1 * O1.sum(dim=1) + params['C1'] + Z1
+        Y1 = A1 * O1.sum(dim=1) + params['C1'] + Z1 + m1 #* params["neu"]
+
     elif params['setting'] == 'scheme_6':
         # m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
         # m1 = O1[:, 0].float()**2 * torch.sin(O1[:, 0].float())  
@@ -1399,8 +1409,8 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         
         # m1 = torch.floor(O1[:, 0].float() ) * torch.floor(O1[:, 1].float() ) * torch.exp(O1[:, 0].float() )
 
-
-        Y1 = m1 + A1 * (10 * (O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1   
+        Y1 = m1 + A1 * (10 * (O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 
+ 
     elif params['setting'] == 'scheme_7':
 
         # Extract Xt1 and Xt2 from O1
@@ -1420,17 +1430,42 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         # m1 = torch.cosh(O1[:, 0].float()) + torch.cosh(O1[:, 1].float())
  
         Y1 =  m1 + A1 * (2 * in_C1.int() - 1) + params['C1'] + Z1  
+
+    elif params['setting'] == 'scheme_8':
+        # m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
+        m1 = O1[:, 0].float()**2 * torch.sin(O1[:, 0].float())  
+        b = 3
+        # m1 = torch.tan(O1[:, 0].float()**2) + torch.tan(O1[:, 1].float()) 
+        # m1 = torch.atan(O1[:, 0].float()) + torch.atan(O1[:, 1].float())
+        # m1 = torch.tanh(O1[:, 0].float()**3) + torch.tanh(O1[:, 1].float())
+        # m1 = torch.cosh(O1[:, 0].float()) + torch.cosh(O1[:, 1].float())         
+        # m1 = torch.tan(O1[:, 0].float()**2) + torch.tan(O1[:, 1].float()**2)  
+
+        # Stack the tensors along a new dimension
+        # stacked_tensors = torch.stack((O1[:, 0].float(), O1[:, 1].float()), dim=0)
+        # Find the maximum along the new dimension 
+        # m1 = torch.argmax(stacked_tensors, dim=0) 
+        # m1 = torch.max(stacked_tensors, dim=0).values 
+        
+        # m1 = torch.floor(O1[:, 0].float() ) * torch.floor(O1[:, 1].float() ) * torch.exp(O1[:, 0].float() )
+        # Y1 = m1 + A1 * (10 * (O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 
+        Y1 =  A1 * params["alpha"] * ( params["b"]*(O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 #+ params["neu"] * m1 
     else:
         # Add more conditions based on different settings or use a default one.
         Y1 = A1 * O1.sum(dim=1) + Z1  # Example default calculation.
+
     return Y1
+
+
 
 def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
 
     if params['setting'] == 'linear':
         Y2 = 15 + O2 + A2 * (1 - O2 + A1 + O1.sum(dim=1)) + Z2
     elif params['setting'] == 'tao':
-        Y2 = torch.exp(1.26 - torch.abs(1.5 * O1[:, 2] - 2) * (A2 - g2_opt).pow(2)) + Z2
+        # m2 = O1[:, 0].float()**2 * torch.sin(A2.float()) 
+
+        Y2 =  torch.exp(1.26 - torch.abs(1.5 * O1[:, 2] - 2) * (A2 - g2_opt).pow(2)) + Z2
     elif params['setting'] == 'scheme_5':
         # m2 =  5*torch.sin(5 * O2.float()**2)  
         # m2 = O2.float()**2 * torch.sin(O2.float()) 
@@ -1449,14 +1484,14 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
 
         # m2 = torch.floor(O2.float()) * torch.floor(O1[:, 1].float()) * torch.exp(O2.float())
 
-        Y2 = m2 + O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2
+        Y2 =  O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2 + m2 #* params["neu"]
         # Y2 = O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2
 
 
     elif params['setting'] == 'scheme_6':         
         # m2 =  5*torch.sin(5 * O2[:, 0].float()**2)  
         # m2 = O2[:, 0].float()**2 * torch.sin(O2[:, 0].float()) 
-        # m2 = torch.tan(O2[:, 0].float()) + torch.tan(O2[:, 1].float()**2) * params["cnst"]
+        m2 = torch.tan(O2[:, 0].float()) + torch.tan(O2[:, 1].float()**2) * params["cnst"]
         # m2 = torch.atan(O2[:, 0].float()) + torch.atan(O2[:, 1].float())
         # m2 = O1[:, 0].float()**2 + torch.tanh(O2[:, 0].float()) + torch.tanh(O2[:, 1].float())
         # m2 = torch.cosh(O1[:, 0].float()) + torch.cosh(O2[:, 1].float())
@@ -1469,7 +1504,7 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
         # m2 = torch.argmax(stacked_tensors, dim=0) 
         # m2 = torch.max(stacked_tensors, dim=0).values  
 
-        m2 = torch.floor(O2[:, 0].float()) * torch.floor(O1[:, 1].float()) * torch.exp(O2[:, 0].float())
+        # m2 = torch.floor(O2[:, 0].float()) * torch.floor(O1[:, 1].float()) * torch.exp(O2[:, 0].float())
 
  
         Y2 = m2 +  A2 * (10 * (O2[:, 1].float()  > (O2[:, 0].float() **2 + 5*torch.sin(5 * O2[:, 0].float() **2)).float() ).int() - 1) + params["C2"] + Z2  
@@ -1490,7 +1525,28 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
         # m2 = O1[:, 0].float()**2 + torch.tanh(O2[:, 0].float()) + torch.tanh(O2[:, 1].float())
         # m2 = torch.cosh(O1[:, 0].float()) + torch.cosh(O2[:, 1].float())
 
-        Y2 = m2 +  A2 * (2 * in_C2.int() - 1) + params['C2'] + Z2  
+        Y2 =  A2 * (2 * in_C2.int() - 1) + params['C2'] + Z2  + m2
+
+
+    elif params['setting'] == 'scheme_8':         
+        # m2 =  5*torch.sin(5 * O2[:, 0].float()**2)  
+        # m2 = O2[:, 0].float()**2 * torch.sin(O2[:, 0].float()) 
+        m2 = torch.tan(O2[:, 0].float()) + torch.tan(O2[:, 1].float()**2) 
+        # m2 = torch.atan(O2[:, 0].float()) + torch.atan(O2[:, 1].float())
+        # m2 = O1[:, 0].float()**2 + torch.tanh(O2[:, 0].float()) + torch.tanh(O2[:, 1].float())
+        # m2 = torch.cosh(O1[:, 0].float()) + torch.cosh(O2[:, 1].float())
+        # m2 = O1[:, 0].float() * torch.tan(O1[:, 1].float()**2) + O2[:, 0].float() * torch.tan(O2[:, 1].float()**2) * params["cnst"]
+ 
+        # Stack the tensors along a new dimension
+        # stacked_tensors = torch.stack((O1[:, 0].float(), O1[:, 1].float(), O2[:, 0].float(), O2[:, 1].float()), dim=0)
+        # Find the maximum along the new dimension
+        # m2 = torch.argmax(stacked_tensors, dim=0) 
+        # m2 = torch.max(stacked_tensors, dim=0).values  
+
+        # m2 = torch.floor(O2[:, 0].float()) * torch.floor(O1[:, 1].float()) * torch.exp(O2[:, 0].float())
+        # Y2 =   A2 * (params["b"] * (O2[:, 1].float()  > (O2[:, 0].float() **2 + 5*torch.sin(5 * O2[:, 0].float() **2)).float() ).int() - 1) + params["C2"] + Z2  + params["u"]*m2 
+        Y2 =  params["neu"] * O1[torch.arange(O1.size(0), device=device), A2 - 1]**2  + O2 * params["beta"] + params["C2"] + Z2 + params["u"] * m2 
+
     else:
         # Add more conditions based on different settings or use a default one.
         Y2 = A2 * (O2.sum(dim=1)) + Z2  # Example default calculation.
