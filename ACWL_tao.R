@@ -332,7 +332,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       # m1 = floor(S1[k, 1]) * floor(S1[k, 2]) * exp(S1[k, 1])
 
       sums <- sum(X0.k) 
-      R1.a1[k] <- g1.a1[k]*sums + C1 + z1 + m1 #*neu
+      R1.a1[k] <- g1.a1[k]*sums + C1 + z1 # + m1 #*neu
     }
     else if  (setting == "scheme_6") { 
 
@@ -433,7 +433,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       # m2 = max(S1[k, 1], S1[k, 2], S2[k]) 
       # m2 <- floor(S2[k]) * floor(S1[k, 2]) * exp(S2[k])
 
-      R2.a1[k] <-  X0.k[g2.a1[k]]^2 * cnst + S2[k]*beta + C2 + z2 + m2#*neu
+      R2.a1[k] <-  X0.k[g2.a1[k]]^2 * cnst + S2[k]*beta + C2 + z2 #+ m2#*neu
     }
     else if  (setting == "scheme_6") {       
       in_C2 =  (S2[k, ][2] > (S2[k, ][1]^2 + 5*sin(5 * S2[k, ][1]^2))) 

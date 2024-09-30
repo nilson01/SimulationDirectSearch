@@ -11,6 +11,7 @@ import time
 from datetime import datetime
 import copy
 from collections import defaultdict
+from itertools import combinations
 
 
 import rpy2.robjects as ro
@@ -188,16 +189,22 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
     elif params['setting'] == 'scheme_5':
         print(" scheme_5 DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
         # Generate data using PyTorch
-        O1 = torch.randn(sample_size, 3, device=device) #* 10 #10  # Adjusted scale
+        O1 = torch.randn(sample_size, 3, device=device) * 10 #10  # Adjusted scale
         Z1, Z2 = torch.randn(sample_size, device=device), torch.randn(sample_size, device=device)
-        O2 = torch.randn(sample_size, device=device)
+        O2 = torch.randn(sample_size, device=device) # torch.randn(sample_size, 1, device=device)  # 
 
         # Probabilities for treatments, assuming uniform distribution across 3 treatments
         pi_value = torch.full((sample_size,), 1 / 3, device=device)
         pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
 
-        # Input preparation for Stage 1
-        input_stage1 = O1
+        # Input preparation for Stage 1 
+        # Generate interaction terms
+        interaction_terms = [O1[:, i:i+1] * O1[:, j:j+1] for i, j in combinations(range(O1.shape[1]), 2)]
+
+        # Concatenate the original features and interaction terms
+        input_stage1 = torch.cat([O1] + interaction_terms, dim=1)
+         
+        # input_stage1 = O1
         params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
         matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
 
@@ -234,7 +241,16 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
 
         # Input preparation for Stage 2
-        input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+
+        # # Generate interaction terms
+        # interaction_terms_O2 = [O2[:, i:i+1] * O2[:, j:j+1] for i, j in combinations(range(O2.shape[1]), 2)]
+
+        # # Concatenate the original features and interaction terms
+        # O2_new = torch.cat([O2] + interaction_terms_O2, dim=1)
+
+        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+        input_stage2 = torch.cat([input_stage1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+
         params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
         matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
 
@@ -579,11 +595,15 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
       Y1, Y2 = transform_Y(Y1, Y2)
 
     Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
-    print("calculate_reward_stage2: ", O1, g1_opt, O2, g2_opt, g2_opt, Z2)
+    # print("calculate_reward_stage2: ", O1, g1_opt, O2, g2_opt, g2_opt, Z2)
     Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
+
+    print()
+    print("="*60)
     print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
     print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
     print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
+    print("="*60)
 
     # Propensity score stack
     pi_tensor_stack = torch.stack([probs1['pi_10'], probs1['pi_11'], probs1['pi_12'], probs2['pi_20'], probs2['pi_21'], probs2['pi_22']])
@@ -758,7 +778,7 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
         # print("Tao's method estimator: ")
         start_time = time.time()  # Start time recording
 
-        V_rep_Tao = calculate_policy_valuefunc(test_input_stage1, test_O2, params_ds, A1_Tao, A2_Tao, d1_star, d2_star, Z1, Z2)
+        V_rep_Tao = calculate_policy_valuefunc("Tao", test_input_stage1, test_O2, params_ds, A1_Tao, A2_Tao, d1_star, d2_star, Z1, Z2)
         # V_rep_Tao = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_Tao, A2_Tao, P_A1_g_H1, P_A2_g_H2, config_number)
 
         end_time = time.time()  # End time recording
@@ -851,6 +871,8 @@ def simulations(V_replications, params, config_fixed, config_number):
     losses_dict = {'DQL': {}, 'DS': {}} 
     epoch_num_model_lst = []
 
+    print("config_grid: ", params, "\n\n")
+    # print("config_fixed: ", config_fixed, "\n")
 
     # Clone the updated config for DQlearning and surr_opt
     params_DQL_u = copy.deepcopy(params)
@@ -872,6 +894,7 @@ def simulations(V_replications, params, config_fixed, config_number):
     params_DS_f['f_model'] = 'surr_opt'
     params_DQL_f['f_model'] = 'DQlearning'
     params_DQL_f['num_networks'] = 1  
+
 
     for replication in tqdm(range(params['num_replications']), desc="Replications_M1"):
         print(f"\nReplication # -------------->>>>>  {replication+1}")
@@ -924,8 +947,8 @@ def simulations(V_replications, params, config_fixed, config_number):
         # eval_DTR 
         print("Evaluation started") 
         start_time = time.time()  # Start time recording 
-        V_replications, df_DQL, df_DS, df_Tao = eval_DTR(V_replications, replication, df_DQL, df_DS, df_Tao, params_DQL_f, params_DS_f, config_number)
-        # V_replications, df_DQL, df_DS, df_Tao = eval_DTR(V_replications, replication, df_DQL, df_DS, df_Tao, params_DQL_u, params_DS_u, config_number)
+        # V_replications, df_DQL, df_DS, df_Tao = eval_DTR(V_replications, replication, df_DQL, df_DS, df_Tao, params_DQL_f, params_DS_f, config_number)
+        V_replications, df_DQL, df_DS, df_Tao = eval_DTR(V_replications, replication, df_DQL, df_DS, df_Tao, params_DQL_u, params_DS_u, config_number)
         end_time = time.time()  # End time recording
         print(f"Total time taken to run eval_DTR: { end_time - start_time} seconds \n\n")
                 
@@ -1226,14 +1249,14 @@ def main():
 
     # Scheme 5 case
     param_grid = {
-        'activation_function': ['leakyrelu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
+        'activation_function': ['none'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
         'learning_rate': [0.07],
-        'num_layers': [2], # 4
-        'batch_size': [500],
-        'hidden_dim_stage1': [40],  # Number of neurons in the hidden layer of stage 1
-        'hidden_dim_stage2': [10],  # Number of neurons in the hidden layer of stage 2 
-        'dropout_rate': [0],  # Dropout rate to prevent overfitting
-        'n_epoch': [70], #60, 90, 250 
+        'num_layers': [1], # 2, 4 
+        'batch_size': [100],
+        'hidden_dim_stage1': [10],  #40,  Number of neurons in the hidden layer of stage 1
+        'hidden_dim_stage2': [10],  #10,  Number of neurons in the hidden layer of stage 2 
+        'dropout_rate': [0.4],  # 0 Dropout rate to prevent overfitting
+        'n_epoch': [300], #60, 70, 90, 250 
         # 'neu':[2,4,10] 
     }
 

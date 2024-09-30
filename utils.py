@@ -317,40 +317,43 @@ class NNClass(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, num_networks, dropout_rate, activation_fn_name, num_hidden_layers):
         super(NNClass, self).__init__()
         self.networks = nn.ModuleList()
-
-        # Map the string name to the actual activation function class
-        activation_fn_name = activation_fn_name.lower()
-        if activation_fn_name == 'elu':
-            activation_fn = nn.ELU
-        elif activation_fn_name == 'relu':
-            activation_fn = nn.ReLU
-        elif activation_fn_name == 'sigmoid':
-            activation_fn = nn.Sigmoid
-        elif activation_fn_name == 'tanh':
-            activation_fn = nn.Tanh
-        elif activation_fn_name == 'leakyrelu':
-            activation_fn = nn.LeakyReLU
-        elif activation_fn_name == 'none': # Check for 'none' and use the Identity class
-            activation_fn = Identity
-        else:
-            raise ValueError(f"Unsupported activation function: {activation_fn_name}")
-
         for _ in range(num_networks):
             layers = []
-            layers.append(nn.Linear(input_dim, hidden_dim))
-            if activation_fn is not Identity:  # Only add activation if it's not Identity
-                layers.append(activation_fn())            
-            layers.append(nn.Dropout(dropout_rate))
-            
-            for _ in range(num_hidden_layers):  # Adjusting the hidden layers count
-                layers.append(nn.Linear(hidden_dim, hidden_dim))
+            if num_hidden_layers == 0:
+                # Direct linear layer from input to output without any hidden layers
+                layers.append(nn.Linear(input_dim, output_dim))
+            else:
+                # Regular case: Build hidden layers
+                layers.append(nn.Linear(input_dim, hidden_dim))
+                activation_fn_name = activation_fn_name.lower()
+                if activation_fn_name == 'elu':
+                    activation_fn = nn.ELU
+                elif activation_fn_name == 'relu':
+                    activation_fn = nn.ReLU
+                elif activation_fn_name == 'sigmoid':
+                    activation_fn = nn.Sigmoid
+                elif activation_fn_name == 'tanh':
+                    activation_fn = nn.Tanh
+                elif activation_fn_name == 'leakyrelu':
+                    activation_fn = nn.LeakyReLU
+                elif activation_fn_name == 'none': # Check for 'none' and use the Identity class
+                    activation_fn = Identity
+                else:
+                    raise ValueError(f"Unsupported activation function: {activation_fn_name}")
+                    
                 if activation_fn is not Identity:  # Only add activation if it's not Identity
-                    layers.append(activation_fn())
+                    layers.append(activation_fn())            
                 layers.append(nn.Dropout(dropout_rate))
                 
-            layers.append(nn.Linear(hidden_dim, output_dim))
-            layers.append(nn.BatchNorm1d(output_dim))
+                for _ in range(num_hidden_layers):
+                    layers.append(nn.Linear(hidden_dim, hidden_dim))
+                    if activation_fn is not Identity:  # Only add activation if it's not Identity
+                        layers.append(activation_fn())
+                    layers.append(nn.Dropout(dropout_rate))
+                
+                layers.append(nn.Linear(hidden_dim, output_dim))
             
+            # No BatchNorm for linear model as it should be purely linear
             network = nn.Sequential(*layers)
             self.networks.append(network)
 
@@ -1390,7 +1393,7 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         # m1 = torch.max(stacked_tensors, dim=0).values 
         # m1 = torch.floor(O1[:, 0].float() ) * torch.floor(O1[:, 1].float() ) * torch.exp(O1[:, 0].float() )
 
-        Y1 = A1 * O1.sum(dim=1) + params['C1'] + Z1 + m1 #* params["neu"]
+        Y1 = A1 * O1.sum(dim=1) + params['C1'] + Z1 #+ m1 #* params["neu"]
 
     elif params['setting'] == 'scheme_6':
         # m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
@@ -1449,7 +1452,7 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         
         # m1 = torch.floor(O1[:, 0].float() ) * torch.floor(O1[:, 1].float() ) * torch.exp(O1[:, 0].float() )
         # Y1 = m1 + A1 * (10 * (O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 
-        Y1 =  A1 * params["alpha"] * ( params["b"]*(O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 #+ params["neu"] * m1 
+        Y1 =  A1 * params["alpha"] * ( 2*(O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 # + params["neu"] * m1 
     else:
         # Add more conditions based on different settings or use a default one.
         Y1 = A1 * O1.sum(dim=1) + Z1  # Example default calculation.
@@ -1484,7 +1487,7 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
 
         # m2 = torch.floor(O2.float()) * torch.floor(O1[:, 1].float()) * torch.exp(O2.float())
 
-        Y2 =  O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2 + m2 #* params["neu"]
+        Y2 =  O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2 # + m2 #* params["neu"]
         # Y2 = O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2
 
 
@@ -1545,7 +1548,15 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
 
         # m2 = torch.floor(O2[:, 0].float()) * torch.floor(O1[:, 1].float()) * torch.exp(O2[:, 0].float())
         # Y2 =   A2 * (params["b"] * (O2[:, 1].float()  > (O2[:, 0].float() **2 + 5*torch.sin(5 * O2[:, 0].float() **2)).float() ).int() - 1) + params["C2"] + Z2  + params["u"]*m2 
-        Y2 =  params["neu"] * O1[torch.arange(O1.size(0), device=device), A2 - 1]**2  + O2 * params["beta"] + params["C2"] + Z2 + params["u"] * m2 
+
+        # Debugging prints to check shapes
+        # print("Shape of params['neu']:", params["neu"].shape)
+        # print("Shape of params['beta']:", params["beta"].shape)
+        # print("Shape of params['C2']:", params["C2"].shape)
+        # print("Shape of params['u']:", params["u"].shape)
+
+        Y2 =  params["u"] * O1[torch.arange(O1.size(0), device=device), A2 - 1]**2  + params["C2"] + Z2 #+ params["neu"] * m2 
+        # Y2 =  O1[torch.arange(O1.size(0), device=device), A2 - 1].unsqueeze(1)**2  + O2
 
     else:
         # Add more conditions based on different settings or use a default one.
@@ -1553,12 +1564,20 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
     return Y2
 
 
-def calculate_policy_valuefunc(O1, O2, params, A1_di, A2_di, d1_star, d2_star, Z1, Z2):
+def calculate_policy_valuefunc(method_name, O1, O2, params, A1_di, A2_di, d1_star, d2_star, Z1, Z2):
 
     Y1_di = calculate_reward_stage1(O1, A1_di, d1_star, Z1, params) #(O1, A1_di, Z1)
 
     print(f"O1: {O1.dtype}, A1_di: {A1_di.dtype}, O2: {O2.dtype}, A2_di: {A2_di.dtype}, d2_star: {d2_star.dtype}, Z2: {Z2.dtype}")
     Y2_di = calculate_reward_stage2(O1, A1_di, O2, A2_di, d2_star, Z2, params) #(O1, O2, A1_di, A2_di, Z1, Z2 )
+    print()
+    print("="*60)
+    print("Method Name: ", method_name)
+    print("Estimated torch.mean(Y1_di):", torch.mean(Y1_di))
+    print("Estimated torch.mean(Y2_di):", torch.mean(Y2_di))
+    print("Estimated torch.mean(Y1_di + Y2_di):", torch.mean(Y1_di + Y2_di))
+    print("="*60)
+    print()
 
     return torch.mean(Y1_di + Y2_di)
 
@@ -1592,11 +1611,9 @@ def evaluate_method(method_name, params, config_number, df, test_input_stage1, A
     }
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
-    V_replications_M1_pred = calculate_policy_valuefunc(test_input_stage1, test_O2, params, A1, A2,  d1_star, d2_star, Z1, Z2)
+    V_replications_M1_pred = calculate_policy_valuefunc(method_name, test_input_stage1, test_O2, params, A1, A2,  d1_star, d2_star, Z1, Z2)
 
     # Calculate policy values using the DR estimator
     # V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
-
-    # print(f"{method_name} estimator: ")
 
     return df, V_replications_M1_pred
