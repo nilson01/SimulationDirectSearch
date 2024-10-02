@@ -29,11 +29,12 @@ alpha: 10
 f_model: 'model_name'  # DQlearning, surr_opt, tao - igore here
 noiseless: True # True, False  # Boolean flag to indicate if noise should be excluded in simulations
 use_m_propen: True # True, False
+interaction_terms: False
 
 surrogate_num: 1  # Indicates the surrogate model configuration number
 option_sur: 4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
-sample_size: 15000 # 30000  # Number of samples to be used 
+sample_size: 3000 # 30000  # Number of samples to be used 
 batch_size: 300 #7000  # Batch size calculated as a proportion of sample size
 num_replications: 5 # 30, 100
 # job_id: tao 

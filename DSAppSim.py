@@ -49,8 +49,8 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         pi_value = torch.full((sample_size,), 1 / 3, device=device)
         pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
 
-        input_stage1 = O1
-        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
+        # input_stage1 = O1
+        # params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
 
         matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
 
@@ -63,24 +63,12 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         g1_opt = torch.full((sample_size,), 3, device=device)  # optimal policy for stage 1 is to always choose action 3
         g2_opt = torch.where((1 - O2 + g1_opt + O1.sum(dim=1)) > 0, torch.tensor(3, device=device), torch.tensor(1, device=device))
 
-        # # Approach 2 S1
-        # result1 = A_sim(matrix_pi1, stage=1)
-        # if  params['use_m_propen']:
-        #     A1, _ = result1['A'], result1['probs']
-        #     probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
-        # else:         
-        #     A1, probs1 = result1['A'], result1['probs']
-        # A1 += 1
-
         # Reward stage 1
         Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
-        # Y1 = 15 + A1 + O1.sum(dim=1) + O1.prod(dim=1) + Z1
 
         # Input preparation
-        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
-        input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2.unsqueeze(1)], dim=1)
-        params['input_dim_stage2'] = input_stage2.shape[1] # 5 # 7 + 1 = 8 # (H_2)
-        # print("params['input_dim_stage2']: ", params['input_dim_stage2'])
+        # input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2.unsqueeze(1)], dim=1)
+        # params['input_dim_stage2'] = input_stage2.shape[1] # 5 # 7 + 1 = 8 # (H_2)
 
         matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
         
@@ -102,7 +90,6 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params)
         # Y2 = 15 + O2 + A2 * (1 - O2 + A1 + O1.sum(dim=1)) + Z2
 
-
     elif params['setting'] == 'tao':
         print(" TAO DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
         # Simulate baseline covariates
@@ -122,9 +109,8 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # Stage 1 data simulation
             
         # Input preparation
-        # input_stage1 = O1.t()
-        input_stage1 = O1
-        params['input_dim_stage1'] = input_stage1.shape[1] # (H_1)  for DS
+        # input_stage1 = O1
+        # params['input_dim_stage1'] = input_stage1.shape[1] # (H_1)  for DS
 
         # x1, x2, x3, x4, x5 = O1[0], O1[1], O1[2], O1[3], O1[4]
         x1, x2, x3, x4, x5 = O1[:, 0], O1[:, 1], O1[:, 2], O1[:, 3], O1[:, 4]
@@ -153,9 +139,8 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params) 
 
         # Input preparation
-        # input_stage2 = torch.cat([O1.t(), A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device)], dim=1)
-        input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device)], dim=1)
-        params['input_dim_stage2'] = input_stage2.shape[1] # 5 # 7 + 1 = 8 # (H_2)
+        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device)], dim=1)
+        # params['input_dim_stage2'] = input_stage2.shape[1] # 5 # 7 + 1 = 8 # (H_2)
 
         # Stage 2 data simulation
         pi_20 = torch.ones(sample_size, device=device)
@@ -185,7 +170,6 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
 
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params)
 
-
     elif params['setting'] == 'scheme_5':
         print(" scheme_5 DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
         # Generate data using PyTorch
@@ -197,15 +181,9 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         pi_value = torch.full((sample_size,), 1 / 3, device=device)
         pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
 
-        # Input preparation for Stage 1 
-        # Generate interaction terms
-        interaction_terms = [O1[:, i:i+1] * O1[:, j:j+1] for i, j in combinations(range(O1.shape[1]), 2)]
-
-        # Concatenate the original features and interaction terms
-        input_stage1 = torch.cat([O1] + interaction_terms, dim=1)
-         
+        # Input preparation for Stage 1          
         # input_stage1 = O1
-        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
+        # params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
         matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
 
         # Approach 1 S1
@@ -217,41 +195,13 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         sums = O1.sum(dim=1)
         g1_opt = 3.0 * (sums > 0).float() + 1.0 * (sums < 0).float()
         g2_opt = torch.argmax(O1**2, dim=1) + 1
-
-        # # Approach 2 S1
-        # result1 = A_sim(matrix_pi1, stage=1)
-        # if  params['use_m_propen']:
-        #     A1, _ = result1['A'], result1['probs']
-        #     probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
-        # else:         
-        #     A1, probs1 = result1['A'], result1['probs']
-        # A1 += 1
-
-        # Reward stage 1
-        # # Constants C1, C2, beta, and cnst
-        # # C1, C2, beta, cnst = 3.0, 3.0, 1, 1  # Example constants
-
-        # Compute Y1 using g(O1) and A1
-        # def g(O1):
-        #     return O1.sum(dim=1)  # Example function g
-
-        # Y1 = A1 * g(O1) + C1 + Z1
-        # Y1 = A1 * O1.sum(dim=1) + params['C1'] + Z1
         
         Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
 
         # Input preparation for Stage 2
+        # input_stage2 = torch.cat([input_stage1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+        # params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
 
-        # # Generate interaction terms
-        # interaction_terms_O2 = [O2[:, i:i+1] * O2[:, j:j+1] for i, j in combinations(range(O2.shape[1]), 2)]
-
-        # # Concatenate the original features and interaction terms
-        # O2_new = torch.cat([O2] + interaction_terms_O2, dim=1)
-
-        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
-        input_stage2 = torch.cat([input_stage1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
-
-        params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
         matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
 
         # Approach 1 S2
@@ -277,7 +227,6 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         print(f"O1: {O1.dtype}, A1: {A1.dtype}, O2: {O2.dtype}, A2: {A2.dtype}, g2_opt: {g2_opt.dtype}, Z2: {Z2.dtype}")
 
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params)
-
 
     elif params['setting'] == 'scheme_6':
 
@@ -311,8 +260,9 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         g2_opt = dt_star(O2)   
 
         # Input preparation for Stage 1
-        input_stage1 = O1
-        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
+        # input_stage1 = O1
+        # params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
+
         matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
 
         # Approach 1 S1
@@ -320,28 +270,12 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         probs1 = {name: matrix_pi1[:, idx] for idx, name in enumerate(col_names_1)}
         A1 = torch.randint(1, 4, (sample_size,), device=device)
 
-        # # Approach 2 S1
-        # result1 = A_sim(matrix_pi1, stage=1)
-        # if  params['use_m_propen']:
-        #     A1, _ = result1['A'], result1['probs']
-        #     probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
-        # else:         
-        #     A1, probs1 = result1['A'], result1['probs']
-        # A1 += 1
-
-        # Reward stage 1
-        # Compute Y1 and Y2 
-        # Y1 = A1 * (10 * in_C(O1) - 1) + C1 + Z1   
-
-        # Y1 = A1 * (10 * (O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ) - 1) + params["C1"] + Z1           
-
         Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
 
         # Input preparation for Stage 2         
-        input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)
+        # input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)
+        # params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
 
-        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
-        params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
         matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
 
         # Approach 1 S2
@@ -372,7 +306,6 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         # print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
         # print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
   
-
     elif params['setting'] == 'scheme_7':
 
         print(" scheme_i DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
@@ -386,8 +319,8 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         pi_10 = pi_11 = pi_12 = pi_20 = pi_21 = pi_22 = pi_value
 
         # Input preparation for Stage 1
-        input_stage1 = O1
-        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
+        # input_stage1 = O1
+        # params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
         matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
 
         # Approach 1 S1
@@ -412,34 +345,12 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         g1_opt = dt_star(O1)
         g2_opt = dt_star(O2)
 
-        # # Approach 2 S1
-        # result1 = A_sim(matrix_pi1, stage=1)
-        # if  params['use_m_propen']:
-        #     A1, _ = result1['A'], result1['probs']
-        #     probs1 = M_propen(A1, input_stage1, stage=1)  # multinomial logistic regression with H1
-        # else:         
-        #     A1, probs1 = result1['A'], result1['probs']
-        # A1 += 1
-
-        # Reward stage 1
-        # Constants C1, C2 and beta
-        C1, C2 = 5.0, 5.0  # Example constants
-
-        # Compute Y1 and Y2 
-        # Y1 = A1 * (2 * in_C(O1).int() - 1) + C1 + Z1  
-
-        # X = O1[:, 0].float() 
-        # Y = O1[:, 1].float()  
-        # Z = O1[:, 2].float()  
-        # Y1 = A1 * (2 * (Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float() ).int() - 1) + C1 + Z1  
-
         Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
 
         # Input preparation for Stage 2         
-        input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)
+        # input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)
+        # params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
 
-        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
-        params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
         matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
 
         # Approach 1 S2
@@ -448,30 +359,8 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         A2 = torch.randint(1, 4, (sample_size,), device=device)
 
         # # Approach 2 S2
-        # result2 = A_sim(matrix_pi2, stage=2)
-        # if  params['use_m_propen']:
-        #     A2, _ = result2['A'], result2['probs']
-        #     probs2 = M_propen(A2, input_stage2, stage=2)  # multinomial logistic regression with H2
-        # else:         
-        #     A2, probs2 = result2['A'], result2['probs']
-        # A2 += 1
-
-        # Reward stage 2
-        # Y2 = A2 * (2 * in_C(O2) - 1) + C2 + Z2     
-
-
-        # X = O2[:, 0].float() 
-        # Y = O2[:, 1].float()  
-        # Z = O2[:, 2].float()  
-        # Y2 = A2 * (2 * (Z > -1.0 + (X**2).float() + torch.cos(8*X**2+Y).float() + (Y**2).float() + 2*torch.sin(5*Y**2).float() ).int() - 1) + C2 + Z2 
 
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params) 
-    
-        # Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
-        # Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
-        # print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
-        # print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
-        # print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
 
     elif params['setting'] == 'scheme_8':
 
@@ -504,9 +393,15 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         g1_opt = dt_star(O1)
         g2_opt = torch.argmax(O1**2, dim=1) + 1
 
-        # Input preparation for Stage 1
-        input_stage1 = O1
-        params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
+        # # Input preparation for Stage 1
+        # input_stage1 = O1
+        # if params['interaction_terms'] and O1.shape[1] > 1:
+        #     interaction_terms = [O1[:, i:i+1] * O1[:, j:j+1] for i, j in combinations(range(O1.shape[1]), 2)]
+        #     # Concatenate the original features and interaction terms
+        #     input_stage1 = torch.cat([O1] + interaction_terms, dim=1)
+            
+        
+        # params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)  
         matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
 
         # Approach 1 S1
@@ -516,11 +411,19 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
 
         Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
 
-        # Input preparation for Stage 2         
-        input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)
+        # # Input preparation for Stage 2  
+        # input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)       
+        # if O2.ndimension() == 1: # O2 is 1D, treated as a single column
+        #     input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2.unsqueeze(1).to(device)], dim=1)       
+        # # Input preparation for Stage 2
+        # if params['interaction_terms']:
+        #     interaction_terms = [input_stage2[:, i:i+1] * input_stage2[:, j:j+1] for i, j in combinations(range(input_stage2.shape[1]), 2)]
+        #     # Concatenate the original features and interaction terms
+        #     input_stage2 = torch.cat([input_stage2] + interaction_terms, dim=1)
+            
+        # # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+        # params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
 
-        # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
-        params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
         matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
 
         # Approach 1 S2
@@ -529,8 +432,7 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         A2 = torch.randint(1, 4, (sample_size,), device=device)
 
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params) 
-
-    
+   
     elif params['setting'] == 'scheme_i':
 
         print(" scheme_i DGP setting ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
@@ -590,6 +492,32 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         Y2 = sum(f_i_scheme1(O1, A1, i) * (A2 == i).float() for i in range(1, 4)) + O2 * beta + C2 + Z2
 
 
+    # Input preparation for Stage 1
+    input_stage1 = O1
+    if params['interaction_terms'] and O1.shape[1] > 1:
+        interaction_terms = [O1[:, i:i+1] * O1[:, j:j+1] for i, j in combinations(range(O1.shape[1]), 2)]
+        # Concatenate the original features and interaction terms
+        input_stage1 = torch.cat([O1] + interaction_terms, dim=1)
+        
+    params['input_dim_stage1'] = input_stage1.shape[1] #  (H_1)
+
+    # Input preparation for Stage 2  
+      
+    if O2.ndimension() == 1 and O2.numel>0: # O2 is 1D, treated as a single column
+        input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2.unsqueeze(1).to(device)], dim=1)      
+    else:
+        input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)     
+
+    # Input preparation for Stage 2
+    if params['interaction_terms']:
+        interaction_terms = [input_stage2[:, i:i+1] * input_stage2[:, j:j+1] for i, j in combinations(range(input_stage2.shape[1]), 2)]
+        # Concatenate the original features and interaction terms
+        input_stage2 = torch.cat([input_stage2] + interaction_terms, dim=1)
+        
+    # input_stage2 = torch.cat([O1, A1.unsqueeze(1).to(device), Y1.unsqueeze(1).to(device), O2.unsqueeze(1).to(device)], dim=1)
+    params['input_dim_stage2'] = input_stage2.shape[1] # (H_2)
+
+    
     if run != 'test':
       # transform Y for direct search
       Y1, Y2 = transform_Y(Y1, Y2)

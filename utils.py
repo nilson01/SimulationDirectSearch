@@ -149,7 +149,7 @@ def load_and_process_data(params, folder):
     unique_values_DS = extract_unique_treatment_values(global_df_DS, columns_to_process, name = "DS")
     
     train_size = int(params['training_validation_prop'] * params['sample_size'])
-
+ 
     # Process and plot results from all simulations
     for i, method_losses_dicts in enumerate(all_losses_dicts):
         run_name = f"run_trainVval_{i}"
@@ -550,7 +550,6 @@ class NNClass(nn.Module):
 
 
 # 2. plotting and summary utils
-
 
 def plot_v_values(v_dict, num_replications, train_size):
 
