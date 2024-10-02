@@ -153,13 +153,15 @@ def load_and_process_data(params, folder):
     # Process and plot results from all simulations
     for i, method_losses_dicts in enumerate(all_losses_dicts):
         run_name = f"run_trainVval_{i}"
-        selected_indices = [i for i in range(params['num_replications'])]  
+        selected_indices = [i for i in range(params['num_replications'])] 
+         
+        # Check if method_losses_dicts['DQL'] is not empty before plotting
+        if method_losses_dicts.get('DQL'):
+            plot_simulation_Qlearning_losses_in_grid(selected_indices, method_losses_dicts['DQL'], train_size, run_name, folder)
 
-        # Pass the appropriate sub-dictionary for DQL
-        plot_simulation_Qlearning_losses_in_grid(selected_indices, method_losses_dicts['DQL'], train_size, run_name, folder)
-
-        # Pass the appropriate sub-dictionary for DS
-        plot_simulation_surLoss_losses_in_grid(selected_indices, method_losses_dicts['DS'], train_size, run_name, folder)
+        # Check if method_losses_dicts['DS'] is not empty before plotting
+        if method_losses_dicts.get('DS'):
+            plot_simulation_surLoss_losses_in_grid(selected_indices, method_losses_dicts['DS'], train_size, run_name, folder)
 
     # Print results for each configuration
     print("\n\n")

@@ -1,12 +1,11 @@
 # Network parameters configuration
 
 # Models to run True False
-run_surr_opt: False
+run_surr_opt: True
 run_DQlearning: True
-run_adaptive_contrast_tao: False 
+run_adaptive_contrast_tao: True 
 setting: 'tao' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8' 
 num_replications: 3 # 30, 100
-
 
 # scheme_5 constants 
 C1: 3.0 
@@ -27,21 +26,20 @@ u: 10
 alpha: 10
 
 
-
 f_model: 'model_name'  # DQlearning, surr_opt, tao - igore here
 noiseless: True # True, False  # Boolean flag to indicate if noise should be excluded in simulations
 use_m_propen: True # True, False
 interaction_terms: False
 
-surrogate_num: 1 #1  # Indicates the surrogate model configuration number
+surrogate_num: 2 #1  # Indicates the surrogate model configuration number
 option_sur: 1 #4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
-sample_size: 8000 # 30000  # Number of samples to be used 
+sample_size: 3000 # 30000  # Number of samples to be used 
 batch_size: 300 #7000  # Batch size calculated as a proportion of sample size
 # job_id: tao 
 
 training_validation_prop: 0.7  # Proportion of data for training vs validation
-n_epoch: 250 # 150  # Number of training epochs
+n_epoch: 60 # 150  # Number of training epochs
 num_networks: 2  # Number of parallel networks or models
 activation_function: 'elu' # elu, relu, sigmoid, tanh, leakyrelu, none
 
