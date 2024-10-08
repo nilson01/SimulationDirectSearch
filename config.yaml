@@ -3,7 +3,7 @@
 # Models to run True False
 run_surr_opt: True
 run_DQlearning: True
-run_adaptive_contrast_tao: True 
+run_adaptive_contrast_tao: False 
 setting: 'tao' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8' 
 num_replications: 3 # 30, 100
 
@@ -27,12 +27,12 @@ alpha: 10
 
 
 f_model: 'model_name'  # DQlearning, surr_opt, tao - igore here
-noiseless: True # True, False  # Boolean flag to indicate if noise should be excluded in simulations
+noiseless: False # True, False  # Boolean flag to indicate if noise should be excluded in simulations
 use_m_propen: True # True, False
 interaction_terms: False
 
-surrogate_num: 2 #1  # Indicates the surrogate model configuration number
-option_sur: 1 #4  # Specifies the operational mode or variant of the surrogate model
+surrogate_num: 1 #1  # Indicates the surrogate model configuration number
+option_sur: 2 #4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
 sample_size: 3000 # 30000  # Number of samples to be used 
 batch_size: 300 #7000  # Batch size calculated as a proportion of sample size
