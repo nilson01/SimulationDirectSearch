@@ -175,7 +175,7 @@ def load_and_process_data(params, folder):
     df = save_results_to_dataframe(results, folder)
 
 
-    
+   
         
 
 # 1. DGP utils
@@ -1437,9 +1437,9 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         Y1 =  m1 + A1 * (2 * in_C1.int() - 1) + params['C1'] + Z1  
 
     elif params['setting'] == 'scheme_8':
-        # m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
-        m1 = O1[:, 0].float()**2 * torch.sin(O1[:, 0].float())  
-        b = 3
+        m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
+        # m1 = O1[:, 0].float()**2 * torch.sin(O1[:, 0].float())  
+        # b = 3
         # m1 = torch.tan(O1[:, 0].float()**2) + torch.tan(O1[:, 1].float()) 
         # m1 = torch.atan(O1[:, 0].float()) + torch.atan(O1[:, 1].float())
         # m1 = torch.tanh(O1[:, 0].float()**3) + torch.tanh(O1[:, 1].float())
@@ -1454,7 +1454,17 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         
         # m1 = torch.floor(O1[:, 0].float() ) * torch.floor(O1[:, 1].float() ) * torch.exp(O1[:, 0].float() )
         # Y1 = m1 + A1 * (10 * (O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 
-        Y1 =  A1 * params["alpha"] * ( 2*(O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 # + params["neu"] * m1 
+
+
+
+        # highly discontinuous functuon 
+        # delta_A1 = torch.tensor([2.0, 3.0, 1.5], device=device) # Tensor of shape (3,)
+        # eta_A1 = torch.tensor([1.0, 2.5, 2.0], device=device)    # Tensor of shape (3,)
+        # sin_component = torch.sin(torch.matmul(O1, params['gamma1']))
+        # cos_component = torch.cos(torch.matmul(O1, params['gamma1_prime']))
+        # m1 = (delta_A1[A1.long() - 1] * sin_component)**2 + (eta_A1[A1.long() - 1] * cos_component) 
+
+        Y1 =  A1 * params["alpha"] * ( 2*(O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 + params["neu"] * m1 
     else:
         # Add more conditions based on different settings or use a default one.
         Y1 = A1 * O1.sum(dim=1) + Z1  # Example default calculation.
@@ -1534,9 +1544,9 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
 
 
     elif params['setting'] == 'scheme_8':         
-        # m2 =  5*torch.sin(5 * O2[:, 0].float()**2)  
+        m2 =  5*torch.sin(5 * O2[:, 0].float()**2)  
         # m2 = O2[:, 0].float()**2 * torch.sin(O2[:, 0].float()) 
-        m2 = torch.tan(O2[:, 0].float()) + torch.tan(O2[:, 1].float()**2) 
+        # m2 = torch.tan(O2[:, 0].float()) + torch.tan(O2[:, 1].float()**2) 
         # m2 = torch.atan(O2[:, 0].float()) + torch.atan(O2[:, 1].float())
         # m2 = O1[:, 0].float()**2 + torch.tanh(O2[:, 0].float()) + torch.tanh(O2[:, 1].float())
         # m2 = torch.cosh(O1[:, 0].float()) + torch.cosh(O2[:, 1].float())
@@ -1557,7 +1567,36 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
         # print("Shape of params['C2']:", params["C2"].shape)
         # print("Shape of params['u']:", params["u"].shape)
 
-        Y2 =  params["u"] * O1[torch.arange(O1.size(0), device=device), A2 - 1]**2  + params["C2"] + Z2 #+ params["neu"] * m2 
+
+        # highly discontinuous functuon 
+        # delta_A2 =  torch.tensor([2.5, 1.5, 3.0], device=device) # Tensor of shape (3,)
+        # eta_A2 = torch.tensor([2.0, 1.0, 2.5], device=device)    # Tensor of shape (3,)
+        # cos_component = torch.cos(torch.matmul(O1, params['gamma2']  ))
+        # sin_component = torch.sin(torch.matmul(O1, params['gamma2_prime']))
+        # m2 = (delta_A2[A2.long() - 1]  * cos_component)**2 + \
+        #     (eta_A2[A2.long() - 1] * sin_component) 
+
+
+        # Define x
+        x = O1[torch.arange(O1.size(0), device=device), A2 - 1]
+
+        # Function choices based on the graphs using params['f']
+        if params['f'] == "square":
+            fX1A2 = x ** 2
+        elif params['f'] == "arctan":
+            fX1A2 = torch.atan(x)
+        elif params['f'] == "sin":
+            fX1A2 = torch.sin(x)
+        elif params['f'] == "exp_half":
+            fX1A2 = torch.exp(x / 2)  # exp(x/2)
+        elif params['f'] == "exp":
+            fX1A2 = torch.exp(x)       # exp(x)
+        elif params['f'] == "tan":
+            fX1A2 = torch.tan(x)
+        else:
+            raise ValueError("Invalid function type")
+                
+        Y2 =  params["u"] * fX1A2 + params["C2"] + Z2 + params["neu"] * m2 
         # Y2 =  O1[torch.arange(O1.size(0), device=device), A2 - 1].unsqueeze(1)**2  + O2
 
     else:

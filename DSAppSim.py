@@ -367,8 +367,11 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
             # Ot = (Xt1, Xt2)
             return 3 * in_C(Ot).int() + 1 * (1 - in_C(Ot).int())  # in_C is 1 if true, so 3*1+1*0=3; otherwise 1     
            
-        g1_opt = dt_star(O1)
-        g2_opt = torch.argmax(O1**2, dim=1) + 1
+        g1_opt_orig = dt_star(O1)
+        g2_opt_orig = torch.argmax(O1**2, dim=1) + 1
+
+
+
 
         # # Input preparation for Stage 1
         # input_stage1 = O1
@@ -386,7 +389,37 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         probs1 = {name: matrix_pi1[:, idx] for idx, name in enumerate(col_names_1)}
         A1 = torch.randint(1, 4, (sample_size,), device=device)
 
+
+
+        zeros_tensor = torch.ones_like(A1)
+        ones_tensor = torch.full_like(A1, 2)
+        twos_tensor = torch.full_like(A1, 3)
+
+        # Now call the function with these tensors
+        y1_ones = calculate_reward_stage1(O1, zeros_tensor, g1_opt_orig, Z1, params)         
+        y1_twos = calculate_reward_stage1(O1, ones_tensor, g1_opt_orig, Z1, params)         
+        y1_tres = calculate_reward_stage1(O1, twos_tensor, g1_opt_orig, Z1, params)
+
+        stacked_tensors = torch.stack([y1_ones, y1_twos, y1_tres], dim=0)
+        g1_opt = torch.argmax(stacked_tensors, dim=0) + 1
+
+
         Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)
+
+
+
+        # Element-wise comparison and check if all elements are the same
+        comparison = torch.eq(g1_opt_orig, g1_opt)
+        all_same = torch.all(comparison)
+
+        # Debug print
+        print("**********   Comparison Result:", "Exactly the same." if all_same else "Differences found.")
+        if not all_same:
+            mismatched_indices = torch.nonzero(~comparison, as_tuple=True)
+            print("Mismatched Indices:", mismatched_indices)
+            print("g1_opt_orig values:", g1_opt_orig[mismatched_indices])
+            print("g1_opt values:", g1_opt[mismatched_indices])
+
 
         # # Input preparation for Stage 2  
         # input_stage2 = torch.cat([O1, A1.unsqueeze(1), Y1.unsqueeze(1), O2], dim=1)       
@@ -408,7 +441,27 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         probs2 = {name: matrix_pi2[:, idx] for idx, name in enumerate(col_names_2)}
         A2 = torch.randint(1, 4, (sample_size,), device=device)
 
+
+        # Create tensors of all zeros, ones, and twos for A2
+        zeros_tensor_A2 = torch.ones_like(A2)
+        ones_tensor_A2 = torch.full_like(A2, 2)
+        twos_tensor_A2 = torch.full_like(A2, 3)
+
+        # Calculate rewards for each tensor
+        y2_ones = calculate_reward_stage2(O1, g1_opt, O2, zeros_tensor_A2, g2_opt_orig, Z2, params)
+        y2_twos = calculate_reward_stage2(O1, g1_opt, O2, ones_tensor_A2, g2_opt_orig, Z2, params)
+        y2_tres = calculate_reward_stage2(O1, g1_opt, O2, twos_tensor_A2, g2_opt_orig, Z2, params)
+
+        # Stack the tensors and find the argmax along the new dimension, then add 1
+        g2_opt = torch.argmax(torch.stack([ y2_ones, y2_twos, y2_tres], dim=0), dim=0) + 1
+
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params) 
+
+
+
+
+
+
    
     elif params['setting'] == 'scheme_i':
 
@@ -759,6 +812,11 @@ def adaptive_contrast_tao(all_data, contrast, config_number, job_id, setting):
 def simulations(V_replications, params, config_number):
 
     columns = ['Behavioral_A1', 'Behavioral_A2', 'Predicted_A1', 'Predicted_A2']
+
+    params['gamma1'] = torch.randn(params['input_dim'], device=device)
+    params['gamma2'] = torch.randn(params['input_dim'], device=device)
+    params['gamma1_prime'] = torch.randn(params['input_dim'], device=device)
+    params['gamma2_prime'] = torch.randn(params['input_dim'], device=device)
 
     # Initialize separate DataFrames for DQL and DS
     df_DQL = pd.DataFrame(columns=columns)
@@ -1132,7 +1190,10 @@ def main():
     #     'dropout_rate': [0.4],  # 0 Dropout rate to prevent overfitting
     #     'n_epoch': [300], #60, 70, 90, 250 
     # }
-    param_grid = {}
+
+
+    # Empty Grid
+    # param_grid = {}
 
     # # Scheme 5 case
     # param_grid = {
@@ -1145,6 +1206,17 @@ def main():
     #     'dropout_rate': [0],  # Dropout rate to prevent overfitting
     #     'n_epoch': [70] #60, 90, 250
     # }
+
+    param_grid = {
+        'activation_function': [ 'elu', 'none'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
+        'learning_rate': [0.07], # 0.07
+        'num_layers': [4], # 2, 4, => 0 means truly linear model, here num_layers means --> number of hidden layers
+        'batch_size': [300], #300
+        'hidden_dim_stage1': [5, 40],  #5,10  Number of neurons in the hidden layer of stage 1
+        'hidden_dim_stage2': [5, 40],  #5,10  Number of neurons in the hidden layer of stage 2 
+        'dropout_rate': [0.1, 0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
+        'n_epoch': [60, 150], #60, 150
+    }
 
     # Perform operations whose output should go to the file
     run_grid_search(config, param_grid)
