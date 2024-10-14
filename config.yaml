@@ -6,32 +6,36 @@ run_DQlearning: True
 run_adaptive_contrast_tao: True 
 setting: 'scheme_8' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8' 
 num_replications: 3 # 30, 100
+sample_size: 2000 # 30000  # Number of samples to be used 
 
-# scheme_5 constants 
-C1: 3.0 
-C2: 3.0 
-beta: 1 
-cnst: 1 # 1, 5, 10, 20, 30, 100 
- 
+# # scheme_5 constants 
+# C1: 3.0 
+# C2: 3.0 
+# beta: 1 
+# cnst: 1 # 1, 5, 10, 20, 30, 100 
+
+
 # # scheme_6 constants 
 # C1: 5.0 
 # C2: 5.0 
 # beta: 1 
 # cnst: 10 #10
-b: 2 # keep this 2 for scheme 8
+# b: 2 
 
 # scheme 8
-neu: 10
-u: 10
-alpha: 10
-f: 'square'
+C1: 3.0 
+C2: 3.0 
+neu: 5 #10
+u: 5 #10
+alpha: 5 #10
+f: "square" #'square', arctan, sin, exp_half, exp, tan
+
+# # new scheme
+# input_dim: 3 #10, 50, 100 # only for new scheme
 
 
-input_dim: 3 #10, 50, 100 # only for new scheme
 
-
-
-f_model: 'model_name'  # DQlearning, surr_opt, tao - igore here
+# f_model: 'model_name'  # DQlearning, surr_opt, tao - igore here
 noiseless: False # True, False  # Boolean flag to indicate if noise should be excluded in simulations
 use_m_propen: True # True, False
 interaction_terms: False
@@ -39,7 +43,6 @@ interaction_terms: False
 surrogate_num: 1 #1  # Indicates the surrogate model configuration number
 option_sur: 2 #4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
-sample_size: 2000 # 30000  # Number of samples to be used 
 batch_size: 300 #7000  # Batch size calculated as a proportion of sample size
 # job_id: tao 
 

@@ -679,7 +679,8 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
 
     # Call the R function with the parameters
     results = ro.globalenv['test_ACWL'](S1, S2, d1_star.cpu().numpy(), d2_star.cpu().numpy(), params_ds['noiseless'], 
-                                        config_number, params_ds['job_id'], setting=params_ds['setting'])
+                                        config_number, params_ds['job_id'], setting=params_ds['setting'],
+                                        func = params_ds["f"], neu = params_ds["neu"], alpha = params_ds["alpha"], u = params_ds["u"])
 
     # Extract the decisions and convert to PyTorch tensors on the specified device
     A1_Tao = torch.tensor(np.array(results.rx2('g1.a1')), dtype=torch.int64).to(params_ds['device'])
@@ -813,10 +814,10 @@ def simulations(V_replications, params, config_number):
 
     columns = ['Behavioral_A1', 'Behavioral_A2', 'Predicted_A1', 'Predicted_A2']
 
-    params['gamma1'] = torch.randn(params['input_dim'], device=device)
-    params['gamma2'] = torch.randn(params['input_dim'], device=device)
-    params['gamma1_prime'] = torch.randn(params['input_dim'], device=device)
-    params['gamma2_prime'] = torch.randn(params['input_dim'], device=device)
+    # params['gamma1'] = torch.randn(params['input_dim'], device=device)
+    # params['gamma2'] = torch.randn(params['input_dim'], device=device)
+    # params['gamma1_prime'] = torch.randn(params['input_dim'], device=device)
+    # params['gamma2_prime'] = torch.randn(params['input_dim'], device=device)
 
     # Initialize separate DataFrames for DQL and DS
     df_DQL = pd.DataFrame(columns=columns)
@@ -1158,64 +1159,19 @@ def main():
     print("Training size: %d", train_size)   
 
     # # Define parameter grid for grid search
-    # param_grid = {
-    #     'activation_function': [ 'none'], # elu, relu, sigmoid, tanh, leakyrelu, none
-    #     'batch_size': [10, 25, 200], # 50
-    #     'optimizer_lr': [0.07], # 0.1, 0.01, 0.07, 0.001
-    #     'num_layers': [2, 4], # 1,2,3,4,5,6,7
-    #     # 'n_epoch':[60, 150],
-    #     # "surrogate_num": 1  
-    # }
-    
-    # Tao case
-    # param_grid = {
-    #     'activation_function': ['none'], # elu, relu, sigmoid, tanh, leakyrelu, none
-    #     'learning_rate': [0.07],
-    #     'num_layers': [2, 4],
-    #     'batch_size': [500],
-    #     'hidden_dim_stage1': [40],  # Number of neurons in the hidden layer of stage 1
-    #     'hidden_dim_stage2': [10],  # Number of neurons in the hidden layer of stage 2 
-    #     'dropout_rate': [0],  # Dropout rate to prevent overfitting
-    #     'n_epoch': [250]
-    # }
-
-    # Scheme 5 case
-    # param_grid = {
-    #     'activation_function': ['none'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
-    #     'learning_rate': [0.07],
-    #     'num_layers': [1], # 2, 4 
-    #     'batch_size': [100],
-    #     'hidden_dim_stage1': [10],  #40,  Number of neurons in the hidden layer of stage 1
-    #     'hidden_dim_stage2': [10],  #10,  Number of neurons in the hidden layer of stage 2 
-    #     'dropout_rate': [0.4],  # 0 Dropout rate to prevent overfitting
-    #     'n_epoch': [300], #60, 70, 90, 250 
-    # }
-
 
     # Empty Grid
     # param_grid = {}
 
-    # # Scheme 5 case
-    # param_grid = {
-    #     'activation_function': ['relu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
-    #     'learning_rate': [0.07],
-    #     'num_layers': [3], # 4
-    #     'batch_size': [1000],
-    #     'hidden_dim_stage1': [10],  # Number of neurons in the hidden layer of stage 1
-    #     'hidden_dim_stage2': [10],  # Number of neurons in the hidden layer of stage 2 
-    #     'dropout_rate': [0],  # Dropout rate to prevent overfitting
-    #     'n_epoch': [70] #60, 90, 250
-    # }
-
     param_grid = {
-        'activation_function': [ 'elu', 'none'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
+        'activation_function': [ 'elu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
         'learning_rate': [0.07], # 0.07
         'num_layers': [4], # 2, 4, => 0 means truly linear model, here num_layers means --> number of hidden layers
         'batch_size': [300], #300
-        'hidden_dim_stage1': [5, 40],  #5,10  Number of neurons in the hidden layer of stage 1
-        'hidden_dim_stage2': [5, 40],  #5,10  Number of neurons in the hidden layer of stage 2 
-        'dropout_rate': [0.1, 0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
-        'n_epoch': [60, 150], #60, 150
+        'hidden_dim_stage1': [40],  #5,10  Number of neurons in the hidden layer of stage 1
+        'hidden_dim_stage2': [40],  #5,10  Number of neurons in the hidden layer of stage 2 
+        'dropout_rate': [0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
+        'n_epoch': [60], #60, 150
     }
 
     # Perform operations whose output should go to the file

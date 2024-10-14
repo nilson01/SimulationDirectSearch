@@ -265,7 +265,7 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
 
 
 
-test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, setting= "tao") {
+test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, setting= "tao", func = "square", neu = 10, alpha = 10, u = 10) {
 
   cat("Test model: tao, Setting: ", setting, "\n")
   ni <- nrow(S1) 
@@ -384,9 +384,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
 
       # m1 = floor(S1[k, 1]) * floor(S1[k, 2]) * exp(S1[k, 1])
       in_C1 = (X0.k[2] > ( X0.k[1]^2 + 5*sin(5 * X0.k[1]^2))) 
-      cnst = 10 #10 
-      neu = 10
-      alpha = 10 
+      # cnst = 10 #10 
       # b = 2 
  
       R1.a1[k] <- alpha * g1.a1[k] * ( 2 * as.numeric( in_C1 ) - 1) + C1 + z1 + neu * m1 
@@ -473,8 +471,8 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
     else if  (setting == "scheme_8") {       
       # in_C2 =  (S2[k, ][2] > (S2[k, ][1]^2 + 5*sin(5 * S2[k, ][1]^2))) 
       # cnst = 10 #10 
-      neu = 10
-      u = 10
+      # neu = 10
+      # u = 10
 
       m2 = 5* (sin(5 * S2[k, ][1]^2))  
       # m2 = S2[, 1]^2 * sin(S2[, 1]) 
@@ -491,8 +489,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
 
 
       # Define x
-      func = "square"
-      
+
       x <- X0.k[g2.a1[k]]
 
       # Function choices based on the value of func
