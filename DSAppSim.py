@@ -1034,7 +1034,7 @@ def run_grid_search(config, param_grid):
             print("\n\n")
                 
     folder = f"data/{config['job_id']}"
-    save_simulation_data(all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder)
+    save_simulation_data(performances_DQL, performances_DS, performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder)
     load_and_process_data(config, folder)
 
         
@@ -1163,16 +1163,23 @@ def main():
     # Empty Grid
     # param_grid = {}
 
-    param_grid = {
-        'activation_function': [ 'elu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
-        'learning_rate': [0.07], # 0.07
-        'num_layers': [4], # 2, 4, => 0 means truly linear model, here num_layers means --> number of hidden layers
-        'batch_size': [300], #300
-        'hidden_dim_stage1': [40],  #5,10  Number of neurons in the hidden layer of stage 1
-        'hidden_dim_stage2': [40],  #5,10  Number of neurons in the hidden layer of stage 2 
-        'dropout_rate': [0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
-        'n_epoch': [60], #60, 150
-    }
+    param_grid = {  
+        'n_epoch': [60], #250
+        'hidden_dim_stage1': [20], #20
+        'hidden_dim_stage2': [20], #20
+        'dropout_rate': [0.0], #0.3, 0.43
+        }
+
+    # param_grid = {
+    #     'activation_function': [ 'elu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
+    #     'learning_rate': [0.07], # 0.07
+    #     'num_layers': [4], # 2, 4, => 0 means truly linear model, here num_layers means --> number of hidden layers
+    #     'batch_size': [300], #300
+    #     'hidden_dim_stage1': [40],  #5,10  Number of neurons in the hidden layer of stage 1
+    #     'hidden_dim_stage2': [40],  #5,10  Number of neurons in the hidden layer of stage 2 
+    #     'dropout_rate': [0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
+    #     'n_epoch': [60], #60, 150
+    # }
 
     # Perform operations whose output should go to the file
     run_grid_search(config, param_grid)

@@ -48,11 +48,19 @@ def extract_unique_treatment_values(df, columns_to_process, name):
     return unique_values
 
 
-def save_simulation_data(all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder):
+def save_simulation_data(performances_DQL, performances_DS, performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder):
     # Check if the folder exists, if not, create it
     if not os.path.exists(folder):
         os.makedirs(folder)
     
+    print()
+    print("DQL Value function across simulations: ", [i.item() for i in performances_DQL['Method\'s Value fn.']])
+    print()
+    print("Tao Value function across simulations: ", [i.item() for i in performances_Tao['Method\'s Value fn.']])
+    print()
+    print("DS Value function across simulations: ", [i.item() for i in performances_DS['Method\'s Value fn.']])
+    print()
+
     # Define paths for saving files
     df_path_DQL = os.path.join(folder, 'simulation_data_DQL.pkl')
     df_path_DS = os.path.join(folder, 'simulation_data_DS.pkl')
@@ -354,6 +362,7 @@ class NNClass(nn.Module):
                     layers.append(nn.Dropout(dropout_rate))
                 
                 layers.append(nn.Linear(hidden_dim, output_dim))
+                layers.append(nn.BatchNorm1d(output_dim))
             
             # No BatchNorm for linear model as it should be purely linear
             network = nn.Sequential(*layers)
