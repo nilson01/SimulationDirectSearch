@@ -6,7 +6,7 @@ run_DQlearning: True
 run_adaptive_contrast_tao: True 
 setting: 'tao' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8' 
 num_replications: 3 # 30, 100
-sample_size: 15000 # 30000  # Number of samples to be used 
+sample_size: 1000 # 30000  # Number of samples to be used 
 
 n_epoch: 60 # 150  # Number of training epochs
 num_layers: 0
@@ -16,6 +16,9 @@ dropout_rate: 0.4  # Dropout rate to prevent overfitting
 activation_function: 'elu' # elu, relu, sigmoid, tanh, leakyrelu, none
 hidden_dim_stage1: 40  # Number of neurons in the hidden layer of stage 1
 hidden_dim_stage2: 40  # Number of neurons in the hidden layer of stage 2 
+m1 : 'sin'
+m2: 'sin'
+
 
 # # scheme_5 constants 
 # C1: 3.0 

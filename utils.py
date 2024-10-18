@@ -1446,7 +1446,7 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         Y1 =  m1 + A1 * (2 * in_C1.int() - 1) + params['C1'] + Z1  
 
     elif params['setting'] == 'scheme_8':
-        m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
+        # m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
         # m1 = O1[:, 0].float()**2 * torch.sin(O1[:, 0].float())  
         # b = 3
         # m1 = torch.tan(O1[:, 0].float()**2) + torch.tan(O1[:, 1].float()) 
@@ -1472,6 +1472,17 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         # sin_component = torch.sin(torch.matmul(O1, params['gamma1']))
         # cos_component = torch.cos(torch.matmul(O1, params['gamma1_prime']))
         # m1 = (delta_A1[A1.long() - 1] * sin_component)**2 + (eta_A1[A1.long() - 1] * cos_component) 
+
+        if params['m1'] == "sin":
+            m1 = torch.sin(O1[:, 0].float())
+        elif params['m1'] == "cos":
+            m1 = torch.cos(O1[:, 0].float())
+        elif params['m1'] == "arctan":
+            m1 = torch.atan(O1[:, 0].float())
+        elif params['m1'] == "quadratic":
+            m1 = O1[:, 0].float() ** 2
+        else:
+            raise ValueError("Invalid m1 option")
 
         Y1 =  A1 * params["alpha"] * ( 2*(O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 + params["neu"] * m1 
     else:
@@ -1554,7 +1565,7 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
 
     elif params['setting'] == 'scheme_8':         
         m2 =  5*torch.sin(5 * O2[:, 0].float()**2)  
-        # m2 = O2[:, 0].float()**2 * torch.sin(O2[:, 0].float()) 
+        # m2 = O2[:, 0].float()**2 * torch.sin(O2[:, 0].float())  
         # m2 = torch.tan(O2[:, 0].float()) + torch.tan(O2[:, 1].float()**2) 
         # m2 = torch.atan(O2[:, 0].float()) + torch.atan(O2[:, 1].float())
         # m2 = O1[:, 0].float()**2 + torch.tanh(O2[:, 0].float()) + torch.tanh(O2[:, 1].float())
@@ -1604,6 +1615,18 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
             fX1A2 = torch.tan(x)
         else:
             raise ValueError("Invalid function type")
+        
+
+        if params['m2'] == "sin":
+            m2 = torch.sin(O2[:, 0].float())
+        elif params['m2'] == "cos":
+            m2 = torch.cos(O2[:, 0].float())
+        elif params['m2'] == "arctan":
+            m2 = torch.atan(O2[:, 0].float())
+        elif params['m2'] == "quadratic":
+            m2 = O2[:, 0].float() ** 2
+        else:
+            raise ValueError("Invalid m2 option")
                 
         Y2 =  params["u"] * fX1A2 + params["C2"] + Z2 + params["neu"] * m2 
         # Y2 =  O1[torch.arange(O1.size(0), device=device), A2 - 1].unsqueeze(1)**2  + O2
