@@ -22,9 +22,20 @@ ro.r.source("ACWL_tao.R")
 
 
 # Generate Data
-def generate_and_preprocess_data(params, replication_seed, run='train'):
+def generate_and_preprocess_data(params, replication_seed, config_seed, run='train'):
 
-    # torch.manual_seed(replication_seed)
+    # Set seed for this configuration and replication
+    seed_value = config_seed * 100 + replication_seed  # Ensures unique seed for each config and replication
+    torch.manual_seed(seed_value)
+
+    print()
+    print(" SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
+    print(" SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
+    print("config_seed,  replication_seed, seed_value: ", config_seed,  replication_seed, seed_value)
+    print(" SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
+    print(" SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> ")
+    print()
+
     sample_size = params['sample_size']
     device = params['device']
 
@@ -458,6 +469,161 @@ def generate_and_preprocess_data(params, replication_seed, run='train'):
         Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params) 
 
 
+    elif params['setting'] == 'new':
+        # Set mu_0 and sigma^2 for sampling θ_{ta}
+        mu_0 = 2.0
+        sigma_squared = 0.5
+
+        params['gamma1'] = torch.randn(params['input_dim'], device=device)
+        params['gamma2'] = torch.randn(params['input_dim'], device=device)
+        params['gamma1_prime'] = torch.randn(params['input_dim'], device=device)
+        params['gamma2_prime'] = torch.randn(params['input_dim'], device=device)
+
+        # params.update({
+        #     'gamma1': torch.randn(10, device=device),
+        #     'gamma2': torch.randn(10, device=device),
+        #     'delta_A1': torch.tensor([1.0, 10.0, 1.0], device=device),  # Amplify difference, Optimal action is A1=2
+        #     'delta_A2': torch.tensor([1.0, 10.0, 1.0], device=device),  # Optimal action is A2=2
+        #     'lambda_val': 0.3,  # Dependency on Y1 in Y2
+        # })
+        
+
+        # Simulate baseline covariates
+        O1 = torch.randn(sample_size, params['input_dim'], device=device)  # X ∈ R^10
+        O2 = torch.tensor([], device=device)  # Not used in this scheme
+
+        Z1 = torch.randn(sample_size, device=device) * 0.5  # ε1 ~ N(0, 0.5^2)
+        Z2 = torch.randn(sample_size, device=device) * 0.5  # ε2 ~ N(0, 0.5^2)
+
+        # Sample θ_{ta} for biased treatment assignment at stage 1
+        # mu_t1 = torch.ones(params['input_dim'], device=device) * mu_0  # Mean vector for suboptimal actions
+        # mu_t2 = -torch.ones(params['input_dim'], device=device) * mu_0  # Mean vector for optimal action
+
+
+
+        # Approximate optimal action g1_opt
+        # delta_A1 = params['delta_A1']
+        # gamma1 = params['gamma1']
+        # inner_product = torch.matmul(O1, gamma1)
+        # expected_rewards = (torch.sin(inner_product).unsqueeze(1) * delta_A1)**2  # Square to match reward function
+        # g1_opt = expected_rewards.argmax(dim=1) + 1  # Actions in {1,2,3}
+
+
+        # Compute components for optimal policy at Stage 1
+        sin_component_opt1 = torch.sin(torch.matmul(O1, params['gamma1']))
+        cos_component_opt1 = torch.cos(torch.matmul(O1, params['gamma1_prime']))
+        expected_rewards1 = (params['delta_A1'].unsqueeze(0) * sin_component_opt1.unsqueeze(1))**2 + \
+                            (params['eta_A1'].unsqueeze(0) * cos_component_opt1.unsqueeze(1))
+        g1_opt = expected_rewards1.argmax(dim=1) + 1  # Actions in {1,2,3}
+
+
+
+
+
+
+        # theta_1 = torch.zeros(3, 10, device=device)
+        # # For action a=1 (suboptimal)
+        # theta_1[0] = mu_t1 + torch.randn(10, device=device) * np.sqrt(sigma_squared)
+        # # For action a=2 (optimal)
+        # theta_1[1] = mu_t2 + torch.randn(10, device=device) * np.sqrt(sigma_squared)
+        # # For action a=3 (suboptimal)
+        # theta_1[2] = mu_t1 + torch.randn(10, device=device) * np.sqrt(sigma_squared)
+
+        # Sample theta_{ta} for Stage 1 
+        theta_mu = torch.randn(params['input_dim'], device=device)  # Random vector not aligned with gamma1
+
+        theta_1 = torch.zeros(3, params['input_dim'], device=device)
+        for a in range(3):
+            if a + 1 != g1_opt.mode()[0].item():  # If not the most common optimal action
+                theta_1[a] = -theta_mu + torch.randn(params['input_dim'], device=device) * 0.1
+            else:
+                theta_1[a] = theta_mu + torch.randn(params['input_dim'], device=device) * 0.1
+
+
+
+        # Stage 1 data simulation
+        # Compute treatment probabilities π_1(A1 = a | H1)
+        # Split exp_theta_X into three separate components 
+        exp_theta_X = torch.exp(torch.matmul(O1, theta_1.t()))  # Shape: (n, 3)
+        pi_10, pi_11, pi_12 = exp_theta_X[:, 0], exp_theta_X[:, 1], exp_theta_X[:, 2]
+        # Stack the components along the 0th dimension and transpose to match the shape (n, 3)
+        matrix_pi1 = torch.stack((pi_10, pi_11, pi_12), dim=0).t()
+        result1 = A_sim(matrix_pi1, stage=1)
+        A1, probs1 = result1['A'], result1['probs']
+
+        A1 += 1  # Adjust actions to be in {1,2,3}
+
+
+
+
+        # Calculate Y1
+        Y1 = calculate_reward_stage1(O1, A1, g1_opt, Z1, params)     
+        Y1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
+
+
+        # Prepare input for stage 2
+        input_stage2 = torch.cat([O1, A1.unsqueeze(1).float().to(device), Y1.unsqueeze(1).to(device)], dim=1)
+        params['input_dim_stage2'] = input_stage2.shape[1]  # Update input dimension for stage 2
+
+
+        # Approximate optimal action g2_opt
+        # delta_A2 = params['delta_A2']
+        # gamma2 = params['gamma2']
+        # inner_product2 = torch.matmul(O1, gamma2)
+        # # expected_rewards2 = (torch.cos(inner_product2).unsqueeze(1) * delta_A2)**2 + params['lambda_val'] * Y1.unsqueeze(1)
+        # expected_rewards2 = (torch.cos(inner_product2).unsqueeze(1) * delta_A2)**2 + params['lambda_val']* Y1.unsqueeze(1)
+        # g2_opt = expected_rewards2.argmax(dim=1) + 1  # Actions in {1,2,3}
+
+        # Compute components for optimal policy at Stage 2
+        cos_component_opt2 = torch.cos(torch.matmul(O1, params['gamma2']))
+        sin_component_opt2 = torch.sin(torch.matmul(O1, params['gamma2_prime']))
+
+        expected_rewards2 = (params['delta_A2'].unsqueeze(0) * cos_component_opt2.unsqueeze(1))**2 + \
+                            (params['eta_A2'].unsqueeze(0) * sin_component_opt2.unsqueeze(1)) + \
+                            params['lambda_val'] * Y1_opt.unsqueeze(1) 
+        
+        # expected_rewards2 = (params['delta_A2'].unsqueeze(0) * cos_component_opt2.unsqueeze(1))**2 + \
+        #             (params['eta_A2'].unsqueeze(0) * sin_component_opt2.unsqueeze(1)) 
+        g2_opt = expected_rewards2.argmax(dim=1) + 1  # Actions in {1,2,3}
+
+
+ 
+        # Sample θ_{ta} for biased treatment assignment at stage 2
+        # theta_2 = torch.zeros(3, 10, device=device)
+        # # For action a=1 (suboptimal)
+        # theta_2[0] = mu_t1 + torch.randn(10, device=device) * np.sqrt(sigma_squared)
+        # # For action a=2 (optimal)
+        # theta_2[1] = mu_t2 + torch.randn(10, device=device) * np.sqrt(sigma_squared)
+        # # For action a=3 (suboptimal)
+        # theta_2[2] = mu_t1 + torch.randn(10, device=device) * np.sqrt(sigma_squared)
+
+        # Sample theta_{ta} for Stage 2
+        theta_2 = torch.zeros(3, params['input_dim'], device=device)
+        for a in range(3):
+            if a + 1 != g2_opt.mode()[0].item():  # If not the most common optimal action
+                theta_2[a] = -theta_mu + torch.randn(params['input_dim'], device=device) * 0.1
+            else:
+                theta_2[a] = theta_mu + torch.randn(params['input_dim'], device=device) * 0.1
+
+        alpha = 0.5  # Dependency on A1
+        beta = 0.5   # Dependency on Y1
+
+        # Compute treatment probabilities π_2(A2 = a | H2)
+        # Split exp_theta_X into three separate components 
+        exp_theta_X_stage2 = torch.exp(torch.matmul(O1, theta_2.t()) + alpha * A1.unsqueeze(1) + beta * Y1.unsqueeze(1))
+        pi_20, pi_21, pi_22 = exp_theta_X_stage2[:, 0], exp_theta_X_stage2[:, 1], exp_theta_X_stage2[:, 2]
+        # Stack the components along the 0th dimension and transpose to match the shape (n, 3)
+        matrix_pi2 = torch.stack((pi_20, pi_21, pi_22), dim=0).t()
+        result2 = A_sim(matrix_pi2, stage=2)
+        A2, probs2 = result2['A'], result2['probs']
+
+        A2 += 1  # Adjust actions to be in {1,2,3}
+
+
+
+        # Calculate Y2
+        Y2 = calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params, Y1=Y1) 
+
 
 
 
@@ -679,7 +845,8 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
 
     # Call the R function with the parameters
     results = ro.globalenv['test_ACWL'](S1, S2, d1_star.cpu().numpy(), d2_star.cpu().numpy(), params_ds['noiseless'], 
-                                        config_number, params_ds['job_id'], setting=params_ds['setting'],
+                                        config_number, params_ds['job_id'], param_m1 = params_ds['m1'], param_m2 = params_ds['m2'],
+                                        setting=params_ds['setting'],
                                         func = params_ds["f"], neu = params_ds["neu"], alpha = params_ds["alpha"], u = params_ds["u"])
 
     # Extract the decisions and convert to PyTorch tensors on the specified device
@@ -695,7 +862,7 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
 
 
     # Generate and preprocess data for evaluation
-    processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications, run='test')
+    processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications+123, config_seed=config_number, run='test')
     test_input_stage1, test_input_stage2, test_O2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2  = processed_result
     train_tensors = [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test]
 
@@ -814,15 +981,46 @@ def simulations(V_replications, params, config_number):
 
     columns = ['Behavioral_A1', 'Behavioral_A2', 'Predicted_A1', 'Predicted_A2']
 
+    # Initialize separate DataFrames for DQL and DS
+    df_DQL = pd.DataFrame(columns=columns)
+    df_DS = pd.DataFrame(columns=columns)
+    df_Tao = pd.DataFrame(columns=columns)
+
+    # Generate and preprocess data for training
     # params['gamma1'] = torch.randn(params['input_dim'], device=device)
     # params['gamma2'] = torch.randn(params['input_dim'], device=device)
     # params['gamma1_prime'] = torch.randn(params['input_dim'], device=device)
     # params['gamma2_prime'] = torch.randn(params['input_dim'], device=device)
 
-    # Initialize separate DataFrames for DQL and DS
-    df_DQL = pd.DataFrame(columns=columns)
-    df_DS = pd.DataFrame(columns=columns)
-    df_Tao = pd.DataFrame(columns=columns)
+    # All ones for gamma vectors
+    params['gamma1'] = torch.ones(params['input_dim'], device=device)
+    params['gamma2'] = torch.ones(params['input_dim'], device=device)
+    params['gamma1_prime'] = torch.ones(params['input_dim'], device=device)
+    params['gamma2_prime'] = torch.ones(params['input_dim'], device=device)
+
+    # # Scaled identity-based vectors (linear scaling)
+    # params['gamma1'] = torch.tensor([i / (params['input_dim']**0.5) for i in range(1, params['input_dim'] + 1)], device=device)
+    # params['gamma2'] = torch.tensor([i / (params['input_dim']**0.5) for i in range(1, params['input_dim'] + 1)], device=device)
+    # params['gamma1_prime'] = torch.tensor([i / (params['input_dim']**0.5) for i in range(params['input_dim'], 0, -1)], device=device)
+    # params['gamma2_prime'] = torch.tensor([i / (params['input_dim']**0.5) for i in range(params['input_dim'], 0, -1)], device=device)
+
+
+    params['delta_A1'] =  torch.tensor([2.0, 3.0, 1.5], device=device) # Amplify difference, Optimal action is A1= 2
+    params['delta_A2'] =  torch.tensor([2.5, 1.5, 3.0], device=device) # Optimal action is A2= 3
+    
+    # params['delta_A1'] =  torch.tensor([1.0, 10.0, 1.0], device=device)  # Amplify difference, Optimal action is A1=2
+    # params['delta_A2'] =  torch.tensor([1.0, 1.0, 10.0], device=device)  # Optimal action is A2=2
+    
+    params['lambda_val'] = torch.tensor(0.3)  # Dependency on Y1 in Y2
+
+    params['eta_A1'] = torch.tensor([1.0, 2.5, 2.0], device=device)
+    params['eta_A2'] = torch.tensor([2.0, 1.0, 2.5], device=device)
+
+    # params['eta_A1'] = torch.tensor([1.0, 10.0, 1.0], device=device) 
+    # params['eta_A2'] = torch.tensor([1.0, 1.0, 10.0], device=device) 
+
+
+
 
     losses_dict = {'DQL': {}, 'DS': {}} 
     epoch_num_model_lst = []
@@ -841,7 +1039,7 @@ def simulations(V_replications, params, config_number):
         print(f"\nReplication # -------------->>>>>  {replication+1}")
 
         # Generate and preprocess data for training
-        tuple_train, tuple_val, adapC_tao_Data = generate_and_preprocess_data(params, replication_seed=replication, run='train')
+        tuple_train, tuple_val, adapC_tao_Data = generate_and_preprocess_data(params, replication_seed=replication, config_seed=config_number, run='train')
 
         # Estimate treatment regime : model --> surr_opt
         print("Training started!")
@@ -890,8 +1088,7 @@ def simulations(V_replications, params, config_number):
     return V_replications, df_DQL, df_DS, df_Tao, losses_dict, epoch_num_model_lst
 
 
-def run_training(config, config_updates, V_replications, config_number, replication_seed):
-    torch.manual_seed(replication_seed)
+def run_training(config, config_updates, V_replications, config_number, config_replication_seed):
     local_config = {**config, **config_updates}  # Create a local config that includes both global settings and updates
     
     # Execute the simulation function using updated settings
@@ -909,7 +1106,7 @@ def run_training(config, config_updates, V_replications, config_number, replicat
 def run_training_with_params(params):
 
     config, current_config, V_replications, i, config_number = params
-    return run_training(config, current_config, V_replications, config_number, replication_seed=i)
+    return run_training(config, current_config, V_replications, config_number, config_replication_seed=i)
  
 
 

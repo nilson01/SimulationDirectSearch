@@ -16,8 +16,7 @@ dropout_rate: 0.4  # Dropout rate to prevent overfitting
 activation_function: 'elu' # elu, relu, sigmoid, tanh, leakyrelu, none
 hidden_dim_stage1: 40  # Number of neurons in the hidden layer of stage 1
 hidden_dim_stage2: 40  # Number of neurons in the hidden layer of stage 2 
-m1 : 'sin'
-m2: 'sin'
+
 
 
 # # scheme_5 constants 
@@ -41,9 +40,11 @@ neu: 5 #10
 u: 5 #10
 alpha: 5 #10
 f: "square" #'square', arctan, sin, exp_half, exp, tan
+m1 : 'sin'
+m2: 'sin'
 
 # # new scheme
-# input_dim: 3 #10, 50, 100 # only for new scheme
+input_dim: 100 #10, 50, 100 # only for new scheme
 
 
 

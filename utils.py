@@ -301,10 +301,7 @@ def initialize_nn(params, stage):
 
 
 
-def batches(N, batch_size, seed=0):
-    # Set the seed for PyTorch random number generator for reproducibility
-    # torch.manual_seed(seed)
-    
+def batches(N, batch_size):
     # Create a tensor of indices from 0 to N-1
     indices = torch.arange(N)
     

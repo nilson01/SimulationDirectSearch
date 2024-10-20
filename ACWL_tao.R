@@ -265,7 +265,7 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
 
 
 
-test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, setting= "tao", func = "square", neu = 10, alpha = 10, u = 10) {
+test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, param_m1, param_m2, setting= "tao", func = "square", neu = 10, alpha = 10, u = 10) {
 
   cat("Test model: tao, Setting: ", setting, "\n")
   ni <- nrow(S1) 
@@ -371,7 +371,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
     }
     else if  (setting == "scheme_8") { 
 
-      m1 = 5 * sin(5 * S1[k, ][1]^2)  
+      # m1 = 5 * sin(5 * S1[k, ][1]^2)  
       # m1 = S1[, 1]^2 * sin(S1[, 1]) 
       # m1 = tan(S1[k, ][1])^2 + tan(S1[k, ][2]) * cnst 
       # m1 = atan(S1[k, ][1]) + atan(S1[k, ][2])
@@ -383,6 +383,20 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       # m1 = max(S1[k, 1], S1[k, 2]) 
 
       # m1 = floor(S1[k, 1]) * floor(S1[k, 2]) * exp(S1[k, 1])
+
+
+      if (param_m1 == "sin") {
+        m1 <- sin(S1[k, ][1])
+      } else if (param_m1 == "cos") {
+        m1 <- cos(S1[k, ][1])
+      } else if (param_m1 == "arctan") {
+        m1 <- atan(S1[k, ][1])
+      } else if (param_m1 == "quadratic") {
+        m1 <- (S1[k, ][1]) ^ 2
+      } else {
+        stop("Invalid m1 option")
+      }
+
       in_C1 = (X0.k[2] > ( X0.k[1]^2 + 5*sin(5 * X0.k[1]^2))) 
       # cnst = 10 #10 
       # b = 2 
@@ -474,7 +488,7 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
       # neu = 10
       # u = 10
 
-      m2 = 5* (sin(5 * S2[k, ][1]^2))  
+      # m2 = 5* (sin(5 * S2[k, ][1]^2))  
       # m2 = S2[, 1]^2 * sin(S2[, 1]) 
       # m2 = tan(S2[k, ][1]) + tan(S2[k, ][2]^2) * cnst 
       # m2 = atan(S2[k, ][1]) + atan(S2[k, ][2]) 
@@ -507,6 +521,18 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, settin
         fX1A2 <- tan(x)
       } else {
         stop("Invalid function type")
+      }
+
+      if (param_m2 == "sin") {
+        m2 <- sin(S2[k, ][1])
+      } else if (param_m2 == "cos") {
+        m2 <- cos(S2[k, ][1])
+      } else if (param_m2 == "arctan") {
+        m2 <- atan(S2[k, ][1])
+      } else if (param_m2 == "quadratic") {
+        m2 <- (S2[k, ][1]) ^ 2
+      } else {
+        stop("Invalid m2 option")
       }
 
       R2.a1[k] <-  u* fX1A2 + C2 + z2 + neu*m2 
