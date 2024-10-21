@@ -471,13 +471,13 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
 
     elif params['setting'] == 'new':
         # Set mu_0 and sigma^2 for sampling θ_{ta}
-        mu_0 = 2.0
-        sigma_squared = 0.5
+        # mu_0 = 2.0
+        # sigma_squared = 0.5
 
-        params['gamma1'] = torch.randn(params['input_dim'], device=device)
-        params['gamma2'] = torch.randn(params['input_dim'], device=device)
-        params['gamma1_prime'] = torch.randn(params['input_dim'], device=device)
-        params['gamma2_prime'] = torch.randn(params['input_dim'], device=device)
+        # params['gamma1'] = torch.randn(params['input_dim'], device=device)
+        # params['gamma2'] = torch.randn(params['input_dim'], device=device)
+        # params['gamma1_prime'] = torch.randn(params['input_dim'], device=device)
+        # params['gamma2_prime'] = torch.randn(params['input_dim'], device=device)
 
         # params.update({
         #     'gamma1': torch.randn(10, device=device),
@@ -719,8 +719,7 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
       Y1, Y2 = transform_Y(Y1, Y2)
 
     Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
-    # print("calculate_reward_stage2: ", O1, g1_opt, O2, g2_opt, g2_opt, Z2)
-    Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params)
+    Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params, Y1 = Y1_g1_opt)
 
     print()
     print("="*60)
@@ -843,11 +842,37 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
     S2 =   S2.astype(S1.dtype) #  S2.reshape(-1, 1) #
 
 
+    # Convert tensors to NumPy arrays
+    gamma1_np = params_ds['gamma1'].cpu().numpy().reshape(-1, 1)  # Reshape to be a column vector
+    gamma1_prime_np = params_ds['gamma1_prime'].cpu().numpy().reshape(-1, 1)
+    delta_A1_np = params_ds['delta_A1'].cpu().numpy()
+    eta_A1_np = params_ds['eta_A1'].cpu().numpy()
+
+    gamma2_np = params_ds['gamma2'].cpu().numpy().reshape(-1, 1)  # Reshape to be a column vector
+    gamma2_prime_np = params_ds['gamma2_prime'].cpu().numpy().reshape(-1, 1)
+
+    delta_A2_np = params_ds['delta_A2'].cpu().numpy()
+    eta_A2_np = params_ds['eta_A2'].cpu().numpy()
+
+    lambda_val_np = params_ds['lambda_val'].cpu().numpy()
+
+
+
     # Call the R function with the parameters
     results = ro.globalenv['test_ACWL'](S1, S2, d1_star.cpu().numpy(), d2_star.cpu().numpy(), params_ds['noiseless'], 
                                         config_number, params_ds['job_id'], param_m1 = params_ds['m1'], param_m2 = params_ds['m2'],
                                         setting=params_ds['setting'],
-                                        func = params_ds["f"], neu = params_ds["neu"], alpha = params_ds["alpha"], u = params_ds["u"])
+                                        func = params_ds["f"], neu = params_ds["neu"], alpha = params_ds["alpha"], u = params_ds["u"],
+                                        gamma1=gamma1_np, 
+                                        gamma1_prime=gamma1_prime_np, 
+                                        delta_A1=delta_A1_np, 
+                                        eta_A1=eta_A1_np, 
+                                        gamma2=gamma2_np, 
+                                        gamma2_prime=gamma2_prime_np, 
+                                        delta_A2=delta_A2_np, 
+                                        eta_A2=eta_A2_np,         
+                                        lambda_val=lambda_val_np
+                                        )
 
     # Extract the decisions and convert to PyTorch tensors on the specified device
     A1_Tao = torch.tensor(np.array(results.rx2('g1.a1')), dtype=torch.int64).to(params_ds['device'])
@@ -1121,6 +1146,12 @@ def run_grid_search(config, param_grid):
 
     all_losses_dicts = []  # Losses from each run
     all_epoch_num_lists = []  # Epoch numbers from each run 
+
+    # Initialize empty lists to store the value functions across all configurations
+    all_performances_DQL = []
+    all_performances_DS = []
+    all_performances_Tao = []
+
     grid_replications = 1
 
     # Collect all parameter combinations
@@ -1160,6 +1191,21 @@ def run_grid_search(config, param_grid):
 
             performances_Beh = pd.DataFrame()
             performances_Beh = pd.concat([performance_Beh, performance_Beh], axis=0)
+
+
+            # Process and store DQL performance
+            dql_values = [value.item() if value is not None else None for value in performances_DQL['Method\'s Value fn.']]
+            all_performances_DQL.append(dql_values)
+
+            # Process and store DS performance
+            ds_values = [value.item() if value is not None else None for value in performances_DS['Method\'s Value fn.']]
+            all_performances_DS.append(ds_values)
+
+            # Process and store Tao performance
+            tao_values = [value.item() if value is not None else None for value in performances_Tao['Method\'s Value fn.']]
+            all_performances_Tao.append(tao_values)
+
+
 
             # Update the cumulative DataFrame for DQL with the current DataFrame results
             all_dfs_DQL = pd.concat([all_dfs_DQL, df_DQL], axis=0, ignore_index=True)
@@ -1231,7 +1277,7 @@ def run_grid_search(config, param_grid):
             print("\n\n")
                 
     folder = f"data/{config['job_id']}"
-    save_simulation_data(performances_DQL, performances_DS, performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder)
+    save_simulation_data(all_performances_DQL, all_performances_DS,  all_performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder)
     load_and_process_data(config, folder)
 
         

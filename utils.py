@@ -48,18 +48,40 @@ def extract_unique_treatment_values(df, columns_to_process, name):
     return unique_values
 
 
-def save_simulation_data(performances_DQL, performances_DS, performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder):
+def save_simulation_data(all_performances_DQL, all_performances_DS,  all_performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder):
     # Check if the folder exists, if not, create it
     if not os.path.exists(folder):
         os.makedirs(folder)
     
+    # print()
+    # print("DQL Value function across simulations: ", [i.item() for i in performances_DQL['Method\'s Value fn.']])
+    # print()
+    # print("Tao Value function across simulations: ", [i.item() for i in performances_Tao['Method\'s Value fn.']])
+    # print()
+    # print("DS Value function across simulations: ", [i.item() for i in performances_DS['Method\'s Value fn.']])
+    # print()
+        
     print()
-    print("DQL Value function across simulations: ", [i.item() for i in performances_DQL['Method\'s Value fn.']])
+    # Print DQL value functions across all configurations
+    print("DQL Value Functions across all simulations:")
+    for idx, dql_values in enumerate(all_performances_DQL):
+        print(f"Configuration {idx + 1}: {dql_values}")
+
     print()
-    print("Tao Value function across simulations: ", [i.item() for i in performances_Tao['Method\'s Value fn.']])
+
+    # Print DS value functions across all configurations
+    print("\nDS Value Functions across all simulations:")
+    for idx, ds_values in enumerate(all_performances_DS):
+        print(f"Configuration {idx + 1}: {ds_values}")
+
     print()
-    print("DS Value function across simulations: ", [i.item() for i in performances_DS['Method\'s Value fn.']])
-    print()
+
+    # Print Tao value functions across all configurations
+    print("\nTao Value Functions across all simulations:")
+    for idx, tao_values in enumerate(all_performances_Tao):
+        print(f"Configuration {idx + 1}: {tao_values}")
+
+    print()       
 
     # Define paths for saving files
     df_path_DQL = os.path.join(folder, 'simulation_data_DQL.pkl')
@@ -67,6 +89,21 @@ def save_simulation_data(performances_DQL, performances_DS, performances_Tao, al
     losses_path = os.path.join(folder, 'losses_dicts.pkl')
     epochs_path = os.path.join(folder, 'epoch_num_lists.pkl')
     results_path = os.path.join(folder, 'simulation_results.pkl')
+
+
+    df_sim_VF_path_DQL = os.path.join(folder, 'sim_VF_data_DQL.pkl')
+    df_sim_VF_path_DS = os.path.join(folder, 'sim_VF_data_DS.pkl')
+    df_sim_VF_path_Tao = os.path.join(folder, 'sim_VF_data_Tao.pkl')
+
+
+    # Save each DataFrame with pickle
+    with open(df_sim_VF_path_DQL, 'wb') as f:
+        pickle.dump(all_performances_DQL, f)
+    with open(df_sim_VF_path_DS, 'wb') as f:
+        pickle.dump(all_performances_DS, f)
+    with open(df_sim_VF_path_Tao, 'wb') as f:
+        pickle.dump(all_performances_Tao, f)
+
 
     # Save each DataFrame with pickle
     with open(df_path_DQL, 'wb') as f:
@@ -892,6 +929,9 @@ def process_batches(model1, model2, data, params, optimizer, is_train=True):
             if is_train:
                 optimizer.zero_grad()
                 loss.backward()
+                # Gradient Clipping (to prevent exploding gradients)
+                torch.nn.utils.clip_grad_norm_(model1.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(model2.parameters(), max_norm=1.0)
                 optimizer.step()
 
         total_loss += loss.item()
@@ -1482,6 +1522,55 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
             raise ValueError("Invalid m1 option")
 
         Y1 =  A1 * params["alpha"] * ( 2*(O1[:, 1].float()  > (O1[:, 0].float() **2 + 5*torch.sin(5 * O1[:, 0].float() **2)).float() ).int() - 1) + params["C1"] + Z1 + params["neu"] * m1 
+
+    elif params['setting'] == 'new':
+
+        # # Extract parameters
+        # gamma1 = params['gamma1']  # Should be a tensor of shape (input_dim,)
+        # delta_A1 = params['delta_A1']  # Tensor of shape (3,)
+        
+        # # Compute the inner product gamma1^T X
+        # inner_product = torch.matmul(O1, gamma1)
+        
+        # # Get the action-specific constant for each sample
+        # delta_a1 = delta_A1[A1.long() - 1]  # A1 in {1,2,3}, adjust index
+        
+        # # Compute Y1
+        # Y1 = (torch.sin(inner_product) * delta_a1)**2 + Z1  # Square the reward to amplify differences     
+        
+        # Extract parameters
+        delta_A1 = params['delta_A1']  # Tensor of shape (3,)
+        eta_A1 = params['eta_A1']      # Tensor of shape (3,)
+        lambda_param = params['lambda_val']  # Scalar
+
+        # Compute components
+        sin_component = torch.sin(torch.matmul(O1, params['gamma1']))
+        cos_component = torch.cos(torch.matmul(O1, params['gamma1_prime']))
+
+        # Introduce non-linear interactions between covariates and actions
+        interaction_term = (O1[:, 0] * A1.float()).tanh()  # Example non-linear interaction
+
+        # Get action-specific constants: delta_a1, eta_a1 
+        # Y1 = (delta_A1[A1.long() - 1]  * sin_component)**2 + \ 
+        #     torch.tensor(0.5) * interaction_term + \
+        #     (eta_A1[A1.long() - 1] * cos_component) + Z1
+
+        # the following works
+        
+        # Y1 = (delta_A1[A1.long() - 1] * sin_component)**2 + \
+        #  (eta_A1[A1.long() - 1] * cos_component) + \
+        #  torch.tensor(0.5) * interaction_term + \
+        #  Z1  
+
+        # Y1 = (delta_A1[A1.long() - 1] * sin_component)**2 + \
+        #  (eta_A1[A1.long() - 1] * cos_component) + \
+        #  lambda_param * interaction_term + \
+        #  Z1  
+
+        Y1 = (delta_A1[A1.long() - 1] * sin_component)**2 + \
+         (eta_A1[A1.long() - 1] * cos_component) + \
+         Z1  
+             
     else:
         # Add more conditions based on different settings or use a default one.
         Y1 = A1 * O1.sum(dim=1) + Z1  # Example default calculation.
@@ -1490,7 +1579,7 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
 
 
 
-def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
+def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params, **kwargs):
 
     if params['setting'] == 'linear':
         Y2 = 15 + O2 + A2 * (1 - O2 + A1 + O1.sum(dim=1)) + Z2
@@ -1628,6 +1717,73 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params):
         Y2 =  params["u"] * fX1A2 + params["C2"] + Z2 + params["neu"] * m2 
         # Y2 =  O1[torch.arange(O1.size(0), device=device), A2 - 1].unsqueeze(1)**2  + O2
 
+    elif params['setting'] == 'new':
+        if 'Y1' not in kwargs:
+            raise ValueError("Y1 is a required parameter but was not provided.")
+    
+        Y1 = kwargs['Y1']  # Extract Y1 from kwargs
+    
+        # # Extract parameters
+        # gamma2 = params['gamma2']  # Should be a tensor of shape (input_dim,)
+        # delta_A2 = params['delta_A2']  # Tensor of shape (3,)
+        # lambda_param = params['lambda_val']  # Scalar
+        
+        # # Compute the inner product gamma2^T X
+        # inner_product = torch.matmul(O1, gamma2)
+        
+        # # Get the action-specific constant for each sample
+        # delta_a2 = delta_A2[A2.long() - 1]  # A2 in {1,2,3}, adjust index
+        
+        # # Compute Y2
+        # Y2 = (torch.cos(inner_product) * delta_a2)**2 + lambda_param * Y1 + Z2  # Square the reward
+        
+
+        #  # Extract parameters
+        # delta_A2 = params['delta_A2']  # Tensor of shape (3,)
+        # eta_A2 = params['eta_A2']      # Tensor of shape (3,)
+        # lambda_param = params['lambda_val']  # Scalar
+
+        # # Compute components
+        # cos_component = torch.cos(torch.matmul(O1, params['gamma2']  ))
+        # sin_component = torch.sin(torch.matmul(O1, params['gamma2_prime']))
+
+        # # Compute Y2
+        # Y2 = (delta_A2[A2.long() - 1]  * cos_component)**2 + (eta_A2[A2.long() - 1] * sin_component) + lambda_param * Y1 + Z2
+    
+
+
+         # Extract parameters
+        delta_A2 = params['delta_A2']  # Tensor of shape (3,)
+        eta_A2 = params['eta_A2']      # Tensor of shape (3,)
+        lambda_param = params['lambda_val']  # Scalar
+
+        # Compute components
+        cos_component = torch.cos(torch.matmul(O1, params['gamma2']  ))
+        sin_component = torch.sin(torch.matmul(O1, params['gamma2_prime']))
+
+        # Introduce a non-linear interaction between current and previous actions
+        interaction_term = (A1.float() * A2.float()).tanh()  # Non-linear interaction of actions
+
+        # Use a non-linear function of the previous reward
+        nonlinear_reward = torch.log(1 + torch.abs(Y1))
+
+        # the following works
+
+        # Compute Y2
+        # Y2 = (delta_A2[A2.long() - 1]  * cos_component)**2 + \
+        #     (eta_A2[A2.long() - 1] * sin_component) + \
+        #     lambda_param * nonlinear_reward + \
+        #        lambda_param * interaction_term + Z2
+
+        Y2 = (delta_A2[A2.long() - 1]  * cos_component)**2 + \
+            (eta_A2[A2.long() - 1] * sin_component) + \
+            lambda_param * nonlinear_reward + Z2 
+
+
+        # Y2 = (delta_A2[A2.long() - 1]  * cos_component)**2 + \
+        #     (eta_A2[A2.long() - 1] * sin_component) + Z2
+    
+
     else:
         # Add more conditions based on different settings or use a default one.
         Y2 = A2 * (O2.sum(dim=1)) + Z2  # Example default calculation.
@@ -1639,7 +1795,7 @@ def calculate_policy_valuefunc(method_name, O1, O2, params, A1_di, A2_di, d1_sta
     Y1_di = calculate_reward_stage1(O1, A1_di, d1_star, Z1, params) #(O1, A1_di, Z1)
 
     print(f"O1: {O1.dtype}, A1_di: {A1_di.dtype}, O2: {O2.dtype}, A2_di: {A2_di.dtype}, d2_star: {d2_star.dtype}, Z2: {Z2.dtype}")
-    Y2_di = calculate_reward_stage2(O1, A1_di, O2, A2_di, d2_star, Z2, params) #(O1, O2, A1_di, A2_di, Z1, Z2 )
+    Y2_di = calculate_reward_stage2(O1, A1_di, O2, A2_di, d2_star, Z2, params, Y1 = Y1_di) #(O1, O2, A1_di, A2_di, Z1, Z2 )
     print()
     print("="*60)
     print("Method Name: ", method_name)

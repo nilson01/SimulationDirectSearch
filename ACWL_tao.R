@@ -265,7 +265,12 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
 
 
 
-test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, param_m1, param_m2, setting= "tao", func = "square", neu = 10, alpha = 10, u = 10) {
+test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, param_m1, param_m2, setting= "tao", func = "square", neu = 10, alpha = 10, u = 10,
+                      gamma1 = numeric(40), gamma1_prime = numeric(40), 
+                      delta_A1 = c(2.5, 1.5, 3.0), eta_A1 = c(2.0, 1.0, 2.5), 
+                      gamma2 = numeric(40), gamma2_prime = numeric(40), 
+                      delta_A2 = c(2.5, 1.5, 3.0), eta_A2 = c(2.0, 1.0, 2.5), 
+                      lambda_val = 0.3) {
 
   cat("Test model: tao, Setting: ", setting, "\n")
   ni <- nrow(S1) 
@@ -403,9 +408,23 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, param_
  
       R1.a1[k] <- alpha * g1.a1[k] * ( 2 * as.numeric( in_C1 ) - 1) + C1 + z1 + neu * m1 
     }
+    else if  (setting == "new") {
+      # Compute components
+      sin_component <- sin(sum(X0.k * gamma1))  # Dot product for gamma1
+      cos_component <- cos(sum(X0.k * gamma1_prime))  # Dot product for gamma1_prime
+
+      # Calculate Y1
+      R1.a1[k] <- (delta_A1[g1.a1[k]] * sin_component)^2 + (eta_A1[g1.a1[k]] * cos_component) + z1 
+              
+    }
     else{
       cat("Setting not specified...", setting, "\n") 
     }
+
+
+
+
+
 
     if (!is.matrix(S2)) {
       # Handle the case where S2 is empty
@@ -536,7 +555,23 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, param_
       }
 
       R2.a1[k] <-  u* fX1A2 + C2 + z2 + neu*m2 
-    }    
+    } 
+    else if  (setting == "new") {  
+      # cat("Setting not specified...", setting, "\n") 
+
+      # Compute components
+      cos_component <- cos(sum(X0.k * gamma2))  # Matrix multiplication or element-wise
+      sin_component <- sin(sum(X0.k * gamma2_prime))  # Matrix multiplication or element-wise
+
+      # Use a non-linear function of the previous reward Y1[k]
+      nonlinear_reward <- log(1 + abs(R1.a1[k]))
+
+      # Compute Y2
+      R2.a1[k] <- (delta_A2[g2.a1[k]] * cos_component)^2 + 
+              (eta_A2[g2.a1[k]] * sin_component) + 
+              lambda_val * nonlinear_reward + z2  # Assuming Z2 is defined as a vector
+
+    }
     else{
       cat("Setting not specified...", setting, "\n") 
     }
