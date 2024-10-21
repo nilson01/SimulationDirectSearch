@@ -721,13 +721,6 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
     Y1_g1_opt =  calculate_reward_stage1(O1, g1_opt, g1_opt, Z1, params)
     Y2_g2_opt = calculate_reward_stage2(O1, g1_opt, O2, g2_opt, g2_opt, Z2, params, Y1 = Y1_g1_opt)
 
-    print()
-    print("="*60)
-    print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
-    print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
-    print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
-    print("="*60)
-
     # Propensity score stack
     pi_tensor_stack = torch.stack([probs1['pi_10'], probs1['pi_11'], probs1['pi_12'], probs2['pi_20'], probs2['pi_21'], probs2['pi_22']])
 
@@ -739,12 +732,23 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
     P_A1_given_H1_tensor = torch.gather(pi_tensor_stack.to(device), dim=0, index=A1_indices).squeeze(0)  # Remove the added dimension after gathering
     P_A2_given_H2_tensor = torch.gather(pi_tensor_stack.to(device), dim=0, index=A2_indices).squeeze(0)  # Remove the added dimension after gathering
 
-
     # Calculate Ci tensor
     Ci = (Y1 + Y2) / (P_A1_given_H1_tensor * P_A2_given_H2_tensor)
 
     if run == 'test':
-        return input_stage1, input_stage2, O2, Y1, Y2, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor, g1_opt, g2_opt, Z1, Z2
+        print("="*90)
+        print("pi_10: ", probs1['pi_10'].mean().item(), "pi_11: ", probs1['pi_11'].mean().item(), "pi_12: ", probs1['pi_12'].mean().item())
+        print("pi_20: ", probs2['pi_20'].mean().item(), "pi_21: ", probs2['pi_21'].mean().item(), "pi_22: ", probs2['pi_22'].mean().item())
+        print("="*90)
+        print()
+        print("="*60)
+        print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
+        print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
+        print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
+        print("Unique- Optimal treat Stage 1", g1_opt.unique())
+        print("Unique- Optimal treat Stage 2", g2_opt.unique())
+        print("="*60)
+        return input_stage1, input_stage2, O2, Y1, Y2, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor, g1_opt, g2_opt, Z1, Z2, Y1_g1_opt, Y2_g2_opt
 
     # Splitting data into training and validation sets
     train_size = int(params['training_validation_prop'] * Y1.shape[0])
@@ -888,11 +892,13 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
 
     # Generate and preprocess data for evaluation
     processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications+123, config_seed=config_number, run='test')
-    test_input_stage1, test_input_stage2, test_O2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2  = processed_result
+    test_input_stage1, test_input_stage2, test_O2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2, Y1_g1_opt, Y2_g2_opt  = processed_result
     train_tensors = [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test]
 
     # Append policy values for DS
-    V_replications["V_replications_M1_behavioral"].append(torch.mean(Y1_tensor + Y2_tensor).cpu().item())  
+    V_replications["V_replications_M1_behavioral"].append(torch.mean(Y1_tensor + Y2_tensor).cpu())  
+    V_replications["V_replications_M1_Optimal"].append(torch.mean(Y1_g1_opt + Y2_g2_opt).cpu())  
+
     # Value function behavioral
     message = f'\nY1 beh mean: {torch.mean(Y1_tensor)}, Y2 beh mean: {torch.mean(Y2_tensor)}, Y1_beh+Y2_beh mean: {torch.mean(Y1_tensor + Y2_tensor)} '
     print(message)
@@ -1170,6 +1176,7 @@ def run_grid_search(config, param_grid):
                 V_replications = {
                     "V_replications_M1_pred": defaultdict(list),
                     "V_replications_M1_behavioral": [],
+                    "V_replications_M1_Optimal": []
                 }
                 params = (config, current_config, V_replications, i, config_number)
                 future = executor.submit(run_training_with_params, params)

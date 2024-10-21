@@ -71,8 +71,8 @@ def save_simulation_data(all_performances_Beh, all_performances_Opt, all_perform
 
     # Print Optimal value functions across all configurations
     print("\nOptimal Value Functions across all simulations:")
-    for idx, ds_values in enumerate(all_performances_Opt):
-        print(f"Configuration {idx + 1}: {ds_values}")
+    for idx, opt_values in enumerate(all_performances_Opt):
+        print(f"Configuration {idx + 1}: {opt_values}")
 
     print()
 
@@ -353,7 +353,8 @@ def initialize_nn(params, stage):
         num_networks=params['num_networks'],
         dropout_rate=params['dropout_rate'],
         activation_fn_name=params['activation_function'],
-        num_hidden_layers=params['num_layers'] - 1  # num_layers is the number of hidden layers
+        num_hidden_layers=params['num_layers'] - 1,  # num_layers is the number of hidden layers
+        add_ll_batch_norm=params['add_ll_batch_norm']
     ).to(params['device'])
     return nn
 
@@ -379,7 +380,7 @@ class Identity(nn.Module):
         return x
     
 class NNClass(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, num_networks, dropout_rate, activation_fn_name, num_hidden_layers):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_networks, dropout_rate, activation_fn_name, num_hidden_layers, add_ll_batch_norm):
         super(NNClass, self).__init__()
         self.networks = nn.ModuleList()
         for _ in range(num_networks):
@@ -409,15 +410,18 @@ class NNClass(nn.Module):
                 if activation_fn is not Identity:  # Only add activation if it's not Identity
                     layers.append(activation_fn())            
                 layers.append(nn.Dropout(dropout_rate))
-                
+                # layers.append(nn.BatchNorm1d(hidden_dim))
+
                 for _ in range(num_hidden_layers):
                     layers.append(nn.Linear(hidden_dim, hidden_dim))
                     if activation_fn is not Identity:  # Only add activation if it's not Identity
                         layers.append(activation_fn())
                     layers.append(nn.Dropout(dropout_rate))
-                
+                    # layers.append(nn.BatchNorm1d(hidden_dim))
+
                 layers.append(nn.Linear(hidden_dim, output_dim))
-                layers.append(nn.BatchNorm1d(output_dim))
+                if add_ll_batch_norm:
+                    layers.append(nn.BatchNorm1d(output_dim))
             
             # No BatchNorm for linear model as it should be purely linear
             network = nn.Sequential(*layers)
@@ -831,7 +835,7 @@ def extract_value_functions_separate(V_replications):
     VF_df_Opt = pd.DataFrame({
         "Method's Value fn.": optimal_data,
     }) 
-    
+
     return VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh, VF_df_Opt
 
 
@@ -958,8 +962,9 @@ def process_batches(model1, model2, data, params, optimizer, is_train=True):
                 optimizer.zero_grad()
                 loss.backward()
                 # Gradient Clipping (to prevent exploding gradients)
-                torch.nn.utils.clip_grad_norm_(model1.parameters(), max_norm=1.0)
-                torch.nn.utils.clip_grad_norm_(model2.parameters(), max_norm=1.0)
+                if params['gradient_clipping']:
+                    torch.nn.utils.clip_grad_norm_(model1.parameters(), max_norm=1.0)
+                    torch.nn.utils.clip_grad_norm_(model2.parameters(), max_norm=1.0)
                 optimizer.step()
 
         total_loss += loss.item()

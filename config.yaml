@@ -6,25 +6,24 @@ run_DQlearning: True
 run_adaptive_contrast_tao: False 
 setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new' 
 num_replications: 3 # 30, 100
-sample_size: 3000 # 30000  # Number of samples to be used 
+sample_size: 15000 # 30000  # Number of samples to be used 
 
 n_epoch: 60 # 150  # Number of training epochs
-num_layers: 0
+num_layers: 4
 optimizer_type: 'adam'  # Optimizer type, can be 'adam' or 'rmsprop'
 optimizer_lr: 0.07  # Learning rate for the optimizer
 dropout_rate: 0.4  # Dropout rate to prevent overfitting
 activation_function: 'elu' # elu, relu, sigmoid, tanh, leakyrelu, none
 hidden_dim_stage1: 40  # Number of neurons in the hidden layer of stage 1
 hidden_dim_stage2: 40  # Number of neurons in the hidden layer of stage 2 
-
-
+gradient_clipping: False
+add_ll_batch_norm: False
 
 # # scheme_5 constants 
 # C1: 3.0 
 # C2: 3.0 
 # beta: 1 
 # cnst: 1 # 1, 5, 10, 20, 30, 100 
-
 
 # # scheme_6 constants 
 # C1: 5.0 
