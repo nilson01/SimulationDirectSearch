@@ -48,7 +48,7 @@ def extract_unique_treatment_values(df, columns_to_process, name):
     return unique_values
 
 
-def save_simulation_data(all_performances_DQL, all_performances_DS,  all_performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder):
+def save_simulation_data(all_performances_Beh, all_performances_Opt, all_performances_DQL, all_performances_DS,  all_performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder):
     # Check if the folder exists, if not, create it
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -61,6 +61,21 @@ def save_simulation_data(all_performances_DQL, all_performances_DS,  all_perform
     # print("DS Value function across simulations: ", [i.item() for i in performances_DS['Method\'s Value fn.']])
     # print()
         
+    print()
+    # Print Beh value functions across all configurations
+    print("Behavioral Value Functions across all simulations:")
+    for idx, beh_values in enumerate(all_performances_Beh):
+        print(f"Configuration {idx + 1}: {beh_values}")
+
+    print()
+
+    # Print Optimal value functions across all configurations
+    print("\nOptimal Value Functions across all simulations:")
+    for idx, ds_values in enumerate(all_performances_Opt):
+        print(f"Configuration {idx + 1}: {ds_values}")
+
+    print()
+
     print()
     # Print DQL value functions across all configurations
     print("DQL Value Functions across all simulations:")
@@ -94,6 +109,8 @@ def save_simulation_data(all_performances_DQL, all_performances_DS,  all_perform
     df_sim_VF_path_DQL = os.path.join(folder, 'sim_VF_data_DQL.pkl')
     df_sim_VF_path_DS = os.path.join(folder, 'sim_VF_data_DS.pkl')
     df_sim_VF_path_Tao = os.path.join(folder, 'sim_VF_data_Tao.pkl')
+    df_sim_VF_path_Beh = os.path.join(folder, 'sim_VF_data_Beh.pkl')
+    df_sim_VF_path_Opt = os.path.join(folder, 'sim_VF_data_Tao.pkl')
 
 
     # Save each DataFrame with pickle
@@ -103,6 +120,10 @@ def save_simulation_data(all_performances_DQL, all_performances_DS,  all_perform
         pickle.dump(all_performances_DS, f)
     with open(df_sim_VF_path_Tao, 'wb') as f:
         pickle.dump(all_performances_Tao, f)
+    with open(df_sim_VF_path_Beh, 'wb') as f:
+        pickle.dump(all_performances_Beh, f)
+    with open(df_sim_VF_path_Opt, 'wb') as f:
+        pickle.dump(all_performances_Opt, f)
 
 
     # Save each DataFrame with pickle
@@ -784,8 +805,11 @@ def extract_value_functions_separate(V_replications):
     # Process predictive values
     pred_data = V_replications.get('V_replications_M1_pred', defaultdict(list))
 
-    # Process behavioral values (assuming these are shared across models)
+    # Process behavioral values 
     behavioral_data = V_replications.get('V_replications_M1_behavioral', [])
+
+    # Process optimal values 
+    optimal_data = V_replications.get('V_replications_M1_Optimal', [])
 
     # Create DataFrames for each method
     VF_df_DQL = pd.DataFrame({
@@ -803,8 +827,12 @@ def extract_value_functions_separate(V_replications):
     VF_df_Beh = pd.DataFrame({
         "Method's Value fn.": behavioral_data,
     })       
+
+    VF_df_Opt = pd.DataFrame({
+        "Method's Value fn.": optimal_data,
+    }) 
     
-    return VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh
+    return VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh, VF_df_Opt
 
 
 

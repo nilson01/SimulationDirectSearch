@@ -1122,8 +1122,8 @@ def run_training(config, config_updates, V_replications, config_number, config_r
     if not any(V_replications[key] for key in V_replications):
         warnings.warn("V_replications is empty. Skipping accuracy calculation.")
     else:
-        VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh = extract_value_functions_separate(V_replications)
-        return VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh, df_DQL, df_DS, df_Tao, losses_dict, epoch_num_model_lst
+        VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh, VF_df_Opt = extract_value_functions_separate(V_replications)
+        return VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh, VF_df_Opt, df_DQL, df_DS, df_Tao, losses_dict, epoch_num_model_lst
  
 
 # parallelized 
@@ -1151,6 +1151,8 @@ def run_grid_search(config, param_grid):
     all_performances_DQL = []
     all_performances_DS = []
     all_performances_Tao = []
+    all_performances_Beh = []
+    all_performances_Opt = []
 
     grid_replications = 1
 
@@ -1175,7 +1177,7 @@ def run_grid_search(config, param_grid):
 
         for future in concurrent.futures.as_completed(future_to_params):
             current_config, i = future_to_params[future]            
-            performance_DQL, performance_DS, performance_Tao, performance_Beh, df_DQL, df_DS, df_Tao, losses_dict, epoch_num_model_lst = future.result()
+            performance_DQL, performance_DS, performance_Tao, performance_Beh, performance_Opt, df_DQL, df_DS, df_Tao, losses_dict, epoch_num_model_lst = future.result()
             
             print(f'Configuration {current_config}, replication {i} completed successfully.')
             
@@ -1192,6 +1194,8 @@ def run_grid_search(config, param_grid):
             performances_Beh = pd.DataFrame()
             performances_Beh = pd.concat([performance_Beh, performance_Beh], axis=0)
 
+            performances_Opt = pd.DataFrame()
+            performances_Opt = pd.concat([performances_Opt, performance_Opt], axis=0)
 
             # Process and store DQL performance
             dql_values = [value.item() if value is not None else None for value in performances_DQL['Method\'s Value fn.']]
@@ -1204,6 +1208,14 @@ def run_grid_search(config, param_grid):
             # Process and store Tao performance
             tao_values = [value.item() if value is not None else None for value in performances_Tao['Method\'s Value fn.']]
             all_performances_Tao.append(tao_values)
+
+            # Process and store Behavioral performance
+            beh_values = [value.item() if value is not None else None for value in performances_Beh['Method\'s Value fn.']]
+            all_performances_Beh.append(beh_values)
+
+            # Process and store Tao performance
+            opt_values = [value.item() if value is not None else None for value in performances_Opt['Method\'s Value fn.']]
+            all_performances_Opt.append(opt_values)
 
 
 
@@ -1227,17 +1239,26 @@ def run_grid_search(config, param_grid):
             performance_DS_mean = performances_DS["Method's Value fn."].mean()
             performance_Tao_mean = performances_Tao["Method's Value fn."].mean()
             performance_Beh_mean = performances_Beh["Method's Value fn."].mean()
+            performance_Opt_mean = performances_Opt["Method's Value fn."].mean()
+
 
             # Calculating the standard deviation for "Method's Value fn."
             performance_DQL_std = performances_DQL["Method's Value fn."].std()
             performance_DS_std = performances_DS["Method's Value fn."].std()
             performance_Tao_std = performances_Tao["Method's Value fn."].std()
             performance_Beh_std = performances_Beh["Method's Value fn."].std()
+            performance_Opt_std = performances_Opt["Method's Value fn."].std()
 
             # Check if the configuration key exists in the results dictionary
             if config_key not in results:
                 # If not, initialize it with dictionaries for each model containing the mean values
                 results[config_key] = {
+                    'Behavioral': {"Method's Value fn.": performance_Beh_mean, 
+                           "Method's Value fn. SD": performance_Beh_std,
+                           },
+                    'Optimal': {"Method's Value fn.": performance_Opt_mean, 
+                           "Method's Value fn. SD": performance_Opt_std,
+                           },
                     'DQL': {"Method's Value fn.": performance_DQL_mean, 
                             "Method's Value fn. SD": performance_DQL_std, 
                             },
@@ -1246,10 +1267,7 @@ def run_grid_search(config, param_grid):
                            },
                     'Tao': {"Method's Value fn.": performance_Tao_mean, 
                            "Method's Value fn. SD": performance_Tao_std,
-                           },
-                    'Behavioral': {"Method's Value fn.": performance_Beh_mean, 
-                           "Method's Value fn. SD": performance_Beh_std,
-                           }    
+                           }   
                 }
             else:
                 # Update existing entries with new means
@@ -1268,7 +1286,11 @@ def run_grid_search(config, param_grid):
                 results[config_key]['Behavioral'].update({
                     "Method's Value fn.": performance_Beh_mean, 
                     "Method's Value fn. SD": performance_Beh_std,  
-                })                
+                })
+                results[config_key]['Optimal'].update({
+                    "Method's Value fn.": performance_Opt_mean, 
+                    "Method's Value fn. SD": performance_Opt_std,  
+                })                  
 
             print("Performances for configuration: %s", config_key)
             print("performance_DQL_mean: %s", performance_DQL_mean)
@@ -1277,7 +1299,7 @@ def run_grid_search(config, param_grid):
             print("\n\n")
                 
     folder = f"data/{config['job_id']}"
-    save_simulation_data(all_performances_DQL, all_performances_DS,  all_performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder)
+    save_simulation_data(all_performances_Beh, all_performances_Opt, all_performances_DQL, all_performances_DS,  all_performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder)
     load_and_process_data(config, folder)
 
         
