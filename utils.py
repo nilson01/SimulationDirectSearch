@@ -813,6 +813,42 @@ def plot_simulation_Qlearning_losses_in_grid(selected_indices, losses_dict, trai
 
 
 
+# def extract_value_functions_separate(V_replications):
+
+#     # Process predictive values
+#     pred_data = V_replications.get('V_replications_M1_pred', defaultdict(list))
+
+#     # Process behavioral values 
+#     behavioral_data = V_replications.get('V_replications_M1_behavioral', [])
+
+#     # Process optimal values 
+#     optimal_data = V_replications.get('V_replications_M1_Optimal', [])
+
+#     # Create DataFrames for each method
+#     VF_df_DQL = pd.DataFrame({
+#         "Method's Value fn.": pred_data.get('DQL', [None] * len(behavioral_data)),
+#     })
+
+#     VF_df_DS = pd.DataFrame({
+#         "Method's Value fn.": pred_data.get('DS', [None] * len(behavioral_data)),
+#     })
+
+#     VF_df_Tao = pd.DataFrame({
+#         "Method's Value fn.": pred_data.get('Tao', [None] * len(behavioral_data)),
+#     })   
+
+#     VF_df_Beh = pd.DataFrame({
+#         "Method's Value fn.": behavioral_data,
+#     })       
+
+#     VF_df_Opt = pd.DataFrame({
+#         "Method's Value fn.": optimal_data,
+#     }) 
+
+#     return VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh, VF_df_Opt
+
+
+
 def extract_value_functions_separate(V_replications):
 
     # Process predictive values
@@ -824,25 +860,31 @@ def extract_value_functions_separate(V_replications):
     # Process optimal values 
     optimal_data = V_replications.get('V_replications_M1_Optimal', [])
 
+    # Helper function to ensure all tensors are converted to CPU and then to numpy
+    def to_numpy(tensor):
+        if isinstance(tensor, torch.Tensor):
+            return tensor.cpu().numpy()  # Move to CPU and convert to NumPy
+        return tensor  # If it's not a tensor, return as is
+
     # Create DataFrames for each method
     VF_df_DQL = pd.DataFrame({
-        "Method's Value fn.": pred_data.get('DQL', [None] * len(behavioral_data)),
+        "Method's Value fn.": [to_numpy(val) for val in pred_data.get('DQL', [None] * len(behavioral_data))],
     })
 
     VF_df_DS = pd.DataFrame({
-        "Method's Value fn.": pred_data.get('DS', [None] * len(behavioral_data)),
+        "Method's Value fn.": [to_numpy(val) for val in pred_data.get('DS', [None] * len(behavioral_data))],
     })
 
     VF_df_Tao = pd.DataFrame({
-        "Method's Value fn.": pred_data.get('Tao', [None] * len(behavioral_data)),
+        "Method's Value fn.": [to_numpy(val) for val in pred_data.get('Tao', [None] * len(behavioral_data))],
     })   
 
     VF_df_Beh = pd.DataFrame({
-        "Method's Value fn.": behavioral_data,
+        "Method's Value fn.": [to_numpy(val) for val in behavioral_data],
     })       
 
     VF_df_Opt = pd.DataFrame({
-        "Method's Value fn.": optimal_data,
+        "Method's Value fn.": [to_numpy(val) for val in optimal_data],
     }) 
 
     return VF_df_DQL, VF_df_DS, VF_df_Tao, VF_df_Beh, VF_df_Opt
