@@ -118,7 +118,26 @@ CL.AIPW<-function(Y,A,pis.hat,mus.reg){
     # largest vs. smallest
     C.a2[i]<-max(mus.a[i,])-min(mus.a[i,])
     # minus 1 to match A's range of 0,...,K-1
-    l.a[i]<-which(mus.a[i,]==max(mus.a[i,])) # -1
+
+    tryCatch({
+      # Assign working order (l.a), ensuring valid max exists
+      max_val <- max(mus.a[i, ], na.rm = TRUE)
+      l.a[i] <- which(mus.a[i, ] == max_val)
+    }, error = function(e) {
+      # Print detailed information only if an error occurs
+      cat("Error occurred at index", i, "\n")
+      cat("mus.a[i, ]: ", mus.a[i, ], "\n")
+      cat("max(mus.a[i, ]): ", max(mus.a[i, ], na.rm = TRUE), "\n")
+      cat("Error message: ", e$message, "\n")
+    })
+
+    # cat("<<<<<<<<<<<<<<>>>>>>>>>>>>>>>=============>: ", mus.a[i,], max(mus.a[i,]))
+    # cat("<<<<<<<<<<<<<<>>>>>>>>>>>>>>>=============>: ", max(mus.a[i,]))
+  
+    # l.a[i]<-which(mus.a[i,]==max(mus.a[i,])) # -1    
+    # max_val <- max(mus.a[i, ], na.rm = TRUE)
+    # l.a[i] <- which(mus.a[i, ] == max_val)
+
   }
   output<-data.frame(C.a1, C.a2, l.a)
   output

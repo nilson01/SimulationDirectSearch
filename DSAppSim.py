@@ -741,12 +741,21 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
         print("pi_20: ", probs2['pi_20'].mean().item(), "pi_21: ", probs2['pi_21'].mean().item(), "pi_22: ", probs2['pi_22'].mean().item())
         print("="*90)
         print()
+
         print("="*60)
+        print("Y1_beh mean: ", torch.mean(Y1) )
+        print("Y2_beh mean: ", torch.mean(Y2) )         
+        print("Y1_beh+Y2_beh mean: ", torch.mean(Y1+Y2) )
+
+        print()
+        print("Unique- Optimal treat Stage 1", g1_opt.unique())
+        print("Unique- Optimal treat Stage 2", g2_opt.unique())
+        print()
+
         print("Y1_g1_opt mean: ", torch.mean(Y1_g1_opt) )
         print("Y2_g2_opt mean: ", torch.mean(Y2_g2_opt) )         
         print("Y1_g1_opt+Y2_g2_opt mean: ", torch.mean(Y1_g1_opt+Y2_g2_opt) )
-        print("Unique- Optimal treat Stage 1", g1_opt.unique())
-        print("Unique- Optimal treat Stage 2", g2_opt.unique())
+
         print("="*60)
         return input_stage1, input_stage2, O2, Y1, Y2, A1, A2, P_A1_given_H1_tensor, P_A2_given_H2_tensor, g1_opt, g2_opt, Z1, Z2, Y1_g1_opt, Y2_g2_opt
 
@@ -759,7 +768,7 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
     return tuple(train_tensors), tuple(val_tensors), tuple([O1, O2, Y1, Y2, A1, A2, pi_tensor_stack, g1_opt, g2_opt])
 
 
-def surr_opt(tuple_train, tuple_val, params, config_number):
+def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num):
     
     sample_size = params['sample_size'] 
     
@@ -800,8 +809,8 @@ def surr_opt(tuple_train, tuple_val, params, config_number):
         os.makedirs(model_dir)
     
     # Define file paths for saving models
-    model_path_stage1 = os.path.join(model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}.pt')
-    model_path_stage2 = os.path.join(model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}.pt')
+    model_path_stage1 = os.path.join(model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+    model_path_stage2 = os.path.join(model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
         
     # Save the models
     torch.save(best_model_stage1_params, model_path_stage1)
@@ -858,7 +867,7 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
     delta_A2_np = params_ds['delta_A2'].cpu().numpy()
     eta_A2_np = params_ds['eta_A2'].cpu().numpy()
 
-    lambda_val_np = params_ds['lambda_val'].cpu().numpy()
+    lambda_val_np = params_ds['lambda_val'].item()
 
 
 
@@ -875,7 +884,7 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
                                         gamma2_prime=gamma2_prime_np, 
                                         delta_A2=delta_A2_np, 
                                         eta_A2=eta_A2_np,         
-                                        lambda_val=lambda_val_np
+                                        # lambda_val=lambda_val_np
                                         )
 
     # Extract the decisions and convert to PyTorch tensors on the specified device
@@ -891,7 +900,7 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
 
 
     # Generate and preprocess data for evaluation
-    processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications+123, config_seed=config_number, run='test')
+    processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications+1234, config_seed=config_number, run='test')
     test_input_stage1, test_input_stage2, test_O2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2, Y1_g1_opt, Y2_g2_opt  = processed_result
     train_tensors = [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test]
 
@@ -899,9 +908,9 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
     V_replications["V_replications_M1_behavioral"].append(torch.mean(Y1_tensor + Y2_tensor).cpu())  
     V_replications["V_replications_M1_Optimal"].append(torch.mean(Y1_g1_opt + Y2_g2_opt).cpu())  
 
-    # Value function behavioral
-    message = f'\nY1 beh mean: {torch.mean(Y1_tensor)}, Y2 beh mean: {torch.mean(Y2_tensor)}, Y1_beh+Y2_beh mean: {torch.mean(Y1_tensor + Y2_tensor)} '
-    print(message)
+    # # Value function behavioral
+    # message = f'\nY1 beh mean: {torch.mean(Y1_tensor)}, Y2 beh mean: {torch.mean(Y2_tensor)}, Y1_beh+Y2_beh mean: {torch.mean(Y1_tensor + Y2_tensor)} '
+    # print(message)
 
     #######################################
     # Evaluation phase using Tao's method #
@@ -927,12 +936,10 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
         # Calculate policy values fn. using the estimator of Tao's method
         # print("Tao's method estimator: ")
         start_time = time.time()  # Start time recording
-
         V_rep_Tao = calculate_policy_valuefunc("Tao", test_input_stage1, test_O2, params_ds, A1_Tao, A2_Tao, d1_star, d2_star, Z1, Z2)
         # V_rep_Tao = calculate_policy_values_W_estimator(train_tensors, params_ds, A1_Tao, A2_Tao, P_A1_g_H1, P_A2_g_H2, config_number)
-
         end_time = time.time()  # End time recording
-        print(f"\n\nTotal time taken to run calculate_policy_values_W_estimator_tao: { end_time - start_time} seconds")
+        print(f"\n\nTotal time taken to run estimator function for testing: { end_time - start_time} seconds")
                 
         # Append policy values for Tao
         V_replications["V_replications_M1_pred"]["Tao"].append(V_rep_Tao)     
@@ -944,7 +951,7 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
     #######################################
     if params_ds.get('run_DQlearning', True):
         start_time = time.time()  # Start time recording
-        df_DQL, V_rep_DQL = evaluate_method('DQL', params_dql, config_number, df_DQL, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, 
+        df_DQL, V_rep_DQL = evaluate_method_DQL('DQL', params_dql, config_number, df_DQL, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, 
                                             A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 )
         end_time = time.time()  # End time recording
         print(f"\n\nTotal time taken to run evaluate_method)W_estimator('DQL'): { end_time - start_time} seconds")
@@ -958,14 +965,14 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
     ########################################
     if params_ds.get('run_surr_opt', True):
         start_time = time.time()  # Start time recording
-        df_DS, V_rep_DS = evaluate_method('DS', params_ds, config_number, df_DS, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, 
+        df_DS, V_rep_DS = evaluate_method_DS('DS', params_ds, config_number, df_DS, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, 
                                         A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 )
         end_time = time.time()  # End time recording
-        print(f"\n\nTotal time taken to run evaluate_method)W_estimator('DS'): { end_time - start_time} seconds\n\n")
+        print(f"\nTotal time taken to run evaluate_method)W_estimator('DS'): { end_time - start_time} seconds\n")
                     
         # Append policy values for DS
         V_replications["V_replications_M1_pred"]["DS"].append(V_rep_DS)
-        message = f'\nY1_DS+Y2_DS mean: {V_rep_DS} '
+        message = f'Y1_DS+Y2_DS mean: {V_rep_DS}'
         print(message)
 
     return V_replications, df_DQL, df_DS, df_Tao 
@@ -1101,7 +1108,13 @@ def simulations(V_replications, params, config_number):
             params_DS_u['input_dim_stage2'] = params['input_dim_stage2']  # Ex. TAO: 7  # (H_2, A_2)
 
             start_time = time.time()  # Start time recording
-            trn_val_loss_tpl_DS, epoch_num_model_DS = surr_opt(tuple_train, tuple_val, params_DS_u, config_number)
+
+            for ensemble_num in range(params['ensemble_count']):
+                print()
+                print(f"***************************************** Train: {ensemble_num}*****************************************")
+                print()
+                trn_val_loss_tpl_DS, epoch_num_model_DS = surr_opt(tuple_train, tuple_val, params_DS_u, config_number, ensemble_num)
+
             end_time = time.time()  # End time recording
             print(f"Total time taken to run surr_opt: { end_time - start_time} seconds")
             # Append epoch model results from surr_opt
@@ -1199,7 +1212,7 @@ def run_grid_search(config, param_grid):
             performances_Tao = pd.concat([performances_Tao, performance_Tao], axis=0)
 
             performances_Beh = pd.DataFrame()
-            performances_Beh = pd.concat([performance_Beh, performance_Beh], axis=0)
+            performances_Beh = pd.concat([performances_Beh, performance_Beh], axis=0)
 
             performances_Opt = pd.DataFrame()
             performances_Opt = pd.concat([performances_Opt, performance_Opt], axis=0)

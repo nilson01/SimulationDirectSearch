@@ -363,10 +363,19 @@ def initialize_nn(params, stage):
 def batches(N, batch_size):
     # Create a tensor of indices from 0 to N-1
     indices = torch.arange(N)
-    
+
+    # Save the current random state
+    rng_state = torch.get_rng_state()
+
+    # Optionally, set a different random seed for the shuffle (or just let it be random)
+    torch.manual_seed(torch.seed())  # Generates a random seed for this shuffle
+
     # Shuffle the indices
     indices = indices[torch.randperm(N)]
-    
+
+    # Restore the previous random state to ensure consistency elsewhere
+    torch.set_rng_state(rng_state)
+
     # Yield batches of indices
     for start_idx in range(0, N, batch_size):
         batch_indices = indices[start_idx:start_idx + batch_size]
@@ -1207,14 +1216,14 @@ def compute_test_outputs(nn, test_input, A_tensor, params, is_stage1=True):
 
 
 
-def initialize_and_load_model(stage, sample_size, params, config_number):
+def initialize_and_load_model(stage, sample_size, params, config_number, ensemble_num=1):
     # Initialize the neural network model
     nn_model = initialize_nn(params, stage).to(params['device'])
     
     # Define the directory and file name for the model
     model_dir = f"models/{params['job_id']}"
     if params['f_model']=="surr_opt":
-        model_filename = f'best_model_stage_surr_{stage}_{sample_size}_config_number_{config_number}.pt'
+        model_filename = f'best_model_stage_surr_{stage}_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt'
     else:
         model_filename = f'best_model_stage_Q_{stage}_{sample_size}_config_number_{config_number}.pt'
         
@@ -1827,7 +1836,8 @@ def calculate_policy_valuefunc(method_name, O1, O2, params, A1_di, A2_di, d1_sta
 
     Y1_di = calculate_reward_stage1(O1, A1_di, d1_star, Z1, params) #(O1, A1_di, Z1)
 
-    print(f"O1: {O1.dtype}, A1_di: {A1_di.dtype}, O2: {O2.dtype}, A2_di: {A2_di.dtype}, d2_star: {d2_star.dtype}, Z2: {Z2.dtype}")
+    # print(f"O1: {O1.dtype}, A1_di: {A1_di.dtype}, O2: {O2.dtype}, A2_di: {A2_di.dtype}, d2_star: {d2_star.dtype}, Z2: {Z2.dtype}")
+
     Y2_di = calculate_reward_stage2(O1, A1_di, O2, A2_di, d2_star, Z2, params, Y1 = Y1_di) #(O1, O2, A1_di, A2_di, Z1, Z2 )
     print()
     print("="*60)
@@ -1842,7 +1852,107 @@ def calculate_policy_valuefunc(method_name, O1, O2, params, A1_di, A2_di, d1_sta
 
 
 
-def evaluate_method(method_name, params, config_number, df, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 ):
+def evaluate_method_DS(method_name, params, config_number, df, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 ):
+    
+    
+    # # Initialize and load models for the method
+    # nn_stage1 = initialize_and_load_model(1, params['sample_size'], params, config_number)
+    # nn_stage2 = initialize_and_load_model(2, params['sample_size'], params, config_number)
+
+    # # Calculate test outputs for all networks in stage 1
+    # A1 = compute_test_outputs(nn=nn_stage1, 
+    #                           test_input=test_input_stage1, 
+    #                           A_tensor=A1_tensor_test, 
+    #                           params=params, 
+    #                           is_stage1=True)
+
+    # # Calculate test outputs for all networks in stage 2
+    # A2 = compute_test_outputs(nn=nn_stage2, 
+    #                           test_input=test_input_stage2, 
+    #                           A_tensor=A2_tensor_test, 
+    #                           params=params, 
+    #                           is_stage1=False)
+
+
+    # Define a function for majority voting using PyTorch
+    def max_voting(votes):
+        # votes is a tensor of shape (ensemble_count, num_samples)
+        # Perform voting by getting the most frequent element in each column (sample)
+        return torch.mode(votes, dim=0).values  # Returns the most frequent element along the ensemble axis
+
+    # Initialize lists to store the predictions for A1 and A2 across the ensemble
+    A1_ensemble = []
+    A2_ensemble = []
+
+    # Loop through each ensemble member
+    for ensemble_num in range(params['ensemble_count']):
+        print()
+        print(f"***************************************** Test: {ensemble_num}*****************************************")
+        print()
+        # Initialize and load models for the current ensemble member
+        nn_stage1 = initialize_and_load_model(1, params['sample_size'], params, config_number, ensemble_num=ensemble_num)
+        nn_stage2 = initialize_and_load_model(2, params['sample_size'], params, config_number, ensemble_num=ensemble_num)
+        
+        # Calculate test outputs for stage 1
+        A1 = compute_test_outputs(nn=nn_stage1, 
+                                test_input=test_input_stage1, 
+                                A_tensor=A1_tensor_test, 
+                                params=params, 
+                                is_stage1=True)
+        
+        # Calculate test outputs for stage 2
+        A2 = compute_test_outputs(nn=nn_stage2, 
+                                test_input=test_input_stage2, 
+                                A_tensor=A2_tensor_test, 
+                                params=params, 
+                                is_stage1=False)
+        
+        # Append the outputs for each ensemble member (A1 and A2 predictions)
+        A1_ensemble.append(A1)
+        A2_ensemble.append(A2)
+
+    # Convert lists to PyTorch tensors of shape (ensemble_count, num_samples)
+    A1_ensemble = torch.stack(A1_ensemble)  # Tensor of shape (ensemble_count, num_samples)
+    A2_ensemble = torch.stack(A2_ensemble)  # Tensor of shape (ensemble_count, num_samples)
+
+    # Perform majority voting across the ensemble for A1 and A2
+    A1 = max_voting(A1_ensemble)  # Output of shape (num_samples,) with voted actions for A1
+    A2 = max_voting(A2_ensemble)  # Output of shape (num_samples,) with voted actions for A2
+
+    # Print top 20 ensemble predictions and their corresponding majority votes in a stacked format
+    print("\nTop 20 Ensemble Predictions and Majority Votes for A1 (stacked format):")
+    for i in range(20):
+        print(f"Sample {i+1}:")
+        stacked_A1 = torch.cat([A1_ensemble[:, i], A1[i].unsqueeze(0)])  # Stack ensemble predictions and majority vote
+        print(f"  Ensemble A1 predictions + Voted A1 action: {stacked_A1.tolist()}")  # Print stacked format
+
+    print("\nTop 20 Ensemble Predictions and Majority Votes for A2 (stacked format):")
+    for i in range(20):
+        print(f"Sample {i+1}:")
+        stacked_A2 = torch.cat([A2_ensemble[:, i], A2[i].unsqueeze(0)])  # Stack ensemble predictions and majority vote
+        print(f"  Ensemble A2 predictions + Voted A2 action: {stacked_A2.tolist()}")  # Print stacked format
+
+
+    # Append to DataFrame
+    new_row = {
+        'Behavioral_A1': A1_tensor_test.cpu().numpy().tolist(),
+        'Behavioral_A2': A2_tensor_test.cpu().numpy().tolist(),
+        'Predicted_A1': A1.cpu().numpy().tolist(),
+        'Predicted_A2': A2.cpu().numpy().tolist()
+    }
+    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+
+    V_replications_M1_pred = calculate_policy_valuefunc(method_name, test_input_stage1, test_O2, params, A1, A2,  d1_star, d2_star, Z1, Z2)
+
+    # Calculate policy values using the DR estimator
+    # V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
+
+    return df, V_replications_M1_pred
+
+
+
+def evaluate_method_DQL(method_name, params, config_number, df, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 ):
+    
     # Initialize and load models for the method
     nn_stage1 = initialize_and_load_model(1, params['sample_size'], params, config_number)
     nn_stage2 = initialize_and_load_model(2, params['sample_size'], params, config_number)
@@ -1876,3 +1986,4 @@ def evaluate_method(method_name, params, config_number, df, test_input_stage1, A
     # V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
 
     return df, V_replications_M1_pred
+

@@ -1,12 +1,13 @@
 # Network parameters configuration
 
 # Models to run True False
+run_DQlearning: False
 run_surr_opt: True
-run_DQlearning: True
 run_adaptive_contrast_tao: False 
 setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new' 
-num_replications: 3 # 30, 100
-sample_size: 15000 # 30000  # Number of samples to be used 
+num_replications: 9 # 30, 100
+sample_size: 15000 # 30000, 10000  # Number of samples to be used 
+batch_size: 5000  #700, 300  # Batch size calculated as a proportion of sample size
 
 n_epoch: 60 # 150  # Number of training epochs
 num_layers: 4
@@ -16,8 +17,9 @@ dropout_rate: 0.4  # Dropout rate to prevent overfitting
 activation_function: 'elu' # elu, relu, sigmoid, tanh, leakyrelu, none
 hidden_dim_stage1: 40  # Number of neurons in the hidden layer of stage 1
 hidden_dim_stage2: 40  # Number of neurons in the hidden layer of stage 2 
-gradient_clipping: False
+gradient_clipping: True # True, False
 add_ll_batch_norm: False
+ensemble_count: 7 # 7
 
 # # scheme_5 constants 
 # C1: 3.0 
@@ -29,15 +31,15 @@ add_ll_batch_norm: False
 # C1: 5.0 
 # C2: 5.0 
 # beta: 1 
-# cnst: 10 #10
+# cnst: 10 # 10 
 # b: 2 
 
-# scheme 8
+# scheme 8 
 C1: 3.0 
 C2: 3.0 
-neu: 5 #10
-u: 5 #10
-alpha: 5 #10
+neu: 5 # 10 
+u: 5 # 10 
+alpha: 5 # 10
 f: "square" #'square', arctan, sin, exp_half, exp, tan
 m1 : 'sin'
 m2: 'sin'
@@ -55,7 +57,6 @@ interaction_terms: False
 surrogate_num: 1 #1  # Indicates the surrogate model configuration number
 option_sur: 2 #4  # Specifies the operational mode or variant of the surrogate model
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
-batch_size: 300 #7000  # Batch size calculated as a proportion of sample size
 # job_id: tao 
 
 training_validation_prop: 0.7  # Proportion of data for training vs validation
