@@ -954,7 +954,7 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
         df_DQL, V_rep_DQL = evaluate_method_DQL('DQL', params_dql, config_number, df_DQL, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, 
                                             A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 )
         end_time = time.time()  # End time recording
-        print(f"\n\nTotal time taken to run evaluate_method)W_estimator('DQL'): { end_time - start_time} seconds")
+        print(f"\n\nTotal time taken to run evaluate_method ('DQL'): { end_time - start_time} seconds")
         # Append policy values for DQL
         V_replications["V_replications_M1_pred"]["DQL"].append(V_rep_DQL)     
         message = f'\nY1_DQL+Y2_DQL mean: {V_rep_DQL} '
@@ -968,7 +968,7 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
         df_DS, V_rep_DS = evaluate_method_DS('DS', params_ds, config_number, df_DS, test_input_stage1, A1_tensor_test, test_O2, test_input_stage2, 
                                         A2_tensor_test, train_tensors, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2 )
         end_time = time.time()  # End time recording
-        print(f"\nTotal time taken to run evaluate_method)W_estimator('DS'): { end_time - start_time} seconds\n")
+        print(f"\nTotal time taken to run evaluate_method ('DS'): { end_time - start_time} seconds\n")
                     
         # Append policy values for DS
         V_replications["V_replications_M1_pred"]["DS"].append(V_rep_DS)
@@ -1446,14 +1446,14 @@ def main():
     # # Define parameter grid for grid search
 
     # Empty Grid
-    # param_grid = {}
+    param_grid = {}
 
-    param_grid = {  
-        'n_epoch': [60], #250
-        'hidden_dim_stage1': [20], #20
-        'hidden_dim_stage2': [20], #20
-        'dropout_rate': [0.0], #0.3, 0.43
-        }
+    # param_grid = {  
+    #     'n_epoch': [60], #250
+    #     'hidden_dim_stage1': [20], #20
+    #     'hidden_dim_stage2': [20], #20
+    #     'dropout_rate': [0.0], #0.3, 0.43
+    #     }
 
     # param_grid = {
     #     'activation_function': [ 'elu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
