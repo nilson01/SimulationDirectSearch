@@ -1,12 +1,12 @@
 # Network parameters configuration
 
-# Models to run True False
-run_DQlearning: False
-run_surr_opt: True
+# Models to run True False 
+run_DQlearning: False 
+run_surr_opt: True 
 run_adaptive_contrast_tao: False 
 setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new' 
-num_replications: 9 # 30, 100
-sample_size: 15000 # 30000, 10000  # Number of samples to be used 
+num_replications: 3 # 30, 100
+sample_size: 15000 # 15000, 30000, 10000  # Number of samples to be used 
 batch_size: 800  #700, 300  # Batch size calculated as a proportion of sample size
 
 n_epoch: 60 # 150  # Number of training epochs
@@ -19,6 +19,7 @@ hidden_dim_stage1: 40  # Number of neurons in the hidden layer of stage 1
 hidden_dim_stage2: 40  # Number of neurons in the hidden layer of stage 2 
 gradient_clipping: True # True, False
 add_ll_batch_norm: False
+phi_ensamble: True # if this is true keep ensemble_count to 5
 ensemble_count: 5 # 7 
 
 # # scheme_5 constants 

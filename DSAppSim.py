@@ -768,7 +768,7 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
     return tuple(train_tensors), tuple(val_tensors), tuple([O1, O2, Y1, Y2, A1, A2, pi_tensor_stack, g1_opt, g2_opt])
 
 
-def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num):
+def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur):
     
     sample_size = params['sample_size'] 
     
@@ -788,10 +788,10 @@ def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num):
     # Training and Validation loop for both stages
     for epoch in range(params['n_epoch']):
 
-        train_loss = process_batches(nn_stage1, nn_stage2, train_data, params, optimizer, is_train=True)
+        train_loss = process_batches(nn_stage1, nn_stage2, train_data, params, optimizer, option_sur=option_sur, is_train=True)
         train_losses.append(train_loss)
 
-        val_loss = process_batches(nn_stage1, nn_stage2, val_data, params, optimizer, is_train=False)
+        val_loss = process_batches(nn_stage1, nn_stage2, val_data, params, optimizer, option_sur=option_sur, is_train=False)
         val_losses.append(val_loss)
 
         if val_loss < best_val_loss:
@@ -897,7 +897,6 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
 
 # def eval_DTR(V_replications, num_replications, nn_stage1_DQL, nn_stage2_DQL, nn_stage1_DS, nn_stage2_DS, df_DQL, df_DS, df_Tao, params_dql, params_ds, config_number):
 def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql, params_ds, config_number):
-
 
     # Generate and preprocess data for evaluation
     processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications+1234, config_seed=config_number, run='test')
@@ -1095,7 +1094,6 @@ def simulations(V_replications, params, config_number):
             params_DQL_u['input_dim_stage1'] = params['input_dim_stage1'] + 1 # Ex. TAO: 5 + 1 = 6 # (H_1, A_1)
             params_DQL_u['input_dim_stage2'] = params['input_dim_stage2'] + 1 # Ex. TAO: 7 + 1 = 8 # (H_2, A_2)
 
-
             start_time = time.time()  # Start time recording
             trn_val_loss_tpl_DQL = DQlearning(tuple_train, tuple_val, params_DQL_u, config_number)
             end_time = time.time()  # End time recording
@@ -1111,9 +1109,13 @@ def simulations(V_replications, params, config_number):
 
             for ensemble_num in range(params['ensemble_count']):
                 print()
-                print(f"***************************************** Train: {ensemble_num}*****************************************")
+                print(f"***************************************** Train -> Agent #: {ensemble_num}*****************************************")
                 print()
-                trn_val_loss_tpl_DS, epoch_num_model_DS = surr_opt(tuple_train, tuple_val, params_DS_u, config_number, ensemble_num)
+                if params['phi_ensamble']:
+                    option_sur = params['option_sur']
+                else:
+                    option_sur = ensemble_num+1
+                trn_val_loss_tpl_DS, epoch_num_model_DS = surr_opt(tuple_train, tuple_val, params_DS_u, config_number, ensemble_num, option_sur)
 
             end_time = time.time()  # End time recording
             print(f"Total time taken to run surr_opt: { end_time - start_time} seconds")

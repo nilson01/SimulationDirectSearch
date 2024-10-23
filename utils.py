@@ -983,7 +983,7 @@ def main_loss_gamma(stage1_outputs, stage2_outputs, A1, A2, Ci, option, surrogat
 
 
 
-def process_batches(model1, model2, data, params, optimizer, is_train=True):
+def process_batches(model1, model2, data, params, optimizer, option_sur, is_train=True):
     batch_size = params['batch_size']
     total_loss = 0
     num_batches = (data['input1'].shape[0] + batch_size - 1) // batch_size
@@ -1008,7 +1008,7 @@ def process_batches(model1, model2, data, params, optimizer, is_train=True):
             outputs_stage2 = torch.stack(outputs_stage2, dim=1).squeeze()
 
             loss = main_loss_gamma(outputs_stage1, outputs_stage2, batch_data['A1'], batch_data['A2'], 
-                                   batch_data['Ci'], option=params['option_sur'], surrogate_num=params['surrogate_num'])
+                                   batch_data['Ci'], option=option_sur, surrogate_num=params['surrogate_num'])
             if is_train:
                 optimizer.zero_grad()
                 loss.backward()
@@ -1929,7 +1929,7 @@ def evaluate_method_DS(method_name, params, config_number, df, test_input_stage1
     # Loop through each ensemble member
     for ensemble_num in range(params['ensemble_count']):
         print()
-        print(f"***************************************** Test: {ensemble_num}*****************************************")
+        print(f"***************************************** Test -> Agent #: {ensemble_num}*****************************************")
         print()
         # Initialize and load models for the current ensemble member
         nn_stage1 = initialize_and_load_model(1, params['sample_size'], params, config_number, ensemble_num=ensemble_num)
