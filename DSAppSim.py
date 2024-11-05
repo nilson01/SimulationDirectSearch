@@ -1033,30 +1033,30 @@ class CustomDataset(Dataset):
 
 
 
-# Define a function to create the DataLoader with repeated shuffling if needed
-def get_data_loader_with_reshuffle(dataset, batch_size, batches_to_sample):
-    # Generate all indices for the dataset
-    indices = np.arange(len(dataset))
+# # Define a function to create the DataLoader with repeated shuffling if needed
+# def get_data_loader_with_reshuffle(dataset, batch_size, batches_to_sample):
+#     # Generate all indices for the dataset
+#     indices = np.arange(len(dataset))
     
-    # Prepare a list to hold the selected indices for this epoch
-    sampled_indices = []
+#     # Prepare a list to hold the selected indices for this epoch
+#     sampled_indices = []
     
-    # Loop until we reach the desired number of batches
-    while len(sampled_indices) < batches_to_sample * batch_size:
-        # Shuffle indices
-        np.random.shuffle(indices)
+#     # Loop until we reach the desired number of batches
+#     while len(sampled_indices) < batches_to_sample * batch_size:
+#         # Shuffle indices
+#         np.random.shuffle(indices)
         
-        # Add the shuffled indices to sampled_indices
-        sampled_indices.extend(indices)
+#         # Add the shuffled indices to sampled_indices
+#         sampled_indices.extend(indices)
     
-    # Trim sampled_indices to match exactly `num_batches * batch_size`
-    sampled_indices = sampled_indices[:batches_to_sample * batch_size]
+#     # Trim sampled_indices to match exactly `num_batches * batch_size`
+#     sampled_indices = sampled_indices[:batches_to_sample * batch_size]
     
-    # Create DataLoader with SubsetRandomSampler to sample these indices
-    sampler = SubsetRandomSampler(sampled_indices)
-    loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
+#     # Create DataLoader with SubsetRandomSampler to sample these indices
+#     sampler = SubsetRandomSampler(sampled_indices)
+#     loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
     
-    return loader
+#     return loader
 
 
 def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur):
@@ -1064,7 +1064,7 @@ def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option
     device = params['device']
     n_epoch = params['n_epoch']
     batch_size = params['batch_size']
-    batches_to_sample =  params['batches_to_sample']
+    # batches_to_sample =  params['batches_to_sample']
     
     eval_freq =  params['eval_freq'] # params.get('eval_freq', 10)  # Evaluate every 10 steps by default
     # early_stopping_patience =  params['early_stopping_patience'] # params.get('early_stopping_patience', 10)  
@@ -1278,9 +1278,7 @@ def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option
     model_path_stage2 = os.path.join(
         model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
 
-    # torch.save(best_model_stage1_params, model_path_stage1)
-    # torch.save(best_model_stage2_params, model_path_stage2)
-    
+
     # Ensure the model parameters are not None before saving
     if best_model_stage1_params is not None and best_model_stage2_params is not None:
         # Save models
