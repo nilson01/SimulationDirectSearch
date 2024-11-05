@@ -14,12 +14,19 @@ from collections import defaultdict
 from itertools import combinations
 
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
+
+import numpy as np
+from itertools import islice
+
 import rpy2.robjects as ro
 from rpy2.robjects import numpy2ri
 numpy2ri.activate()
 # Load the R script to avoid dynamic loading
 ro.r.source("ACWL_tao.R")
-
 
 # Generate Data
 def generate_and_preprocess_data(params, replication_seed, config_seed, run='train'):
@@ -530,15 +537,19 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
         # theta_1[2] = mu_t1 + torch.randn(10, device=device) * np.sqrt(sigma_squared)
 
         # Sample theta_{ta} for Stage 1 
-        theta_mu = torch.randn(params['input_dim'], device=device)  # Random vector not aligned with gamma1
 
+        # tuning_param = torch.tensor(1.0)
+        theta_mu = torch.full((params['input_dim'],), 1, device=device)
+
+        # theta_mu = torch.randn(params['input_dim'], device=device)  # Random vector not aligned with gamma1
+
+        # Approach: 1 theta_1    
         theta_1 = torch.zeros(3, params['input_dim'], device=device)
         for a in range(3):
             if a + 1 != g1_opt.mode()[0].item():  # If not the most common optimal action
-                theta_1[a] = -theta_mu + torch.randn(params['input_dim'], device=device) * 0.1
+                theta_1[a] = -theta_mu 
             else:
-                theta_1[a] = theta_mu + torch.randn(params['input_dim'], device=device) * 0.1
-
+                theta_1[a] = theta_mu 
 
 
         # Stage 1 data simulation
@@ -598,12 +609,21 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
         # theta_2[2] = mu_t1 + torch.randn(10, device=device) * np.sqrt(sigma_squared)
 
         # Sample theta_{ta} for Stage 2
+        # Approach: 1 theta_1        
         theta_2 = torch.zeros(3, params['input_dim'], device=device)
         for a in range(3):
             if a + 1 != g2_opt.mode()[0].item():  # If not the most common optimal action
-                theta_2[a] = -theta_mu + torch.randn(params['input_dim'], device=device) * 0.1
+                theta_2[a] = -theta_mu
             else:
-                theta_2[a] = theta_mu + torch.randn(params['input_dim'], device=device) * 0.1
+                theta_2[a] = theta_mu 
+
+        # # Approach: 2 theta_2        
+        # theta_2 = torch.zeros(3, params['input_dim'], device=device) 
+        # for a in range(3):
+        #     if a + 1 != g2_opt.mode()[0].item():  # If not the most common optimal action
+        #         theta_1[a] = -theta_mu 
+        #     else:
+        #         theta_1[a] = theta_mu 
 
         alpha = 0.5  # Dependency on A1
         beta = 0.5   # Dependency on Y1
@@ -768,54 +788,518 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
     return tuple(train_tensors), tuple(val_tensors), tuple([O1, O2, Y1, Y2, A1, A2, pi_tensor_stack, g1_opt, g2_opt])
 
 
-def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur):
+# def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur):
     
-    sample_size = params['sample_size'] 
+#     sample_size = params['sample_size'] 
     
-    train_losses, val_losses = [], []
-    best_val_loss, best_model_stage1_params, best_model_stage2_params, epoch_num_model = float('inf'), None, None, 0
+#     train_losses, val_losses = [], []
+#     best_val_loss, best_model_stage1_params, best_model_stage2_params, epoch_num_model = float('inf'), None, None, 0
 
+#     nn_stage1 = initialize_and_prepare_model(1, params)
+#     nn_stage2 = initialize_and_prepare_model(2, params)
+
+#     optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
+
+#     #  Training and Validation data
+#     train_data = {'input1': tuple_train[0], 'input2': tuple_train[1], 'Ci': tuple_train[2], 'A1': tuple_train[5], 'A2': tuple_train[6]}
+#     val_data = {'input1': tuple_val[0], 'input2': tuple_val[1], 'Ci': tuple_val[2], 'A1': tuple_val[5], 'A2': tuple_val[6]}
+
+
+#     # Training and Validation loop for both stages
+#     for epoch in range(params['n_epoch']):
+
+#         train_loss = process_batches(nn_stage1, nn_stage2, train_data, params, optimizer, option_sur=option_sur, is_train=True)
+#         train_losses.append(train_loss)
+
+#         val_loss = process_batches(nn_stage1, nn_stage2, val_data, params, optimizer, option_sur=option_sur, is_train=False)
+#         val_losses.append(val_loss)
+
+#         if val_loss < best_val_loss:
+#             epoch_num_model = epoch
+#             best_val_loss = val_loss
+#             best_model_stage1_params = nn_stage1.state_dict()
+#             best_model_stage2_params = nn_stage2.state_dict()
+
+#         # Update the scheduler with the current epoch's validation loss
+#         update_scheduler(scheduler, params, val_loss)
+
+#     model_dir = f"models/{params['job_id']}"
+#     # Check if the directory exists, if not, create it
+#     if not os.path.exists(model_dir):
+#         os.makedirs(model_dir)
+    
+#     # Define file paths for saving models
+#     model_path_stage1 = os.path.join(model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+#     model_path_stage2 = os.path.join(model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+        
+#     # Save the models
+#     torch.save(best_model_stage1_params, model_path_stage1)
+#     torch.save(best_model_stage2_params, model_path_stage2)
+    
+#     return ((train_losses, val_losses), epoch_num_model)
+
+
+
+
+class CustomDataset(Dataset):
+    def __init__(self, data):
+        self.data = data
+        self.length = data['input1'].shape[0]
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        sample = {k: v[idx] for k, v in self.data.items()}
+        return sample
+
+
+
+# def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur):
+#     sample_size = params['sample_size']
+#     device = params['device']
+#     n_epoch = params['n_epoch']
+#     batch_size = params['batch_size']
+#     eval_freq = params.get('eval_freq', 10)  # Evaluate every 10 steps by default
+
+#     # Initialize models
+#     nn_stage1 = initialize_and_prepare_model(1, params)
+#     nn_stage2 = initialize_and_prepare_model(2, params)
+
+#     # Initialize optimizer and scheduler
+#     optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
+
+#     # Prepare training and validation data
+#     train_data = {
+#         'input1': tuple_train[0], 'input2': tuple_train[1], 'Ci': tuple_train[2],
+#         'A1': tuple_train[5], 'A2': tuple_train[6]
+#     }
+#     val_data = {
+#         'input1': tuple_val[0], 'input2': tuple_val[1], 'Ci': tuple_val[2],
+#         'A1': tuple_val[5], 'A2': tuple_val[6]
+#     }
+
+#     # Create datasets and data loaders
+#     train_dataset = CustomDataset(train_data)
+#     val_dataset = CustomDataset(val_data)
+
+#     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+#     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
+#     # Training variables
+#     train_losses = []
+#     val_losses = []
+#     best_val_loss = float('inf')
+#     best_model_stage1_params = None
+#     best_model_stage2_params = None
+#     epoch_num_model = 0
+#     total_steps = 0 
+
+#     # For tabular display
+#     loss_table = pd.DataFrame(columns=['Epoch', 'Avg Training Loss', 'Avg Validation Loss'])
+
+
+#     for epoch in range(n_epoch):
+#         nn_stage1.train()
+#         nn_stage2.train()
+
+#         # Accumulate loss over batches for the epoch
+#         running_train_loss = 0.0
+#         running_val_loss = 0.0
+#         num_batches = 0 
+#         num_val_steps = 0
+
+        
+
+#         for batch_data in train_loader:
+#             total_steps += 1  # Total Steps means the total number of batches in an epoch           
+#             num_batches += 1
+
+#             batch_data = {k: v.to(device) for k, v in batch_data.items()}
+
+#             # Forward pass
+#             outputs_stage1 = nn_stage1(batch_data['input1'])
+#             outputs_stage2 = nn_stage2(batch_data['input2'])
+
+#             outputs_stage1 = torch.stack(outputs_stage1, dim=1).squeeze()
+#             outputs_stage2 = torch.stack(outputs_stage2, dim=1).squeeze()
+
+#             # Compute loss
+#             loss = main_loss_gamma(
+#                 outputs_stage1, outputs_stage2, batch_data['A1'], batch_data['A2'], 
+#                         batch_data['Ci'], option=option_sur, surrogate_num=params['surrogate_num']
+#                         )
+
+#             # Backward and optimize
+#             optimizer.zero_grad()
+#             loss.backward()
+
+#             # Gradient Clipping (to prevent exploding gradients)
+#             if params['gradient_clipping']:
+#                 torch.nn.utils.clip_grad_norm_(nn_stage1.parameters(), max_norm=1.0)
+#                 torch.nn.utils.clip_grad_norm_(nn_stage2.parameters(), max_norm=1.0)
+
+#             optimizer.step() 
+#             running_train_loss += loss.item()
+
+#             # Evaluate model at specified frequency
+#             if total_steps % eval_freq == 0:            
+#                 val_loss = evaluate_model(nn_stage1, nn_stage2, val_loader, params)
+#                 running_val_loss += val_loss
+#                 num_val_steps += 1
+
+#                 # Save the best model
+#                 if val_loss < best_val_loss:
+#                     epoch_num_model = epoch
+#                     best_val_loss = val_loss
+#                     best_model_stage1_params = copy.deepcopy(nn_stage1.state_dict())
+#                     best_model_stage2_params = copy.deepcopy(nn_stage2.state_dict())
+
+#                 # Update scheduler if necessary
+#                 update_scheduler(scheduler, params, val_loss)
+
+#         # Calculate and store average training loss for this epoch
+#         avg_train_loss = running_train_loss / num_batches
+#         train_losses.append(avg_train_loss)  
+
+#         # avg_val_loss = running_val_loss / num_val_steps
+#         # val_losses.append(avg_val_loss)
+
+#         if num_val_steps > 0:
+#             avg_val_loss = running_val_loss / num_val_steps
+#             val_losses.append(avg_val_loss)
+#         else:
+#             val_losses.append(float('nan'))  # In case there were no validation steps this epoch
+        
+#         # print(f'Epoch [{epoch+1}/{n_epoch}], Average Training Loss: {avg_train_loss:.4f}, Average Validation Loss: {avg_val_loss if num_val_steps > 0 else "N/A"}')
+        
+#         # Append to the table
+#         # loss_table = loss_table.append({
+#         #     'Epoch': epoch + 1,
+#         #     'Avg Training Loss': avg_train_loss,
+#         #     'Avg Validation Loss': avg_val_loss if num_val_steps > 0 else "N/A"
+#         # }, ignore_index=True)
+
+#         new_row = pd.DataFrame({
+#             'Epoch': [epoch + 1],
+#             'Avg Training Loss': [avg_train_loss],
+#             'Avg Validation Loss': [avg_val_loss if num_val_steps > 0 else "N/A"]
+#         })
+#         loss_table = pd.concat([loss_table, new_row], ignore_index=True)
+
+
+
+
+
+#     # Print the table at the end of training
+#     print("LOSS TABLE: \n")
+#     print(loss_table.to_string(index=False))
+
+#     # Save the best model parameters
+#     model_dir = f"models/{params['job_id']}"
+#     os.makedirs(model_dir, exist_ok=True)
+
+#     # Define file paths for saving models
+#     model_path_stage1 = os.path.join(
+#         model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+    
+#     model_path_stage2 = os.path.join(
+#         model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+       
+
+#     torch.save(best_model_stage1_params, model_path_stage1)
+#     torch.save(best_model_stage2_params, model_path_stage2)
+
+#     return ((train_losses, val_losses), epoch_num_model)
+
+
+
+
+
+
+# # Function to create DataLoader with limited number of batches
+# def get_random_loader(dataset, batch_size, batches_to_sample = 30):
+#     # Calculate the total number of samples needed for the specified number of batches
+#     total_samples = batches_to_sample * batch_size
+    
+#     # Randomly sample the required indices from the dataset
+#     indices = np.random.choice(len(dataset), total_samples, replace=True)
+    
+#     # Use SubsetRandomSampler to sample only these indices
+#     sampler = SubsetRandomSampler(indices)
+#     loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
+    
+#     return loader
+
+
+
+# Define a function to create the DataLoader with repeated shuffling if needed
+def get_data_loader_with_reshuffle(dataset, batch_size, batches_to_sample):
+    # Generate all indices for the dataset
+    indices = np.arange(len(dataset))
+    
+    # Prepare a list to hold the selected indices for this epoch
+    sampled_indices = []
+    
+    # Loop until we reach the desired number of batches
+    while len(sampled_indices) < batches_to_sample * batch_size:
+        # Shuffle indices
+        np.random.shuffle(indices)
+        
+        # Add the shuffled indices to sampled_indices
+        sampled_indices.extend(indices)
+    
+    # Trim sampled_indices to match exactly `num_batches * batch_size`
+    sampled_indices = sampled_indices[:batches_to_sample * batch_size]
+    
+    # Create DataLoader with SubsetRandomSampler to sample these indices
+    sampler = SubsetRandomSampler(sampled_indices)
+    loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
+    
+    return loader
+
+
+def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur):
+    sample_size = params['sample_size']
+    device = params['device']
+    n_epoch = params['n_epoch']
+    batch_size = params['batch_size']
+    batches_to_sample =  params['batches_to_sample']
+    
+    eval_freq =  params['eval_freq'] # params.get('eval_freq', 10)  # Evaluate every 10 steps by default
+    # early_stopping_patience =  params['early_stopping_patience'] # params.get('early_stopping_patience', 10)  
+    ema_alpha =  params['ema_alpha']
+    stabilization_patience =  params['stabilization_patience'] # params.get('stabilization_patience', 5)  # New stabilization check threshold
+    
+    # # Calculate the number of steps (batches) per epoch
+    # steps_per_epoch = sample_size // batch_size
+    # # Calculate evaluations per epoch based on eval_freq
+    # evaluations_per_epoch = steps_per_epoch // eval_freq
+    # # Set stabilization_patience as a multiple of evaluations per epoch
+    # stabilization_patience = evaluations_per_epoch //  params['stabilization_patience']
+    
+    reinitializations_allowed =  params['reinitializations_allowed'] # params.get('reinitializations_allowed', 2)  # Limit reinitializations
+
+    # Initialize models
     nn_stage1 = initialize_and_prepare_model(1, params)
     nn_stage2 = initialize_and_prepare_model(2, params)
 
+    # Initialize optimizer and scheduler
     optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
 
-    #  Training and Validation data
-    train_data = {'input1': tuple_train[0], 'input2': tuple_train[1], 'Ci': tuple_train[2], 'A1': tuple_train[5], 'A2': tuple_train[6]}
-    val_data = {'input1': tuple_val[0], 'input2': tuple_val[1], 'Ci': tuple_val[2], 'A1': tuple_val[5], 'A2': tuple_val[6]}
+    # Prepare training and validation data
+    train_data = {
+        'input1': tuple_train[0], 'input2': tuple_train[1], 'Ci': tuple_train[2],
+        'A1': tuple_train[5], 'A2': tuple_train[6]
+    }
+    val_data = {
+        'input1': tuple_val[0], 'input2': tuple_val[1], 'Ci': tuple_val[2],
+        'A1': tuple_val[5], 'A2': tuple_val[6]
+    }
 
+    # Create datasets and data loaders
+    train_dataset = CustomDataset(train_data)
+    val_dataset = CustomDataset(val_data)
 
-    # Training and Validation loop for both stages
-    for epoch in range(params['n_epoch']):
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
-        train_loss = process_batches(nn_stage1, nn_stage2, train_data, params, optimizer, option_sur=option_sur, is_train=True)
-        train_losses.append(train_loss)
-
-        val_loss = process_batches(nn_stage1, nn_stage2, val_data, params, optimizer, option_sur=option_sur, is_train=False)
-        val_losses.append(val_loss)
-
-        if val_loss < best_val_loss:
-            epoch_num_model = epoch
-            best_val_loss = val_loss
-            best_model_stage1_params = nn_stage1.state_dict()
-            best_model_stage2_params = nn_stage2.state_dict()
-
-        # Update the scheduler with the current epoch's validation loss
-        update_scheduler(scheduler, params, val_loss)
-
-    model_dir = f"models/{params['job_id']}"
-    # Check if the directory exists, if not, create it
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
+    # Training variables
+    train_losses = []
+    val_losses = []
+    best_val_loss = float('inf')
+    best_model_stage1_params = None
+    best_model_stage2_params = None
+    epoch_num_model = 0
+    total_steps = 0
+    no_improvement_count = 0  # Early stopping counter
+    ema_val_loss = None
+    reinitialization_count = 0  # Track reinitializations
     
-    # Define file paths for saving models
-    model_path_stage1 = os.path.join(model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
-    model_path_stage2 = os.path.join(model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+    early_stop = False  # Set the flag to break the outer loop
+
+
+
+    # For tabular display
+    loss_table = pd.DataFrame(columns=['Epoch', 'Avg Training Loss', 'Avg Validation Loss'])
+
+    for epoch in range(n_epoch):
         
-    # Save the models
-    torch.save(best_model_stage1_params, model_path_stage1)
-    torch.save(best_model_stage2_params, model_path_stage2)
+        if early_stop:
+            break  # Break out of the epoch loop if early stopping is triggered
+
+        nn_stage1.train()
+        nn_stage2.train()
+
+        # Accumulate loss over batches for the epoch
+        running_train_loss = 0.0
+        running_val_loss = 0.0
+        num_batches = 0
+        num_val_steps = 0
+
+        # train_loader = get_data_loader_with_reshuffle(train_dataset, batch_size, batches_to_sample)
+        for batch_data in train_loader:   
+
+            total_steps += 1
+            num_batches += 1
+
+            batch_data = {k: v.to(device) for k, v in batch_data.items()}
+
+            # Forward pass
+            outputs_stage1 = nn_stage1(batch_data['input1'])
+            outputs_stage2 = nn_stage2(batch_data['input2'])
+
+            outputs_stage1 = torch.stack(outputs_stage1, dim=1).squeeze()
+            outputs_stage2 = torch.stack(outputs_stage2, dim=1).squeeze()
+
+            # Compute loss
+            loss = main_loss_gamma(
+                outputs_stage1, outputs_stage2, batch_data['A1'], batch_data['A2'], 
+                batch_data['Ci'], option=option_sur, surrogate_num=params['surrogate_num']
+            )
+
+            # Backward and optimize
+            optimizer.zero_grad()
+            loss.backward()
+
+            # Gradient Clipping (to prevent exploding gradients)
+            if params['gradient_clipping']:
+                torch.nn.utils.clip_grad_norm_(nn_stage1.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(nn_stage2.parameters(), max_norm=1.0)
+
+            optimizer.step() 
+            running_train_loss += loss.item()
+
+            # Evaluate model at specified frequency
+            if total_steps % eval_freq == 0:            
+                val_loss = evaluate_model(nn_stage1, nn_stage2, val_loader, params)
+                running_val_loss += val_loss
+                num_val_steps += 1                     
+
+                # Save the best model
+                # if val_loss < best_val_loss:
+                #     epoch_num_model = epoch
+                #     best_val_loss = val_loss
+                #     best_model_stage1_params = copy.deepcopy(nn_stage1.state_dict())
+                #     best_model_stage2_params = copy.deepcopy(nn_stage2.state_dict())
+                #     no_improvement_count = 0  # Reset early stopping counter
+                
+                # Calculate EMA of validation loss
+                if ema_val_loss is None:
+                    ema_val_loss = val_loss
+                else:
+                    ema_val_loss = ema_alpha * val_loss + (1 - ema_alpha) * ema_val_loss
+                
+                # Save the best model using EMA of validation loss
+                if ema_val_loss < best_val_loss:
+                    # print(" Improved ---> ema_val_loss, best_val_loss: Saving the model...",  ema_val_loss, best_val_loss) 
+                    print(f"Improved ---> ema_val_loss: {ema_val_loss}, best_val_loss: {best_val_loss}. Saving the model...")
+
+                    epoch_num_model = epoch
+                    best_val_loss = ema_val_loss
+                    best_model_stage1_params = copy.deepcopy(nn_stage1.state_dict())
+                    best_model_stage2_params = copy.deepcopy(nn_stage2.state_dict())
+                    no_improvement_count = 0  # Reset early stopping counter                    
+                else:
+                    # print(" Did not improve ---> ema_val_loss, best_val_loss, no_improvement_count, stabilization_patience",  ema_val_loss, best_val_loss, no_improvement_count, stabilization_patience)
+                    print(f"Did not improve ---> ema_val_loss: {ema_val_loss}, best_val_loss: {best_val_loss}, no_improvement_count: {no_improvement_count}, stabilization_patience: {stabilization_patience}")
+
+                    no_improvement_count += 1  # Increment early stopping counter
+                    
+                    
+                # Check stabilization condition
+                if reinitialization_count < reinitializations_allowed and no_improvement_count >= stabilization_patience:
+                    print(f"Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch {epoch + 1}")
+                    
+                    nn_stage1 = initialize_and_prepare_model(1, params)  # Reinitialize model 1
+                    nn_stage2 = initialize_and_prepare_model(2, params)  # Reinitialize model 2
+                    optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
+                    no_improvement_count = 0  # Reset counter after reinitialization
+                    reinitialization_count += 1
+                    
+                 # Early stopping condition based on best_val_loss
+                if params['early_stopping'] and reinitialization_count >= reinitializations_allowed and no_improvement_count >= stabilization_patience:
+                    print(f"Early stopping after {epoch + 1} epochs due to no further improvement.")                 
+                    early_stop = True  # Set the flag to break the outer loop
+                    break
+
+                # # Early stopping check 
+                # if params['early_stopping'] and no_improvement_count >= early_stopping_patience:
+                #     print(f"Early stopping triggered after {epoch + 1} epochs.")
+                #     break
+
+                # Update scheduler if necessary
+                update_scheduler(scheduler, params, val_loss)                 
+                # update_scheduler(scheduler, params, ema_val_loss)
+
+
+        # Calculate and store average training loss for this epoch
+        avg_train_loss = running_train_loss / num_batches
+        train_losses.append(avg_train_loss)  
+        print(" total_steps   ---->  ",  total_steps)  
+        print(" num_batches   ---->  ",  num_batches)                 
+        print(" num_val_steps   ---->  ",  num_val_steps)
+
+
+        if num_val_steps > 0:
+            avg_val_loss = running_val_loss / num_val_steps
+            val_losses.append(avg_val_loss)
+        else:
+            val_losses.append(float('nan'))  # In case there were no validation steps this epoch
+            
+        print()
+        print(f'Epoch [{epoch+1}/{n_epoch}], Average Training Loss: {avg_train_loss:.4f}, Average Validation Loss: {avg_val_loss if num_val_steps > 0 else "N/A"}')
+        print("_"*90)
+        
+        # Append to the table
+        new_row = pd.DataFrame({
+            'Epoch': [epoch + 1],
+            'Avg Training Loss': [avg_train_loss],
+            'Avg Validation Loss': [avg_val_loss if num_val_steps > 0 else "N/A"]
+        })
+        loss_table = pd.concat([loss_table, new_row], ignore_index=True)
+
     
+
+    # Print the table at the end of training
+    print()
+    print("LOSS TABLE: ")
+    print(loss_table.to_string(index=False))
+    print()
+
+    # Save the best model parameters
+    model_dir = f"models/{params['job_id']}"
+    os.makedirs(model_dir, exist_ok=True)
+
+    # Define file paths for saving models
+    model_path_stage1 = os.path.join(
+        model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+    
+    model_path_stage2 = os.path.join(
+        model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+
+    # torch.save(best_model_stage1_params, model_path_stage1)
+    # torch.save(best_model_stage2_params, model_path_stage2)
+    
+    # Ensure the model parameters are not None before saving
+    if best_model_stage1_params is not None and best_model_stage2_params is not None:
+        # Save models
+        torch.save(best_model_stage1_params, model_path_stage1)
+        torch.save(best_model_stage2_params, model_path_stage2)
+
+        # Verify that files were saved correctly
+        if os.path.isfile(model_path_stage1) and os.path.getsize(model_path_stage1) > 0:
+            print(f"Model stage 1 saved successfully at {model_path_stage1}")
+        else:
+            print(f"Error: Model stage 1 was not saved correctly at {model_path_stage1}")
+
+        if os.path.isfile(model_path_stage2) and os.path.getsize(model_path_stage2) > 0:
+            print(f"Model stage 2 saved successfully at {model_path_stage2}")
+        else:
+            print(f"Error: Model stage 2 was not saved correctly at {model_path_stage2}")
+    else:
+        print("Error: Model parameters are None, not saving the models.")
+
     return ((train_losses, val_losses), epoch_num_model)
 
 
@@ -1075,6 +1559,9 @@ def simulations(V_replications, params, config_number):
     for replication in tqdm(range(params['num_replications']), desc="Replications_M1"):
         print(f"\nReplication # -------------->>>>>  {replication+1}")
 
+        seed_value = config_number * 100 + replication 
+        torch.manual_seed(seed_value)
+
         # Generate and preprocess data for training
         tuple_train, tuple_val, adapC_tao_Data = generate_and_preprocess_data(params, replication_seed=replication, config_seed=config_number, run='train')
 
@@ -1111,7 +1598,7 @@ def simulations(V_replications, params, config_number):
                 print()
                 print(f"***************************************** Train -> Agent #: {ensemble_num}*****************************************")
                 print()
-                if params['phi_ensamble']:
+                if params['phi_ensemble']:
                     option_sur = params['option_sur']
                 else:
                     option_sur = ensemble_num+1
@@ -1422,67 +1909,88 @@ def run_grid_search(config, param_grid):
     
     
         
-def main():
+def main(job_id):
 
     # Load configuration and set up the device
-    config = load_config()
-
+    # config = load_config('config_newScheme.yaml') 
+    # config = load_config('config_tao.yaml')  
+    config = load_config('config.yaml') 
+    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     config['device'] = device    
     
-    # Get the SLURM_JOB_ID from environment variables
-    job_id = os.getenv('SLURM_JOB_ID')
+    # # Get the SLURM_JOB_ID from environment variables
+    # job_id = os.getenv('SLURM_JOB_ID')
 
-    # If job_id is None, set it to the current date and time formatted as a string
-    if job_id is None:
-        job_id = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
+    # # If job_id is None, set it to the current date and time formatted as a string
+    # if job_id is None:
+    #     job_id = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
     
     config['job_id'] = job_id
     
     print("Job ID: ", job_id)
 
-    training_validation_prop = config['training_validation_prop']
-    train_size = int(training_validation_prop * config['sample_size'])
-    print("Training size: %d", train_size)   
+    # training_validation_prop = config['training_validation_prop']
+    # train_size = int(training_validation_prop * config['sample_size'])
+    # print("Training size: %d", train_size)   
 
+    
+    
     # # Define parameter grid for grid search
-
     # Empty Grid
     param_grid = {}
+    
+    # param_grid = {  
+    #     'option_sur': [1,2,3,4,5], 
+    #     }
 
     # param_grid = {  
-    #     'n_epoch': [60], #250
-    #     'hidden_dim_stage1': [20], #20
-    #     'hidden_dim_stage2': [20], #20
-    #     'dropout_rate': [0.0], #0.3, 0.43
+    #     'dropout_rate': [0.1,0.3,0.4], 
+    #     'factor': [0.8,0.5,0.1], 
+    #     'ema_alpha': [ 0.1, 0.4, 0.8],
+    #     'optimizer_lr':[0.01, 0.07, 0.1]
     #     }
+
+    # param_grid = {  
+    #     # 'dropout_rate': [0.1, 0.3, 0.4], #0.3, 0.43
+    #     'factor': [0.8, 0.7, 0.5, 0.2], 
+    #     'ema_alpha': [0.05, 0.1, 0.3]
+    #     # 'optimizer_lr':[0.01, 0.07, 0.1]
+    #     }
+
+    # param_grid = {  
+    #     'batch_size': [100, 200, 400, 700, 1200]
+    #     }
+
+    # param_grid = {
+    #     'activation_function': [ 'elu', 'relu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
+    #     'learning_rate': [0.07], # 0.07
+    #     'num_layers': [4], # 2, 4, => 0 means truly linear model, here num_layers means --> number of hidden layers
+    #     'batch_size': [300, 800], #300
+    #     'hidden_dim_stage1': [40],  #5,10  Number of neurons in the hidden layer of stage 1
+    #     'hidden_dim_stage2': [40],  #5,10  Number of neurons in the hidden layer of stage 2 
+    #     'dropout_rate': [0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
+    #     'n_epoch': [60, 150], #60, 150
+    # }
+
 
     # param_grid = {
     #     'activation_function': [ 'elu'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
     #     'learning_rate': [0.07], # 0.07
     #     'num_layers': [4], # 2, 4, => 0 means truly linear model, here num_layers means --> number of hidden layers
-    #     'batch_size': [300], #300
+    #     'batch_size': [800], #300
     #     'hidden_dim_stage1': [40],  #5,10  Number of neurons in the hidden layer of stage 1
     #     'hidden_dim_stage2': [40],  #5,10  Number of neurons in the hidden layer of stage 2 
     #     'dropout_rate': [0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
     #     'n_epoch': [60], #60, 150
     # }
 
+
     # Perform operations whose output should go to the file
     run_grid_search(config, param_grid)
     
 
-class FlushFile:
-    """File-like wrapper that flushes on every write."""
-    def __init__(self, f):
-        self.f = f
 
-    def write(self, x):
-        self.f.write(x)
-        self.f.flush()  # Flush output after write
-
-    def flush(self):
-        self.f.flush()
 
 
 # if __name__ == '__main__':
@@ -1491,28 +1999,158 @@ class FlushFile:
 #     end_time = time.time()
 #     print(f'Total time taken: {end_time - start_time:.2f} seconds')
 
+     
+
+# class FlushFile:
+#     """File-like wrapper that flushes on every write."""
+#     def __init__(self, f):
+#         self.f = f
+
+#     def write(self, x):
+#         self.f.write(x)
+#         self.f.flush()  # Flush output after write
+
+#     def flush(self):
+#         self.f.flush()
+
     
-   
+# if __name__ == '__main__':
+#     multiprocessing.set_start_method('spawn', force=True)
     
+#     # Record the start time
+#     start_time = time.time()
+#     start_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
+#     print(f'Start time: {start_time_str}')
+    
+#     sys.stdout = FlushFile(sys.stdout)
+#     main()
+    
+#     # Record the end time
+#     end_time = time.time()
+#     end_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))
+#     print(f'End time: {end_time_str}')
+    
+#     # Calculate and log the total time taken
+#     total_time = end_time - start_time
+#     print(f'Total time taken: {total_time:.2f} seconds')
+
+
+    
+
+
+class FlushFile:
+    """File-like wrapper that flushes on every write and writes to both console and a file."""
+    def __init__(self, f, logfile):
+        self.f = f
+        self.logfile = logfile
+
+    def write(self, x):
+        self.f.write(x)          # Write to terminal
+        self.f.flush()           # Flush terminal output
+        self.logfile.write(x)    # Write to the log file
+        self.logfile.flush()     # Flush file output
+
+    def flush(self):
+        self.f.flush()
+        self.logfile.flush()
+
+
+
+
+
+# if __name__ == '__main__':
+#     multiprocessing.set_start_method('spawn', force=True)
+
+#     # Get the SLURM_JOB_ID from environment variables
+#     job_id = os.getenv('SLURM_JOB_ID')
+
+#     # If job_id is None, set it to the current date and time formatted as a string
+#     if job_id is None:
+#         job_id = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
+
+#     # Ensure the 'data/job_id' directory exists
+#     log_dir = os.path.join('data', job_id)
+#     os.makedirs(log_dir, exist_ok=True)  # Creates the directory if it doesn't exist
+
+#     # Create a timestamp-based filename
+#     log_time_str = time.strftime('%Y%m%d_%H%M%S', time.localtime(time.time()))  # e.g., '20231026_142530'
+#     log_filename = f"output_log_{log_time_str}.txt"
+    
+#     # Full path for the log file
+#     log_filepath = os.path.join(log_dir, log_filename)
+    
+#     # Open the log file in write mode
+#     with open(log_filepath, 'w') as logfile:
+#         # Set stdout to write to both terminal and logfile
+#         sys.stdout = FlushFile(sys.stdout, logfile)
+        
+#         # Record the start time
+#         start_time = time.time()
+#         start_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
+#         print(f'Start time: {start_time_str}')
+        
+#         # Call the main function and pass the job_id
+#         main(job_id)
+        
+#         # Record the end time
+#         end_time = time.time()
+#         end_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))
+#         print(f'End time: {end_time_str}')
+        
+#         # Calculate and log the total time taken
+#         total_time = end_time - start_time
+#         print(f'Total time taken: {total_time:.2f} seconds')
+
+
+
+
+
 if __name__ == '__main__':
     multiprocessing.set_start_method('spawn', force=True)
-    
-    # Record the start time
-    start_time = time.time()
-    start_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
-    print(f'Start time: {start_time_str}')
-    
-    sys.stdout = FlushFile(sys.stdout)
-    main()
-    
-    # Record the end time
-    end_time = time.time()
-    end_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))
-    print(f'End time: {end_time_str}')
-    
-    # Calculate and log the total time taken
-    total_time = end_time - start_time
-    print(f'Total time taken: {total_time:.2f} seconds')
 
+    # Get the SLURM_JOB_ID from environment variables
+    job_id = os.getenv('SLURM_JOB_ID')
 
+    # If job_id is None, set it to the current date and time formatted as a string
+    if job_id is None:
+        job_id = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
+
+    # Ensure the 'data/job_id' directory exists
+    log_dir = os.path.join('data', job_id)
+    os.makedirs(log_dir, exist_ok=True)  # Creates the directory if it doesn't exist
+
+    # Create a timestamp-based filename
+    log_time_str = time.strftime('%Y%m%d_%H%M%S', time.localtime(time.time()))  # e.g., '20231026_142530'
+    log_filename = f"output_log_{log_time_str}.txt"
     
+    # Full path for the log file
+    log_filepath = os.path.join(log_dir, log_filename)
+    
+    # Open the log file in write mode
+    logfile = open(log_filepath, 'w')  # Open outside the 'with' block
+    
+    # Set stdout to write to both terminal and logfile
+    sys.stdout = FlushFile(sys.stdout, logfile)
+    
+    try:
+        # Record the start time
+        start_time = time.time()
+        start_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
+        print(f'Start time: {start_time_str}')
+        
+        # Call the main function and pass the job_id
+        main(job_id)
+        
+        # Record the end time
+        end_time = time.time()
+        end_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))
+        print(f'End time: {end_time_str}')
+        
+        # Calculate and log the total time taken
+        total_time = end_time - start_time
+        print(f'Total time taken: {total_time:.2f} seconds')
+    
+    finally:
+        # Reset stdout back to its original state and close the logfile
+        sys.stdout = sys.__stdout__  # Reset stdout to its original state
+        logfile.close()  # Now it's safe to close the logfile

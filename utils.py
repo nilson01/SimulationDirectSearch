@@ -356,6 +356,16 @@ def initialize_nn(params, stage):
         num_hidden_layers=params['num_layers'] - 1,  # num_layers is the number of hidden layers
         add_ll_batch_norm=params['add_ll_batch_norm']
     ).to(params['device'])
+
+    # # Printing the initialized weights
+    # print("Initialized weights and biases:")
+    # for name, param in nn.named_parameters():
+    #     if param.requires_grad:
+    #         print(f"{name}: {param.data}")
+
+    # print("\n\n\n")
+    # print("<<<<<<<<<<----------->>>>>>>>>>")
+
     return nn
 
 
@@ -423,8 +433,9 @@ class NNClass(nn.Module):
 
                 for _ in range(num_hidden_layers):
                     layers.append(nn.Linear(hidden_dim, hidden_dim))
-                    if activation_fn is not Identity:  # Only add activation if it's not Identity
-                        layers.append(activation_fn())
+                    if activation_fn is not Identity:  # Only add activation if it's not Identity                         
+                        layers.append(activation_fn(alpha=0.4))
+                        # layers.append(activation_fn())
                     layers.append(nn.Dropout(dropout_rate))
                     # layers.append(nn.BatchNorm1d(hidden_dim))
 
@@ -895,13 +906,13 @@ def extract_value_functions_separate(V_replications):
 
 def compute_phi(x, option):
     if option == 1:
-        return 1 + torch.tanh(5*x)
-    elif option == 2:
-        return 1 + 2 * torch.atan(torch.pi * x / 2) / torch.pi
-    elif option == 3:
         return 1 + x / torch.sqrt(1 + x ** 2)
-    elif option == 4:
+    elif option == 2:
+        return 1 + torch.tanh(5*x)
+    elif option == 3:
         return 1 + x / (1 + torch.abs(x))
+    elif option == 4:
+        return 1 + 2 * torch.atan(torch.pi * x / 2) / torch.pi
     elif option == 5:
         return torch.where(x >= 0, torch.tensor(1.0), torch.tensor(0.0))
     else:
@@ -927,33 +938,102 @@ def gamma_function_old_vec(a, b, A, option):
     return gamma
 
 
-def compute_gamma(a, b, option):
-    # Assume a and b are already tensors, check if they need to be sent to a specific device and ensure they have gradients if required
-    a = a.detach().requires_grad_(True)
-    b = b.detach().requires_grad_(True)
+# def compute_gamma(a, b, option):
+#     a = a.detach().requires_grad_(True)
+#     b = b.detach().requires_grad_(True)
 
-    # asymmetric
+#     # asymmetric
+#     if option == 1:
+#         result = ((torch.exp(a + b) - 1) / ((1 + torch.exp(a)) * (1 + torch.exp(b))) ) +  ( 1 / (1 + torch.exp(a) + torch.exp(b)))
+#     # symmetric
+#     elif option == 2: 
+#         denom = ((torch.exp(a) - 1)**2 * (torch.exp(b) - 1)**2 * (torch.exp(a) - torch.exp(b)) ) + 1e-10
+#         result = (torch.exp(a + b) * ((a * (torch.exp(b) - 1))**2 + (torch.exp(a) - 1) * (-torch.exp(a) + (torch.exp(b) - 1) * (torch.exp(a) - torch.exp(b) + b)) )) / denom 
+
+#     return result
+
+
+# def gamma_function_new_vec(a, b, A, option):
+#     # a, b, and A are torch tensors and move them to the specified device
+#     a = torch.tensor(a, dtype=torch.float32, requires_grad=True).to(device)
+#     b = torch.tensor(b, dtype=torch.float32, requires_grad=True).to(device)
+
+#     # a = torch.tensor(a, dtype=torch.float32).to(device)
+#     # b = torch.tensor(b, dtype=torch.float32).to(device)
+#     A = torch.tensor(A, dtype=torch.int32).to(device)
+
+#     # Apply compute_gamma_vectorized across the entire tensors based on A
+#     result_1 = compute_gamma(a, b, option)
+#     result_2 = compute_gamma(b - a, -a, option)
+#     result_3 = compute_gamma(a - b, -b, option)
+
+#     gamma = torch.where(A == 1, result_1,
+#                         torch.where(A == 2, result_2,
+#                                     torch.where(A == 3, result_3,
+#                                                 torch.tensor(0.0).to(device) )))
+
+#     return gamma
+
+
+
+def compute_gamma(a, b, option):
+    a = torch.clamp(a, min=-5, max=5)
+    b = torch.clamp(b, min=-5, max=5)
+    epsilon = 1e-5
+
     if option == 1:
-        result = ((torch.exp(a + b) - 1) / ((1 + torch.exp(a)) * (1 + torch.exp(b))) ) +  ( 1 / (1 + torch.exp(a) + torch.exp(b)))
-    # symmetric
+        result = ((torch.exp(a + b) - 1) / ((1 + torch.exp(a)) * (1 + torch.exp(b)))) + (1 / (1 + torch.exp(a) + torch.exp(b)))
     elif option == 2:
-        result = (torch.exp(a + b) * ((a * (torch.exp(b) - 1))**2 + (torch.exp(a) - 1) * (-torch.exp(a) + (torch.exp(b) - 1) * (torch.exp(a) - torch.exp(b) + b)) )) / ((torch.exp(a) - 1)**2 * (torch.exp(b) - 1)**2 * (torch.exp(a) - torch.exp(b)))
-        # result = (torch.exp(a + b) * ((a * (torch.exp(b) - 1))**2 + (torch.exp(a) - 1) * (-torch.exp(a)*b + (torch.exp(b) - 1) * (torch.exp(a) - torch.exp(b)) + b) )) / ((torch.exp(a) - 1)**2 * (torch.exp(b) - 1)**2 * (torch.exp(a) - torch.exp(b)))
-    else:
-        result = None
+        denom = ((torch.exp(a) - 1)**2 * (torch.exp(b) - 1)**2 * (torch.exp(a) - torch.exp(b))).clamp(min=epsilon)
+        result = (torch.exp(a + b) * ((a * (torch.exp(b) - 1))**2 + (torch.exp(a) - 1) * (-torch.exp(a) + (torch.exp(b) - 1) * (torch.exp(a) - torch.exp(b) + b)))) / denom
+    
+    # Standardize the result
+    result = (result - result.mean()) / (result.std() + epsilon)
     return result
 
 
+
+# def compute_gamma(a, b, option):
+#     a = torch.clamp(a, min=-5, max=5)
+#     b = torch.clamp(b, min=-5, max=5)
+#     epsilon = 1e-5
+
+#     if option == 1:
+#         # Use softplus for stability
+#         result = ((torch.nn.functional.softplus(a + b) - 1) / ((1 + torch.nn.functional.softplus(a)) * (1 + torch.nn.functional.softplus(b)))) + \
+#                  (1 / (1 + torch.nn.functional.softplus(a) + torch.nn.functional.softplus(b)))
+#     elif option == 2:
+#         # Avoid very large values with log-based transformations
+#         exp_a_b = torch.nn.functional.softplus(a + b)
+#         exp_a, exp_b = torch.nn.functional.softplus(a), torch.nn.functional.softplus(b)
+
+#         denom = ((exp_a - 1)**2 * (exp_b - 1)**2 * (exp_a - exp_b)).clamp(min=epsilon)
+#         num = exp_a_b * ((a * (exp_b - 1))**2 + (exp_a - 1) * (-exp_a + (exp_b - 1) * (exp_a - exp_b + b)))
+#         result = num / denom
+
+#     return result
+
+# # # Adjust compute_gamma for better stabilit
+# def compute_gamma(a, b, option):
+#     a = torch.clamp(a, min=-5, max=5)  # Tighten the clamping range
+#     b = torch.clamp(b, min=-5, max=5)
+#     epsilon = 1e-5  # Adjust epsilon
+
+#     if option == 1:
+#         result = ((torch.exp(a + b) - 1) / ((1 + torch.exp(a)) * (1 + torch.exp(b)))) + (1 / (1 + torch.exp(a) + torch.exp(b)))
+#     elif option == 2:
+#         denom = ((torch.exp(a) - 1)**2 * (torch.exp(b) - 1)**2 * (torch.exp(a) - torch.exp(b))).clamp(min=epsilon)
+#         result = (torch.exp(a + b) * ((a * (torch.exp(b) - 1))**2 + (torch.exp(a) - 1) * (-torch.exp(a) + (torch.exp(b) - 1) * (torch.exp(a) - torch.exp(b) + b)))) / denom
+
+#     return result
+
+
+# Define the gamma function without detaching tensors
 def gamma_function_new_vec(a, b, A, option):
-    # a, b, and A are torch tensors and move them to the specified device
-    a = torch.tensor(a, dtype=torch.float32, requires_grad=True).to(device)
-    b = torch.tensor(b, dtype=torch.float32, requires_grad=True).to(device)
+    a = a.to(device).requires_grad_(True)
+    b = b.to(device).requires_grad_(True)
+    A = A.to(device)
 
-    # a = torch.tensor(a, dtype=torch.float32).to(device)
-    # b = torch.tensor(b, dtype=torch.float32).to(device)
-    A = torch.tensor(A, dtype=torch.int32).to(device)
-
-    # Apply compute_gamma_vectorized across the entire tensors based on A
     result_1 = compute_gamma(a, b, option)
     result_2 = compute_gamma(b - a, -a, option)
     result_3 = compute_gamma(a - b, -b, option)
@@ -961,9 +1041,10 @@ def gamma_function_new_vec(a, b, A, option):
     gamma = torch.where(A == 1, result_1,
                         torch.where(A == 2, result_2,
                                     torch.where(A == 3, result_3,
-                                                torch.tensor(0.0).to(device) )))
-
+                                                torch.zeros_like(result_1))))
     return gamma
+
+
 
 
 def main_loss_gamma(stage1_outputs, stage2_outputs, A1, A2, Ci, option, surrogate_num):
@@ -978,7 +1059,17 @@ def main_loss_gamma(stage1_outputs, stage2_outputs, A1, A2, Ci, option, surrogat
         gamma_stage2 = gamma_function_new_vec(stage2_outputs[:, 0], stage2_outputs[:, 1], A2.int(), option)
 
     loss = -torch.mean(Ci * gamma_stage1 * gamma_stage2)
+    
 
+    #     # Check gamma values for NaN
+    #     if torch.isnan(gamma_stage1).any():
+    #         print("NaN detected in gamma_stage1:", gamma_stage1)
+    #     if torch.isnan(gamma_stage2).any():
+    #         print("NaN detected in gamma_stage2:", gamma_stage2)
+
+    #     if torch.isnan(Ci).any():
+    #         print("NaN detected in Ci:", Ci)
+    
     return loss
 
 
@@ -1023,6 +1114,37 @@ def process_batches(model1, model2, data, params, optimizer, option_sur, is_trai
     return avg_loss
 
 
+def evaluate_model(nn_stage1, nn_stage2, val_loader, params):
+    device = params['device']
+    nn_stage1.eval()
+    nn_stage2.eval()
+    val_loss = 0.0
+    num_batches = 0
+
+    with torch.no_grad():
+        for val_batch in val_loader:
+            val_batch = {k: v.to(device) for k, v in val_batch.items()}
+
+            val_outputs_stage1 = nn_stage1(val_batch['input1'])
+            val_outputs_stage2 = nn_stage2(val_batch['input2'])
+
+            val_outputs_stage1 = torch.stack(val_outputs_stage1, dim=1).squeeze()
+            val_outputs_stage2 = torch.stack(val_outputs_stage2, dim=1).squeeze()
+
+            v_loss = main_loss_gamma(
+                val_outputs_stage1, val_outputs_stage2, val_batch['A1'], val_batch['A2'],
+                val_batch['Ci'], option=params['option_sur'], surrogate_num=params['surrogate_num']
+            )
+
+            val_loss += v_loss.item()
+            num_batches += 1
+
+    nn_stage1.train()
+    nn_stage2.train()
+    return val_loss / num_batches
+
+
+
 def initialize_and_prepare_model(stage, params):
     model = initialize_nn(params, stage).to(params['device'])
     
@@ -1054,7 +1176,7 @@ def initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params):
     scheduler = None
     if params.get('use_scheduler', False):  # Defaults to False if 'use_scheduler' is not in params
         if params['scheduler_type'] == 'reducelronplateau':
-            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=10)
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=params['factor'], patience=4) # patience = 10
         elif params['scheduler_type'] == 'steplr':
             scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=params['scheduler_step_size'], gamma=params['scheduler_gamma'])
         elif params['scheduler_type'] == 'cosineannealing':
@@ -1257,6 +1379,7 @@ def compute_test_outputs(nn, test_input, A_tensor, params, is_stage1=True):
     
 
 
+        
 
 def initialize_and_load_model(stage, sample_size, params, config_number, ensemble_num=1):
     # Initialize the neural network model
@@ -1268,6 +1391,9 @@ def initialize_and_load_model(stage, sample_size, params, config_number, ensembl
         model_filename = f'best_model_stage_surr_{stage}_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt'
     else:
         model_filename = f'best_model_stage_Q_{stage}_{sample_size}_config_number_{config_number}.pt'
+        
+    print("model_filename ------------> ", model_filename)
+    print()
         
     model_path = os.path.join(model_dir, model_filename)
     
@@ -1525,7 +1651,7 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         # m1 = torch.max(stacked_tensors, dim=0).values 
         # m1 = torch.floor(O1[:, 0].float() ) * torch.floor(O1[:, 1].float() ) * torch.exp(O1[:, 0].float() )
 
-        Y1 = A1 * O1.sum(dim=1) + params['C1'] + Z1 #+ m1 #* params["neu"]
+        Y1 = A1 * O1.sum(dim=1) + params['C1'] #+ Z1 #+ m1 #* params["neu"]
 
     elif params['setting'] == 'scheme_6':
         # m1 = 5*torch.sin(5 * O1[:, 0].float() **2) 
@@ -1689,7 +1815,7 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params, **kwargs):
 
         # m2 = torch.floor(O2.float()) * torch.floor(O1[:, 1].float()) * torch.exp(O2.float())
 
-        Y2 =  O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2 # + m2 #* params["neu"]
+        Y2 =  O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] #+ Z2 # + m2 #* params["neu"]
         # Y2 = O1[torch.arange(O1.size(0), device=device), A2 - 1]**2 * params["cnst"] + O2 * params["beta"] + params["C2"] + Z2
 
 
@@ -1962,14 +2088,14 @@ def evaluate_method_DS(method_name, params, config_number, df, test_input_stage1
     A2 = max_voting(A2_ensemble)  # Output of shape (num_samples,) with voted actions for A2
 
     # Print top 20 ensemble predictions and their corresponding majority votes in a stacked format
-    print("\nTop 20 Ensemble Predictions and Majority Votes for A1 (stacked format):")
-    for i in range(20):
+    print("\nFirst 5 Ensemble Predictions and Majority Votes for A1 (stacked format):")
+    for i in range(5):
         print(f"Sample {i+1}:")
         stacked_A1 = torch.cat([A1_ensemble[:, i], A1[i].unsqueeze(0)])  # Stack ensemble predictions and majority vote
-        print(f"  Ensemble A1 predictions + Voted A1 action: {stacked_A1.tolist()}")  # Print stacked format
+        print(f"Ensemble A1 predictions + Voted A1 action: {stacked_A1.tolist()}")  # Print stacked format
 
-    print("\nTop 20 Ensemble Predictions and Majority Votes for A2 (stacked format):")
-    for i in range(20):
+    print("\nFirst 5 Ensemble Predictions and Majority Votes for A2 (stacked format):")
+    for i in range(5):
         print(f"Sample {i+1}:")
         stacked_A2 = torch.cat([A2_ensemble[:, i], A2[i].unsqueeze(0)])  # Stack ensemble predictions and majority vote
         print(f"  Ensemble A2 predictions + Voted A2 action: {stacked_A2.tolist()}")  # Print stacked format
@@ -2028,4 +2154,3 @@ def evaluate_method_DQL(method_name, params, config_number, df, test_input_stage
     # V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
 
     return df, V_replications_M1_pred
-

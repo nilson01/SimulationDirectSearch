@@ -1,0 +1,2477 @@
+R[write to console]: Loading required package: nnet
+
+Start time: 2024-11-05 03:53:55
+Job ID:  11885873
+8 available workers for ProcessPoolExecutor.
+R[write to console]: Loading required package: nnet
+
+R[write to console]: Loading required package: nnet
+
+R[write to console]: Loading required package: nnet
+
+R[write to console]: Loading required package: nnet
+
+R[write to console]: Loading required package: nnet
+
+R[write to console]: Loading required package: nnet
+
+R[write to console]: Loading required package: nnet
+
+R[write to console]: Loading required package: nnet
+
+config_grid:  {'run_DQlearning': False, 'run_surr_opt': True, 'run_adaptive_contrast_tao': False, 'setting': 'new', 'num_replications': 15, 'sample_size': 15000, 'batch_size': 800, 'batches_to_sample': 18, 'optimizer_lr': 0.07, 'eval_freq': 2, 'n_epoch': 10, 'num_layers': 4, 'activation_function': 'elu', 'hidden_dim_stage1': 40, 'hidden_dim_stage2': 40, 'add_ll_batch_norm': False, 'scheduler_step_size': 30, 'scheduler_gamma': 0.8, 'use_scheduler': True, 'scheduler_type': 'reducelronplateau', 'factor': 0.5, 'stabilization_patience': 4, 'reinitializations_allowed': 3, 'early_stopping': True, 'ema_alpha': 0.3, 'optimizer_type': 'adam', 'dropout_rate': 0.4, 'gradient_clipping': True, 'phi_ensemble': False, 'ensemble_count': 1, 'C1': 3.0, 'C2': 3.0, 'neu': 5, 'u': 5, 'alpha': 5, 'f': 'square', 'm1': 'sin', 'm2': 'sin', 'input_dim': 100, 'noiseless': False, 'use_m_propen': True, 'interaction_terms': False, 'surrogate_num': 1, 'option_sur': 5, 'device': device(type='cuda'), 'training_validation_prop': 0.7, 'num_networks': 2, 'output_dim_stage1': 1, 'output_dim_stage2': 1, 'optimizer_weight_decay': 0.001, 'initializer': 'he', 'contrast': 1, 'job_id': '11885873', 'gamma1': tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1.], device='cuda:0'), 'gamma2': tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1.], device='cuda:0'), 'gamma1_prime': tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1.], device='cuda:0'), 'gamma2_prime': tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1.], device='cuda:0'), 'delta_A1': tensor([2.0000, 3.0000, 1.5000], device='cuda:0'), 'delta_A2': tensor([2.5000, 1.5000, 3.0000], device='cuda:0'), 'lambda_val': tensor(0.3000), 'eta_A1': tensor([1.0000, 2.5000, 2.0000], device='cuda:0'), 'eta_A2': tensor([2.0000, 1.0000, 2.5000], device='cuda:0')} 
+
+
+Replications_M1:   0%|                                                                                                              | 0/15 [00:00<?, ?it/s]
+Replication # -------------->>>>>  1
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 0 0
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -8.5862185160319, best_val_loss: inf. Saving the model...
+Did not improve ---> ema_val_loss: -8.530819121996561, best_val_loss: -8.5862185160319, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -8.642158493200936, best_val_loss: -8.5862185160319. Saving the model...
+Did not improve ---> ema_val_loss: -8.618278492848077, best_val_loss: -8.642158493200936, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.563031284562745, best_val_loss: -8.642158493200936, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.562690891808668, best_val_loss: -8.642158493200936, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.563661446760573, best_val_loss: -8.642158493200936, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 1
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -136.3854, Average Validation Loss: -8.57346072651091
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -8.012611990584269, best_val_loss: -8.642158493200936, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.455201713034842, best_val_loss: -8.642158493200936, no_improvement_count: 1, stabilization_patience: 4
+Improved ---> ema_val_loss: -8.869301857007079, best_val_loss: -8.642158493200936. Saving the model...
+Improved ---> ema_val_loss: -9.192299074944627, best_val_loss: -8.869301857007079. Saving the model...
+Improved ---> ema_val_loss: -9.87783101688995, best_val_loss: -9.192299074944627. Saving the model...
+Improved ---> ema_val_loss: -10.396833014923551, best_val_loss: -9.87783101688995. Saving the model...
+Improved ---> ema_val_loss: -10.699183323688063, best_val_loss: -10.396833014923551. Saving the model...
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -126.7745, Average Validation Loss: -10.069449481509979
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -10.950605532621072, best_val_loss: -10.699183323688063. Saving the model...
+Improved ---> ema_val_loss: -11.27143416679532, best_val_loss: -10.950605532621072. Saving the model...
+Improved ---> ema_val_loss: -11.369361874596688, best_val_loss: -11.27143416679532. Saving the model...
+Improved ---> ema_val_loss: -11.376573322212188, best_val_loss: -11.369361874596688. Saving the model...
+Improved ---> ema_val_loss: -11.56194059709394, best_val_loss: -11.376573322212188. Saving the model...
+Did not improve ---> ema_val_loss: -11.507803865887512, best_val_loss: -11.56194059709394, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -11.647736132177165, best_val_loss: -11.56194059709394. Saving the model...
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -171.9973, Average Validation Loss: -11.699820768265498
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.543479627393399, best_val_loss: -11.647736132177165, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.48308123172909, best_val_loss: -11.647736132177165, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.44328715319547, best_val_loss: -11.647736132177165, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.437368144001354, best_val_loss: -11.647736132177165, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -11.6072384045363, best_val_loss: -11.647736132177165, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.52942708215002, best_val_loss: -11.647736132177165, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.496025392975595, best_val_loss: -11.647736132177165, no_improvement_count: 2, stabilization_patience: 4
+ total_steps   ---->   56
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [4/10], Average Training Loss: -166.7925, Average Validation Loss: -11.455130758739655
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.626150155759184, best_val_loss: -11.647736132177165, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 5
+Did not improve ---> ema_val_loss: -11.54291545677923, best_val_loss: -11.647736132177165, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.4940353227667, best_val_loss: -11.647736132177165, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.455327899764814, best_val_loss: -11.647736132177165, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.425686059452678, best_val_loss: -11.647736132177165, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 5 epochs due to no further improvement.
+ total_steps   ---->   66
+ num_batches   ---->   10
+ num_val_steps   ---->   5
+
+Epoch [5/10], Average Training Loss: -155.4888, Average Validation Loss: -11.475997956593831
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -136.385407           -8.573461
+    2       -126.774511          -10.069449
+    3       -171.997273          -11.699821
+    4        -166.79252          -11.455131
+    5       -155.488842          -11.475998
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 14.72930097579956 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1234 1234
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2577485740184784 pi_11:  0.4845028817653656 pi_12:  0.2577485740184784
+pi_20:  0.2577485740184784 pi_21:  0.2577485740184784 pi_22:  0.4845028817653656
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9996, device='cuda:0')
+Y2_beh mean:  tensor(3.7044, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.7040, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6803, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1226, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.8029, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.5150, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(4.9951, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.5101, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.020705699920654297 seconds
+
+Y1_DS+Y2_DS mean: 9.510140419006348
+Total time taken to run eval_DTR: 0.12654829025268555 seconds 
+
+
+Replications_M1:   7%|██████▊                                                                                               | 1/15 [00:15<03:38, 15.63s/it]
+Replication # -------------->>>>>  2
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1 1
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -10.950322786966959, best_val_loss: inf. Saving the model...
+Did not improve ---> ema_val_loss: -10.646386543909708, best_val_loss: -10.950322786966959, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.422594062487283, best_val_loss: -10.950322786966959, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.280896181265511, best_val_loss: -10.950322786966959, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.164908929745355, best_val_loss: -10.950322786966959, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 1
+Did not improve ---> ema_val_loss: -9.990039760724702, best_val_loss: -10.950322786966959, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.969633677004971, best_val_loss: -10.950322786966959, no_improvement_count: 1, stabilization_patience: 4
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -147.1525, Average Validation Loss: -10.019501050313313
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -9.934329864262976, best_val_loss: -10.950322786966959, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.911495218491163, best_val_loss: -10.950322786966959, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 2
+Did not improve ---> ema_val_loss: -10.229452044636929, best_val_loss: -10.950322786966959, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.030316195497559, best_val_loss: -10.950322786966959, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.991682991511375, best_val_loss: -10.950322786966959, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.963815726427956, best_val_loss: -10.950322786966959, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 2
+Did not improve ---> ema_val_loss: -9.120895292671626, best_val_loss: -10.950322786966959, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -131.8470, Average Validation Loss: -9.60022825286502
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -8.48436704319564, best_val_loss: -10.950322786966959, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.019371804885996, best_val_loss: -10.950322786966959, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.560988251472565, best_val_loss: -10.950322786966959, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 3 epochs due to no further improvement.
+ total_steps   ---->   34
+ num_batches   ---->   6
+ num_val_steps   ---->   3
+
+Epoch [3/10], Average Training Loss: -108.8989, Average Validation Loss: -6.808314667807686
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -147.152462          -10.019501
+    2       -131.847033           -9.600228
+    3       -108.898884           -6.808315
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 2.7269341945648193 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1235 1235
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.25665396451950073 pi_11:  0.48669207096099854 pi_12:  0.25665396451950073
+pi_20:  0.25665396451950073 pi_21:  0.25665396451950073 pi_22:  0.48669207096099854
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9907, device='cuda:0')
+Y2_beh mean:  tensor(3.6847, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.6755, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6644, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1126, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.7770, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [1, 1]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.2489, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(4.9678, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.2167, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.018793344497680664 seconds
+
+Y1_DS+Y2_DS mean: 9.216658592224121
+Total time taken to run eval_DTR: 0.03155946731567383 seconds 
+
+
+Replications_M1:  13%|█████████████▌                                                                                        | 2/15 [00:18<01:44,  8.06s/it]
+Replication # -------------->>>>>  3
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 2 2
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -9.144041458765665, best_val_loss: inf. Saving the model...
+Did not improve ---> ema_val_loss: -8.524823228518166, best_val_loss: -9.144041458765665, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -9.961295823256172, best_val_loss: -9.144041458765665. Saving the model...
+Improved ---> ema_val_loss: -11.288794908920922, best_val_loss: -9.961295823256172. Saving the model...
+Improved ---> ema_val_loss: -12.293280112544693, best_val_loss: -11.288794908920922. Saving the model...
+Improved ---> ema_val_loss: -12.98951677427689, best_val_loss: -12.293280112544693. Saving the model...
+Improved ---> ema_val_loss: -13.457866362355151, best_val_loss: -12.98951677427689. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -1978.1079, Average Validation Loss: -12.532172872906639
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -13.880164218083419, best_val_loss: -13.457866362355151. Saving the model...
+Improved ---> ema_val_loss: -14.109580137823798, best_val_loss: -13.880164218083419. Saving the model...
+Improved ---> ema_val_loss: -14.278134843653781, best_val_loss: -14.109580137823798. Saving the model...
+Improved ---> ema_val_loss: -14.372300162576078, best_val_loss: -14.278134843653781. Saving the model...
+Improved ---> ema_val_loss: -14.430199585620269, best_val_loss: -14.372300162576078. Saving the model...
+Improved ---> ema_val_loss: -14.792055437549545, best_val_loss: -14.430199585620269. Saving the model...
+Did not improve ---> ema_val_loss: -14.748619914759411, best_val_loss: -14.792055437549545, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -184.6314, Average Validation Loss: -14.803258941287085
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -14.712482560174116, best_val_loss: -14.792055437549545, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -14.680165938484185, best_val_loss: -14.792055437549545, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -14.649817443254847, best_val_loss: -14.792055437549545, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+Did not improve ---> ema_val_loss: -14.649527104153513, best_val_loss: -14.792055437549545, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -14.66729352277318, best_val_loss: -14.792055437549545, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -14.654196435026918, best_val_loss: -14.792055437549545, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -14.645830990541793, best_val_loss: -14.792055437549545, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -180.4608, Average Validation Loss: -14.631353310176303
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.951178683010907, best_val_loss: -14.792055437549545, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -12.372143647290985, best_val_loss: -14.792055437549545, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -13.52451293751836, best_val_loss: -14.792055437549545, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -13.849195503787875, best_val_loss: -14.792055437549545, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -14.723951403814231, best_val_loss: -14.792055437549545, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -14.884336230320109, best_val_loss: -14.792055437549545. Saving the model...
+Improved ---> ema_val_loss: -15.011738131457228, best_val_loss: -14.884336230320109. Saving the model...
+ total_steps   ---->   56
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [4/10], Average Training Loss: -138.4679, Average Validation Loss: -13.881548552286059
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -14.888306165744424, best_val_loss: -15.011738131457228, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -15.331097715603006, best_val_loss: -15.011738131457228. Saving the model...
+Did not improve ---> ema_val_loss: -15.133628494992537, best_val_loss: -15.331097715603006, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -14.986775725303369, best_val_loss: -15.331097715603006, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -14.895790472083085, best_val_loss: -15.331097715603006, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -14.819864056623931, best_val_loss: -15.331097715603006, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 5 epochs due to no further improvement.
+ total_steps   ---->   68
+ num_batches   ---->   12
+ num_val_steps   ---->   6
+
+Epoch [5/10], Average Training Loss: -187.3461, Average Validation Loss: -14.934626075956556
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1      -1978.107898          -12.532173
+    2        -184.63142          -14.803259
+    3       -180.460769          -14.631353
+    4       -138.467928          -13.881549
+    5       -187.346116          -14.934626
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 5.552110433578491 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1236 1236
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2606004476547241 pi_11:  0.47879913449287415 pi_12:  0.2606004476547241
+pi_20:  0.2606004476547241 pi_21:  0.2606004476547241 pi_22:  0.47879913449287415
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9572, device='cuda:0')
+Y2_beh mean:  tensor(3.6845, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.6418, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6397, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1375, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.7772, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.4697, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(5.0138, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.4834, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.018863677978515625 seconds
+
+Y1_DS+Y2_DS mean: 9.483431816101074
+Total time taken to run eval_DTR: 0.03171539306640625 seconds 
+
+
+Replications_M1:  20%|████████████████████▍                                                                                 | 3/15 [00:23<01:23,  6.93s/it]
+Replication # -------------->>>>>  4
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 3 3
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -3.4697697162628174, best_val_loss: inf. Saving the model...
+Improved ---> ema_val_loss: -5.723219227790832, best_val_loss: -3.4697697162628174. Saving the model...
+Improved ---> ema_val_loss: -7.35425107717514, best_val_loss: -5.723219227790832. Saving the model...
+Improved ---> ema_val_loss: -8.454613422632217, best_val_loss: -7.35425107717514. Saving the model...
+Improved ---> ema_val_loss: -9.248179156279564, best_val_loss: -8.454613422632217. Saving the model...
+Improved ---> ema_val_loss: -9.830172152407169, best_val_loss: -9.248179156279564. Saving the model...
+Improved ---> ema_val_loss: -10.186122576158285, best_val_loss: -9.830172152407169. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -167.9388, Average Validation Loss: -9.991116762161255
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -10.447491613857673, best_val_loss: -10.186122576158285. Saving the model...
+Improved ---> ema_val_loss: -10.675057627243707, best_val_loss: -10.447491613857673. Saving the model...
+Improved ---> ema_val_loss: -10.801475008565223, best_val_loss: -10.675057627243707. Saving the model...
+Improved ---> ema_val_loss: -10.964418622023487, best_val_loss: -10.801475008565223. Saving the model...
+Improved ---> ema_val_loss: -10.989266257004576, best_val_loss: -10.964418622023487. Saving the model...
+Improved ---> ema_val_loss: -11.073311327260381, best_val_loss: -10.989266257004576. Saving the model...
+Improved ---> ema_val_loss: -11.100278090291372, best_val_loss: -11.073311327260381. Saving the model...
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -194.1667, Average Validation Loss: -11.169189725603376
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.088014115489727, best_val_loss: -11.100278090291372, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.073361532606725, best_val_loss: -11.100278090291372, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.065485667886962, best_val_loss: -11.100278090291372, no_improvement_count: 2, stabilization_patience: 4
+Improved ---> ema_val_loss: -11.109405984671753, best_val_loss: -11.100278090291372. Saving the model...
+Improved ---> ema_val_loss: -11.159449951980799, best_val_loss: -11.109405984671753. Saving the model...
+Did not improve ---> ema_val_loss: -11.127783656114342, best_val_loss: -11.159449951980799, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.11465984582484, best_val_loss: -11.159449951980799, no_improvement_count: 1, stabilization_patience: 4
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -193.7991, Average Validation Loss: -11.110245454879035
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.084643310305536, best_val_loss: -11.159449951980799, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.081719313261848, best_val_loss: -11.159449951980799, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -10.78171733611679, best_val_loss: -11.159449951980799, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.891318918423842, best_val_loss: -11.159449951980799, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.928831232398641, best_val_loss: -11.159449951980799, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.969700857964082, best_val_loss: -11.159449951980799, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -9.768017490185148, best_val_loss: -11.159449951980799, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   56
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [4/10], Average Training Loss: -172.7085, Average Validation Loss: -10.33768328030904
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -9.077769728137843, best_val_loss: -11.159449951980799, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.431673077884966, best_val_loss: -11.159449951980799, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.91819483806745, best_val_loss: -11.159449951980799, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 5
+Did not improve ---> ema_val_loss: -8.065703772892942, best_val_loss: -11.159449951980799, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -6.716636489205829, best_val_loss: -11.159449951980799, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.109083296121448, best_val_loss: -11.159449951980799, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.000824392718973, best_val_loss: -11.159449951980799, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 5 epochs due to no further improvement.
+ total_steps   ---->   70
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [5/10], Average Training Loss: -116.8262, Average Validation Loss: -7.742347862039294
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -167.938834           -9.991117
+    2       -194.166731           -11.16919
+    3       -193.799104          -11.110245
+    4       -172.708524          -10.337683
+    5       -116.826156           -7.742348
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 5.594150543212891 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1237 1237
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2582540810108185 pi_11:  0.4834918677806854 pi_12:  0.2582540810108185
+pi_20:  0.2582540810108185 pi_21:  0.2582540810108185 pi_22:  0.4834918677806854
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(3.0366, device='cuda:0')
+Y2_beh mean:  tensor(3.6844, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.7210, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.7055, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1191, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.8246, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.5419, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(4.9894, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.5313, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.018732070922851562 seconds
+
+Y1_DS+Y2_DS mean: 9.531301498413086
+Total time taken to run eval_DTR: 0.031450510025024414 seconds 
+
+
+Replications_M1:  27%|███████████████████████████▏                                                                          | 4/15 [00:29<01:10,  6.42s/it]
+Replication # -------------->>>>>  5
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 4 4
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -9.51621675491333, best_val_loss: inf. Saving the model...
+Improved ---> ema_val_loss: -9.650681066513062, best_val_loss: -9.51621675491333. Saving the model...
+Improved ---> ema_val_loss: -9.747238669395447, best_val_loss: -9.650681066513062. Saving the model...
+Improved ---> ema_val_loss: -9.783994650363923, best_val_loss: -9.747238669395447. Saving the model...
+Improved ---> ema_val_loss: -9.838210804128646, best_val_loss: -9.783994650363923. Saving the model...
+Improved ---> ema_val_loss: -9.868995678429602, best_val_loss: -9.838210804128646. Saving the model...
+Improved ---> ema_val_loss: -9.88706246257162, best_val_loss: -9.868995678429602. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -155.7037, Average Validation Loss: -9.879672391074044
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -9.895058666350792, best_val_loss: -9.88706246257162. Saving the model...
+Improved ---> ema_val_loss: -9.925955081261838, best_val_loss: -9.895058666350792. Saving the model...
+Did not improve ---> ema_val_loss: -9.923293011381578, best_val_loss: -9.925955081261838, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.899978613750186, best_val_loss: -9.925955081261838, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.890041716026497, best_val_loss: -9.925955081261838, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.869297521302165, best_val_loss: -9.925955081261838, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 2
+Improved ---> ema_val_loss: -11.67233399142061, best_val_loss: -9.925955081261838. Saving the model...
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -156.6939, Average Validation Loss: -10.748798881258283
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -10.456768561526776, best_val_loss: -11.67233399142061, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.568677316494036, best_val_loss: -11.67233399142061, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.943422432016405, best_val_loss: -11.67233399142061, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.396131500293563, best_val_loss: -11.67233399142061, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+Did not improve ---> ema_val_loss: -8.861739624820972, best_val_loss: -11.67233399142061, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.18773488253154, best_val_loss: -11.67233399142061, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.425220350770735, best_val_loss: -11.67233399142061, no_improvement_count: 2, stabilization_patience: 4
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -145.0733, Average Validation Loss: -8.513775643848238
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -9.567522524042932, best_val_loss: -11.67233399142061, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -9.537455462188328, best_val_loss: -11.67233399142061, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.690117291549406, best_val_loss: -11.67233399142061, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.793137932179066, best_val_loss: -11.67233399142061, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.84586747194368, best_val_loss: -11.67233399142061, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 4 epochs due to no further improvement.
+ total_steps   ---->   52
+ num_batches   ---->   10
+ num_val_steps   ---->   5
+
+Epoch [4/10], Average Training Loss: -146.4627, Average Validation Loss: -9.883122126261393
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -155.703741           -9.879672
+    2       -156.693912          -10.748799
+    3       -145.073279           -8.513776
+    4       -146.462723           -9.883122
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 4.1697492599487305 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1238 1238
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.256602942943573 pi_11:  0.4867941737174988 pi_12:  0.256602942943573
+pi_20:  0.256602942943573 pi_21:  0.256602942943573 pi_22:  0.4867941737174988
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9729, device='cuda:0')
+Y2_beh mean:  tensor(3.7123, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.6852, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6555, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1314, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.7869, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [3, 3]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [1, 1]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [1, 1]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [3, 3]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [1, 1]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [2, 2]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [2, 2]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [2, 2]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [2, 2]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [2, 2]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(1.5329, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(2.1795, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(3.7124, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.10550117492675781 seconds
+
+Y1_DS+Y2_DS mean: 3.7124183177948
+Total time taken to run eval_DTR: 0.11845660209655762 seconds 
+
+
+Replications_M1:  33%|██████████████████████████████████                                                                    | 5/15 [00:33<00:56,  5.65s/it]
+Replication # -------------->>>>>  6
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 5 5
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -8.991758426030477, best_val_loss: inf. Saving the model...
+Improved ---> ema_val_loss: -9.74238310654958, best_val_loss: -8.991758426030477. Saving the model...
+Improved ---> ema_val_loss: -10.407133794625599, best_val_loss: -9.74238310654958. Saving the model...
+Improved ---> ema_val_loss: -10.774495513995488, best_val_loss: -10.407133794625599. Saving the model...
+Improved ---> ema_val_loss: -11.024819646509487, best_val_loss: -10.774495513995488. Saving the model...
+Improved ---> ema_val_loss: -11.188971614800293, best_val_loss: -11.024819646509487. Saving the model...
+Improved ---> ema_val_loss: -11.325394506428319, best_val_loss: -11.188971614800293. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -137.1595, Average Validation Loss: -11.271443923314411
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -11.516149243336493, best_val_loss: -11.325394506428319. Saving the model...
+Improved ---> ema_val_loss: -11.564182087217869, best_val_loss: -11.516149243336493. Saving the model...
+Improved ---> ema_val_loss: -11.585712821388812, best_val_loss: -11.564182087217869. Saving the model...
+Improved ---> ema_val_loss: -11.609104333095948, best_val_loss: -11.585712821388812. Saving the model...
+Improved ---> ema_val_loss: -11.616660861612598, best_val_loss: -11.609104333095948. Saving the model...
+Improved ---> ema_val_loss: -11.646392532099155, best_val_loss: -11.616660861612598. Saving the model...
+Improved ---> ema_val_loss: -11.657129084603197, best_val_loss: -11.646392532099155. Saving the model...
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -161.2828, Average Validation Loss: -11.709911187489826
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -11.839497614776436, best_val_loss: -11.657129084603197. Saving the model...
+Did not improve ---> ema_val_loss: -11.78813746990039, best_val_loss: -11.839497614776436, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.76435210699729, best_val_loss: -11.839497614776436, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.705161945784333, best_val_loss: -11.839497614776436, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.708391213153769, best_val_loss: -11.839497614776436, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+Did not improve ---> ema_val_loss: -9.851857750231503, best_val_loss: -11.839497614776436, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.96992331944916, best_val_loss: -11.839497614776436, no_improvement_count: 1, stabilization_patience: 4
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -138.4397, Average Validation Loss: -10.670072566895257
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -10.261799879293733, best_val_loss: -11.839497614776436, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.658091544305051, best_val_loss: -11.839497614776436, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -10.950773763096667, best_val_loss: -11.839497614776436, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.148487028683657, best_val_loss: -11.839497614776436, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.42604055806379, best_val_loss: -11.839497614776436, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.491356451939208, best_val_loss: -11.839497614776436, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -9.584677107872032, best_val_loss: -11.839497614776436, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   56
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [4/10], Average Training Loss: -133.4491, Average Validation Loss: -10.660331215177264
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -10.432086127419296, best_val_loss: -11.839497614776436, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.67926211376321, best_val_loss: -11.839497614776436, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.967508902684173, best_val_loss: -11.839497614776436, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 5 epochs due to no further improvement.
+ total_steps   ---->   62
+ num_batches   ---->   6
+ num_val_steps   ---->   3
+
+Epoch [5/10], Average Training Loss: -114.9238, Average Validation Loss: -11.76848822169834
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -137.159455          -11.271444
+    2       -161.282776          -11.709911
+    3       -138.439714          -10.670073
+    4       -133.449099          -10.660331
+    5       -114.923818          -11.768488
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 4.9941816329956055 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1239 1239
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2565745413303375 pi_11:  0.48685091733932495 pi_12:  0.2565745413303375
+pi_20:  0.2565745413303375 pi_21:  0.2565745413303375 pi_22:  0.48685091733932495
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9688, device='cuda:0')
+Y2_beh mean:  tensor(3.7069, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.6757, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6495, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1245, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.7740, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.4813, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(5.0050, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.4863, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.018766403198242188 seconds
+
+Y1_DS+Y2_DS mean: 9.486289024353027
+Total time taken to run eval_DTR: 0.031601905822753906 seconds 
+
+
+Replications_M1:  40%|████████████████████████████████████████▊                                                             | 6/15 [00:38<00:48,  5.44s/it]
+Replication # -------------->>>>>  7
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 6 6
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -7.653592030207316, best_val_loss: inf. Saving the model...
+Improved ---> ema_val_loss: -7.657480231920879, best_val_loss: -7.653592030207316. Saving the model...
+Did not improve ---> ema_val_loss: -7.615880150000255, best_val_loss: -7.657480231920879, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.559067321697871, best_val_loss: -7.657480231920879, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.621952107564608, best_val_loss: -7.657480231920879, no_improvement_count: 2, stabilization_patience: 4
+Improved ---> ema_val_loss: -7.7463123676292085, best_val_loss: -7.657480231920879. Saving the model...
+Improved ---> ema_val_loss: -7.849509302176871, best_val_loss: -7.7463123676292085. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -155.4005, Average Validation Loss: -7.7372762589227575
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -7.830732628085699, best_val_loss: -7.849509302176871, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.69539986358577, best_val_loss: -7.849509302176871, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.717933845664518, best_val_loss: -7.849509302176871, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.816815772157728, best_val_loss: -7.849509302176871, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 2
+Did not improve ---> ema_val_loss: -7.484902802061313, best_val_loss: -7.849509302176871, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.752069457437487, best_val_loss: -7.849509302176871, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.759337509518985, best_val_loss: -7.849509302176871, no_improvement_count: 2, stabilization_patience: 4
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -115.1278, Average Validation Loss: -7.692398718425205
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -8.11352928816506, best_val_loss: -7.849509302176871. Saving the model...
+Improved ---> ema_val_loss: -8.11739638882339, best_val_loss: -8.11352928816506. Saving the model...
+Did not improve ---> ema_val_loss: -8.089753365578472, best_val_loss: -8.11739638882339, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.061076529069299, best_val_loss: -8.11739638882339, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.051735561162719, best_val_loss: -8.11739638882339, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.981101601073485, best_val_loss: -8.11739638882339, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+Improved ---> ema_val_loss: -8.307814016068516, best_val_loss: -8.11739638882339. Saving the model...
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -106.8775, Average Validation Loss: -8.286026466460456
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -8.55931404619135, best_val_loss: -8.307814016068516. Saving the model...
+Did not improve ---> ema_val_loss: -8.207920098027609, best_val_loss: -8.55931404619135, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.772234265610293, best_val_loss: -8.55931404619135, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.557133218867879, best_val_loss: -8.55931404619135, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.55743497893841, best_val_loss: -8.55931404619135, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -7.26966925462029, best_val_loss: -8.55931404619135, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -8.720516630013378, best_val_loss: -8.55931404619135. Saving the model...
+ total_steps   ---->   56
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [4/10], Average Training Loss: -91.2734, Average Validation Loss: -8.086742179734367
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -10.032515537341151, best_val_loss: -8.720516630013378. Saving the model...
+Improved ---> ema_val_loss: -12.105693157632945, best_val_loss: -10.032515537341151. Saving the model...
+Improved ---> ema_val_loss: -13.21706143943852, best_val_loss: -12.105693157632945. Saving the model...
+Improved ---> ema_val_loss: -13.943037215370634, best_val_loss: -13.21706143943852. Saving the model...
+Improved ---> ema_val_loss: -15.359786399651654, best_val_loss: -13.943037215370634. Saving the model...
+Improved ---> ema_val_loss: -15.46350862375335, best_val_loss: -15.359786399651654. Saving the model...
+Improved ---> ema_val_loss: -15.524709380209497, best_val_loss: -15.46350862375335. Saving the model...
+ total_steps   ---->   70
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [5/10], Average Training Loss: -141.6955, Average Validation Loss: -15.93182307197934
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -15.539993585723675, best_val_loss: -15.524709380209497. Saving the model...
+Improved ---> ema_val_loss: -16.493629188442853, best_val_loss: -15.539993585723675. Saving the model...
+Did not improve ---> ema_val_loss: -16.218811515741784, best_val_loss: -16.493629188442853, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -16.02712555194027, best_val_loss: -16.493629188442853, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -15.883165637899324, best_val_loss: -16.493629188442853, no_improvement_count: 2, stabilization_patience: 4
+Improved ---> ema_val_loss: -16.739516643856184, best_val_loss: -16.493629188442853. Saving the model...
+Did not improve ---> ema_val_loss: -16.433030016940783, best_val_loss: -16.739516643856184, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   84
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [6/10], Average Training Loss: -168.7180, Average Validation Loss: -16.49352670851208
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -16.211973064547145, best_val_loss: -16.739516643856184, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -16.0118839337267, best_val_loss: -16.739516643856184, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -15.879107518562304, best_val_loss: -16.739516643856184, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 7 epochs due to no further improvement.
+ total_steps   ---->   90
+ num_batches   ---->   6
+ num_val_steps   ---->   3
+
+Epoch [7/10], Average Training Loss: -167.6236, Average Validation Loss: -15.603492895762125
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -155.400543           -7.737276
+    2       -115.127833           -7.692399
+    3       -106.877465           -8.286026
+    4         -91.27341           -8.086742
+    5       -141.695483          -15.931823
+    6       -168.718045          -16.493527
+    7       -167.623591          -15.603493
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 7.197382688522339 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1240 1240
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2570187449455261 pi_11:  0.48596251010894775 pi_12:  0.2570187449455261
+pi_20:  0.2570187449455261 pi_21:  0.2570187449455261 pi_22:  0.48596251010894775
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9981, device='cuda:0')
+Y2_beh mean:  tensor(3.7031, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.7012, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6716, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1360, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.8076, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.5099, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(5.0084, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.5183, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.01871800422668457 seconds
+
+Y1_DS+Y2_DS mean: 9.518322944641113
+Total time taken to run eval_DTR: 0.030936479568481445 seconds 
+
+
+Replications_M1:  47%|███████████████████████████████████████████████▌                                                      | 7/15 [00:46<00:48,  6.03s/it]
+Replication # -------------->>>>>  8
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 7 7
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -10.195001602172852, best_val_loss: inf. Saving the model...
+Improved ---> ema_val_loss: -10.199872636795044, best_val_loss: -10.195001602172852. Saving the model...
+Improved ---> ema_val_loss: -10.205137019157409, best_val_loss: -10.199872636795044. Saving the model...
+Did not improve ---> ema_val_loss: -10.179075792789458, best_val_loss: -10.205137019157409, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.174673609685897, best_val_loss: -10.205137019157409, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.167332590546607, best_val_loss: -10.205137019157409, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.181914479184627, best_val_loss: -10.205137019157409, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 1
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -168.2837, Average Validation Loss: -10.181781587146578
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -10.183735332343911, best_val_loss: -10.205137019157409, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -10.23432690801, best_val_loss: -10.205137019157409. Saving the model...
+Did not improve ---> ema_val_loss: -10.206477451634832, best_val_loss: -10.23432690801, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.203588638522922, best_val_loss: -10.23432690801, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.195197403106182, best_val_loss: -10.23432690801, no_improvement_count: 2, stabilization_patience: 4
+Improved ---> ema_val_loss: -10.243641870986583, best_val_loss: -10.23432690801. Saving the model...
+Did not improve ---> ema_val_loss: -10.225528061826838, best_val_loss: -10.243641870986583, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -166.5654, Average Validation Loss: -10.227751527513776
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -10.186786288328834, best_val_loss: -10.243641870986583, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.186735709523665, best_val_loss: -10.243641870986583, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.196178015083923, best_val_loss: -10.243641870986583, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+Did not improve ---> ema_val_loss: -10.178802195397612, best_val_loss: -10.243641870986583, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.183978494252083, best_val_loss: -10.243641870986583, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.178638652336321, best_val_loss: -10.243641870986583, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.166509573420093, best_val_loss: -10.243641870986583, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -164.1208, Average Validation Loss: -10.162845588865736
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -9.817375526162131, best_val_loss: -10.243641870986583, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.971687938503921, best_val_loss: -10.243641870986583, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.039513784659654, best_val_loss: -10.243641870986583, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.100664753326699, best_val_loss: -10.243641870986583, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 4 epochs due to no further improvement.
+ total_steps   ---->   50
+ num_batches   ---->   8
+ num_val_steps   ---->   4
+
+Epoch [4/10], Average Training Loss: -120.4649, Average Validation Loss: -9.94390102227529
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -168.283671          -10.181782
+    2        -166.56536          -10.227752
+    3       -164.120812          -10.162846
+    4       -120.464942           -9.943901
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 4.108936786651611 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1241 1241
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2575502395629883 pi_11:  0.4848995506763458 pi_12:  0.2575502395629883
+pi_20:  0.2575502395629883 pi_21:  0.2575502395629883 pi_22:  0.4848995506763458
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(3.0064, device='cuda:0')
+Y2_beh mean:  tensor(3.7058, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.7122, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6895, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1246, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.8141, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.5253, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(5.0000, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.5253, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.01897430419921875 seconds
+
+Y1_DS+Y2_DS mean: 9.5253324508667
+Total time taken to run eval_DTR: 0.03171348571777344 seconds 
+
+
+Replications_M1:  53%|██████████████████████████████████████████████████████▍                                               | 8/15 [00:50<00:38,  5.43s/it]
+Replication # -------------->>>>>  9
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 8 8
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -8.996282736460367, best_val_loss: inf. Saving the model...
+Improved ---> ema_val_loss: -10.056225458780922, best_val_loss: -8.996282736460367. Saving the model...
+Improved ---> ema_val_loss: -10.483665386835732, best_val_loss: -10.056225458780922. Saving the model...
+Improved ---> ema_val_loss: -10.798716155687966, best_val_loss: -10.483665386835732. Saving the model...
+Improved ---> ema_val_loss: -10.992304577032723, best_val_loss: -10.798716155687966. Saving the model...
+Improved ---> ema_val_loss: -11.121779522816338, best_val_loss: -10.992304577032723. Saving the model...
+Improved ---> ema_val_loss: -11.23345356887976, best_val_loss: -11.121779522816338. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -144.6388, Average Validation Loss: -11.271784668877013
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -11.271262947663462, best_val_loss: -11.23345356887976. Saving the model...
+Improved ---> ema_val_loss: -11.311746856333173, best_val_loss: -11.271262947663462. Saving the model...
+Improved ---> ema_val_loss: -11.414584007395256, best_val_loss: -11.311746856333173. Saving the model...
+Improved ---> ema_val_loss: -11.425851286026898, best_val_loss: -11.414584007395256. Saving the model...
+Improved ---> ema_val_loss: -11.442148977916581, best_val_loss: -11.425851286026898. Saving the model...
+Did not improve ---> ema_val_loss: -11.4218017241168, best_val_loss: -11.442148977916581, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -11.489824500338791, best_val_loss: -11.442148977916581. Saving the model...
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -163.9329, Average Validation Loss: -11.482202734266009
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.46324753826816, best_val_loss: -11.489824500338791, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.457524371605828, best_val_loss: -11.489824500338791, no_improvement_count: 1, stabilization_patience: 4
+Improved ---> ema_val_loss: -11.502438881718316, best_val_loss: -11.489824500338791. Saving the model...
+Improved ---> ema_val_loss: -11.515298172937074, best_val_loss: -11.502438881718316. Saving the model...
+Did not improve ---> ema_val_loss: -11.483003147020305, best_val_loss: -11.515298172937074, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.48919482757852, best_val_loss: -11.515298172937074, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.484975928178866, best_val_loss: -11.515298172937074, no_improvement_count: 2, stabilization_patience: 4
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -162.2867, Average Validation Loss: -11.483481361752466
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.486615927892931, best_val_loss: -11.515298172937074, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Improved ---> ema_val_loss: -11.571695230717069, best_val_loss: -11.515298172937074. Saving the model...
+Did not improve ---> ema_val_loss: -11.529887083788935, best_val_loss: -11.571695230717069, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.524312367572541, best_val_loss: -11.571695230717069, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.500024467084714, best_val_loss: -11.571695230717069, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.484368189733956, best_val_loss: -11.571695230717069, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -10.019608427279406, best_val_loss: -11.571695230717069, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   56
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [4/10], Average Training Loss: -148.8315, Average Validation Loss: -10.813902979805357
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -9.175403903360415, best_val_loss: -11.571695230717069, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.6681767953482, best_val_loss: -11.571695230717069, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.410593872977564, best_val_loss: -11.571695230717069, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 5
+Did not improve ---> ema_val_loss: -7.992392627397466, best_val_loss: -11.571695230717069, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.711455310979984, best_val_loss: -11.571695230717069, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.536960005680373, best_val_loss: -11.571695230717069, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.42367395156995, best_val_loss: -11.571695230717069, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 5 epochs due to no further improvement.
+ total_steps   ---->   70
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [5/10], Average Training Loss: -121.9153, Average Validation Loss: -7.265925146284557
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -144.638806          -11.271785
+    2       -163.932947          -11.482203
+    3       -162.286689          -11.483481
+    4       -148.831504          -10.813903
+    5       -121.915301           -7.265925
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 5.590009450912476 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1242 1242
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2571430504322052 pi_11:  0.485713928937912 pi_12:  0.2571430504322052
+pi_20:  0.2571430504322052 pi_21:  0.2571430504322052 pi_22:  0.4857138991355896
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9607, device='cuda:0')
+Y2_beh mean:  tensor(3.7325, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.6932, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6368, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1605, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.7973, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.4578, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(5.0376, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.4954, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.018898487091064453 seconds
+
+Y1_DS+Y2_DS mean: 9.495373725891113
+Total time taken to run eval_DTR: 0.03183460235595703 seconds 
+
+
+Replications_M1:  60%|█████████████████████████████████████████████████████████████▏                                        | 9/15 [00:55<00:32,  5.49s/it]
+Replication # -------------->>>>>  10
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 9 9
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -7.505493243535359, best_val_loss: inf. Saving the model...
+Improved ---> ema_val_loss: -8.513150747617086, best_val_loss: -7.505493243535359. Saving the model...
+Improved ---> ema_val_loss: -9.271647206147511, best_val_loss: -8.513150747617086. Saving the model...
+Improved ---> ema_val_loss: -9.792806261618932, best_val_loss: -9.271647206147511. Saving the model...
+Improved ---> ema_val_loss: -10.178342087753613, best_val_loss: -9.792806261618932. Saving the model...
+Improved ---> ema_val_loss: -10.43151999769767, best_val_loss: -10.178342087753613. Saving the model...
+Improved ---> ema_val_loss: -10.685037669347842, best_val_loss: -10.43151999769767. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -144.1845, Average Validation Loss: -10.54241917246864
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -10.815805283948762, best_val_loss: -10.685037669347842. Saving the model...
+Improved ---> ema_val_loss: -10.890187014575291, best_val_loss: -10.815805283948762. Saving the model...
+Improved ---> ema_val_loss: -10.969367902085027, best_val_loss: -10.890187014575291. Saving the model...
+Improved ---> ema_val_loss: -11.001057617290208, best_val_loss: -10.969367902085027. Saving the model...
+Did not improve ---> ema_val_loss: -11.000648397899043, best_val_loss: -11.001057617290208, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -11.01930163014676, best_val_loss: -11.001057617290208. Saving the model...
+Did not improve ---> ema_val_loss: -11.014272077839792, best_val_loss: -11.01930163014676, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -161.1278, Average Validation Loss: -11.068407649085637
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -11.027960301213318, best_val_loss: -11.01930163014676. Saving the model...
+Improved ---> ema_val_loss: -11.028575373233355, best_val_loss: -11.027960301213318. Saving the model...
+Improved ---> ema_val_loss: -11.04946743525932, best_val_loss: -11.028575373233355. Saving the model...
+Did not improve ---> ema_val_loss: -11.03294792726148, best_val_loss: -11.04946743525932, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -11.061485799830717, best_val_loss: -11.04946743525932. Saving the model...
+Did not improve ---> ema_val_loss: -11.040865587072663, best_val_loss: -11.061485799830717, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.039443751984798, best_val_loss: -11.061485799830717, no_improvement_count: 1, stabilization_patience: 4
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -163.3850, Average Validation Loss: -11.048497154599145
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.02783912675557, best_val_loss: -11.061485799830717, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.03575626194362, best_val_loss: -11.061485799830717, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Improved ---> ema_val_loss: -18.143397079168942, best_val_loss: -11.061485799830717. Saving the model...
+Did not improve ---> ema_val_loss: -15.740393128376631, best_val_loss: -18.143397079168942, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -13.858193612562616, best_val_loss: -18.143397079168942, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -13.820277912941474, best_val_loss: -18.143397079168942, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -12.924858701694834, best_val_loss: -18.143397079168942, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+ total_steps   ---->   56
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [4/10], Average Training Loss: -129.9217, Average Validation Loss: -14.421431053252446
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -12.282038446990827, best_val_loss: -18.143397079168942, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.930971691717431, best_val_loss: -18.143397079168942, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.695430136518485, best_val_loss: -18.143397079168942, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.581981082516675, best_val_loss: -18.143397079168942, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 5
+Did not improve ---> ema_val_loss: -10.187141873270704, best_val_loss: -18.143397079168942, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.111184057078066, best_val_loss: -18.143397079168942, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.209235099491389, best_val_loss: -18.143397079168942, no_improvement_count: 2, stabilization_patience: 4
+ total_steps   ---->   70
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [5/10], Average Training Loss: -130.1842, Average Validation Loss: -9.142122949872698
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -7.721849997118947, best_val_loss: -18.143397079168942, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 6 epochs due to no further improvement.
+ total_steps   ---->   72
+ num_batches   ---->   2
+ num_val_steps   ---->   1
+
+Epoch [6/10], Average Training Loss: -105.4044, Average Validation Loss: -6.584618091583252
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -144.184501          -10.542419
+    2       -161.127777          -11.068408
+    3       -163.385015          -11.048497
+    4       -129.921696          -14.421431
+    5       -130.184242           -9.142123
+    6       -105.404392           -6.584618
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 5.83620548248291 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1243 1243
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.25635913014411926 pi_11:  0.4872817397117615 pi_12:  0.25635913014411926
+pi_20:  0.25635913014411926 pi_21:  0.25635913014411926 pi_22:  0.4872817397117615
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9658, device='cuda:0')
+Y2_beh mean:  tensor(3.6976, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.6634, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6521, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1095, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.7617, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [3, 3]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [3, 3]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [3, 3]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [1, 1]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [1, 1]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [2, 2]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [1, 1]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [1, 1]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(2.4512, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(3.3565, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(5.8076, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.018863916397094727 seconds
+
+Y1_DS+Y2_DS mean: 5.80762243270874
+Total time taken to run eval_DTR: 0.031098127365112305 seconds 
+
+
+Replications_M1:  67%|███████████████████████████████████████████████████████████████████▎                                 | 10/15 [01:01<00:28,  5.61s/it]
+Replication # -------------->>>>>  11
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 10 10
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -31.933860937754314, best_val_loss: inf. Saving the model...
+Did not improve ---> ema_val_loss: -31.92964522043864, best_val_loss: -31.933860937754314, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -31.933853737513225, best_val_loss: -31.933860937754314, no_improvement_count: 1, stabilization_patience: 4
+Improved ---> ema_val_loss: -31.954432565371196, best_val_loss: -31.933860937754314. Saving the model...
+Did not improve ---> ema_val_loss: -31.954376704374948, best_val_loss: -31.954432565371196, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -31.950068192497888, best_val_loss: -31.954432565371196, no_improvement_count: 1, stabilization_patience: 4
+Improved ---> ema_val_loss: -31.963189118873274, best_val_loss: -31.954432565371196. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -165.8287, Average Validation Loss: -31.955408414204918
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -31.972263951738512, best_val_loss: -31.963189118873274. Saving the model...
+Did not improve ---> ema_val_loss: -31.94752259428092, best_val_loss: -31.972263951738512, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -31.97625934245538, best_val_loss: -31.972263951738512. Saving the model...
+Did not improve ---> ema_val_loss: -31.975533706085336, best_val_loss: -31.97625934245538, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -31.985750543570035, best_val_loss: -31.97625934245538. Saving the model...
+Did not improve ---> ema_val_loss: -31.964382127172605, best_val_loss: -31.985750543570035, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -31.969921748511787, best_val_loss: -31.985750543570035, no_improvement_count: 1, stabilization_patience: 4
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -168.1729, Average Validation Loss: -31.972477640424454
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -31.974606673390625, best_val_loss: -31.985750543570035, no_improvement_count: 2, stabilization_patience: 4
+Improved ---> ema_val_loss: -32.014778582582544, best_val_loss: -31.985750543570035. Saving the model...
+Improved ---> ema_val_loss: -32.02810604754167, best_val_loss: -32.014778582582544. Saving the model...
+Did not improve ---> ema_val_loss: -31.998280648074086, best_val_loss: -32.02810604754167, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -31.97061299341626, best_val_loss: -32.02810604754167, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -31.96778916657363, best_val_loss: -32.02810604754167, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -31.962946124258398, best_val_loss: -32.02810604754167, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -169.8664, Average Validation Loss: -31.98583482560657
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -24.29775596774412, best_val_loss: -32.02810604754167, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -19.046927316802293, best_val_loss: -32.02810604754167, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -15.798055911732003, best_val_loss: -32.02810604754167, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -12.964491146078306, best_val_loss: -32.02810604754167, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -12.47781852492632, best_val_loss: -32.02810604754167, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -18.18630268699188, best_val_loss: -32.02810604754167, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -22.31093360750259, best_val_loss: -32.02810604754167, no_improvement_count: 2, stabilization_patience: 4
+ total_steps   ---->   56
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [4/10], Average Training Loss: -111.1884, Average Validation Loss: -14.651560374668666
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -25.236114848036237, best_val_loss: -32.02810604754167, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 5
+Did not improve ---> ema_val_loss: -19.23417270567523, best_val_loss: -32.02810604754167, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -26.826485266989017, best_val_loss: -32.02810604754167, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -28.33766186783103, best_val_loss: -32.02810604754167, no_improvement_count: 2, stabilization_patience: 4
+Improved ---> ema_val_loss: -33.31315426016421, best_val_loss: -32.02810604754167. Saving the model...
+Did not improve ---> ema_val_loss: -32.90604846864144, best_val_loss: -33.31315426016421, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -32.63932302030364, best_val_loss: -33.31315426016421, no_improvement_count: 1, stabilization_patience: 4
+ total_steps   ---->   70
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [5/10], Average Training Loss: -153.4416, Average Validation Loss: -31.79893367631095
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -32.42251981996206, best_val_loss: -33.31315426016421, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -32.27744283668096, best_val_loss: -33.31315426016421, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 6 epochs due to no further improvement.
+ total_steps   ---->   74
+ num_batches   ---->   4
+ num_val_steps   ---->   2
+
+Epoch [6/10], Average Training Loss: -155.5142, Average Validation Loss: -31.92778778076172
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -165.828703          -31.955408
+    2       -168.172928          -31.972478
+    3       -169.866364          -31.985835
+    4       -111.188357           -14.65156
+    5       -153.441599          -31.798934
+    6       -155.514244          -31.927788
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 5.96779465675354 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1244 1244
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2511862516403198 pi_11:  0.49762746691703796 pi_12:  0.2511862516403198
+pi_20:  0.2511862516403198 pi_21:  0.2511862516403198 pi_22:  0.4976274371147156
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(3.0791, device='cuda:0')
+Y2_beh mean:  tensor(3.6636, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.7428, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.7233, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.0784, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.8017, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.5625, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(4.9470, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.5095, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.01896357536315918 seconds
+
+Y1_DS+Y2_DS mean: 9.509456634521484
+Total time taken to run eval_DTR: 0.031548500061035156 seconds 
+
+
+Replications_M1:  73%|██████████████████████████████████████████████████████████████████████████                           | 11/15 [01:07<00:22,  5.73s/it]
+Replication # -------------->>>>>  12
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 11 11
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -11.357029596964518, best_val_loss: inf. Saving the model...
+Did not improve ---> ema_val_loss: -11.329495779673257, best_val_loss: -11.357029596964518, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.345778900782266, best_val_loss: -11.357029596964518, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.308831805864969, best_val_loss: -11.357029596964518, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.32385362030665, best_val_loss: -11.357029596964518, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 1
+Did not improve ---> ema_val_loss: -10.22631437171618, best_val_loss: -11.357029596964518, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.699613354726472, best_val_loss: -11.357029596964518, no_improvement_count: 1, stabilization_patience: 4
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -142.9017, Average Validation Loss: -10.38908755211603
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -9.307259741908993, best_val_loss: -11.357029596964518, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.76375006083715, best_val_loss: -11.357029596964518, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 2
+Did not improve ---> ema_val_loss: -9.47325691094843, best_val_loss: -11.357029596964518, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.060635315950645, best_val_loss: -11.357029596964518, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.431727424565109, best_val_loss: -11.357029596964518, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.669796954306172, best_val_loss: -11.357029596964518, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 2
+Did not improve ---> ema_val_loss: -10.798383910952552, best_val_loss: -11.357029596964518, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -141.1855, Average Validation Loss: -10.29551546914237
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -10.944965501277625, best_val_loss: -11.357029596964518, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.06106991942156, best_val_loss: -11.357029596964518, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.204447380332152, best_val_loss: -11.357029596964518, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 3 epochs due to no further improvement.
+ total_steps   ---->   34
+ num_batches   ---->   6
+ num_val_steps   ---->   3
+
+Epoch [3/10], Average Training Loss: -169.5456, Average Validation Loss: -11.385988076527914
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -142.901652          -10.389088
+    2       -141.185473          -10.295515
+    3       -169.545596          -11.385988
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 2.7542428970336914 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1245 1245
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.26063209772109985 pi_11:  0.4787358045578003 pi_12:  0.26063209772109985
+pi_20:  0.26063209772109985 pi_21:  0.26063209772109985 pi_22:  0.4787358045578003
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9825, device='cuda:0')
+Y2_beh mean:  tensor(3.6825, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.6650, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6790, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1181, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.7972, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.5143, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(4.8758, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.3901, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.018949270248413086 seconds
+
+Y1_DS+Y2_DS mean: 9.390093803405762
+Total time taken to run eval_DTR: 0.03125309944152832 seconds 
+
+
+Replications_M1:  80%|████████████████████████████████████████████████████████████████████████████████▊                    | 12/15 [01:10<00:14,  4.84s/it]
+Replication # -------------->>>>>  13
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 12 12
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -10.480852921803793, best_val_loss: inf. Saving the model...
+Did not improve ---> ema_val_loss: -10.477464087804158, best_val_loss: -10.480852921803793, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -10.491174333890278, best_val_loss: -10.480852921803793. Saving the model...
+Did not improve ---> ema_val_loss: -10.470099099000294, best_val_loss: -10.491174333890278, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.488999312384921, best_val_loss: -10.491174333890278, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.484253416145641, best_val_loss: -10.491174333890278, no_improvement_count: 2, stabilization_patience: 4
+Improved ---> ema_val_loss: -10.546128089010077, best_val_loss: -10.491174333890278. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -161.6444, Average Validation Loss: -10.513039997645787
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -10.527807917540818, best_val_loss: -10.546128089010077, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.530595684490486, best_val_loss: -10.546128089010077, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.507423239061552, best_val_loss: -10.546128089010077, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.490887385583441, best_val_loss: -10.546128089010077, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 2
+Did not improve ---> ema_val_loss: -10.476503383500939, best_val_loss: -10.546128089010077, no_improvement_count: 0, stabilization_patience: 4
+Improved ---> ema_val_loss: -10.564965065289035, best_val_loss: -10.546128089010077. Saving the model...
+Did not improve ---> ema_val_loss: -10.554406419573173, best_val_loss: -10.564965065289035, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -163.7299, Average Validation Loss: -10.524557885669527
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -10.520733915393116, best_val_loss: -10.564965065289035, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.524010572669102, best_val_loss: -10.564965065289035, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.516570794270471, best_val_loss: -10.564965065289035, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+Did not improve ---> ema_val_loss: -10.311465898533886, best_val_loss: -10.564965065289035, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.330460706915614, best_val_loss: -10.564965065289035, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.397123781538317, best_val_loss: -10.564965065289035, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.493977619595743, best_val_loss: -10.564965065289035, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -159.6144, Average Validation Loss: -10.421906107947942
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -9.91246357299009, best_val_loss: -10.564965065289035, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.559200198610458, best_val_loss: -10.564965065289035, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.231992898197852, best_val_loss: -10.564965065289035, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.0799555346055, best_val_loss: -10.564965065289035, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 4 epochs due to no further improvement.
+ total_steps   ---->   50
+ num_batches   ---->   8
+ num_val_steps   ---->   4
+
+Epoch [4/10], Average Training Loss: -100.9335, Average Validation Loss: -8.621056834856669
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -161.644385           -10.51304
+    2        -163.72993          -10.524558
+    3       -159.614435          -10.421906
+    4       -100.933519           -8.621057
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 4.096805095672607 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1246 1246
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2609679698944092 pi_11:  0.47806406021118164 pi_12:  0.2609679698944092
+pi_20:  0.2609679698944092 pi_21:  0.2609679698944092 pi_22:  0.47806406021118164
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9715, device='cuda:0')
+Y2_beh mean:  tensor(3.6767, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.6482, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6612, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1244, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.7855, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.4968, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(5.0023, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.4991, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.018971920013427734 seconds
+
+Y1_DS+Y2_DS mean: 9.499076843261719
+Total time taken to run eval_DTR: 0.03160214424133301 seconds 
+
+
+Replications_M1:  87%|███████████████████████████████████████████████████████████████████████████████████████▌             | 13/15 [01:14<00:09,  4.62s/it]
+Replication # -------------->>>>>  14
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 13 13
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -9.488809585571289, best_val_loss: inf. Saving the model...
+Improved ---> ema_val_loss: -9.502087879180907, best_val_loss: -9.488809585571289. Saving the model...
+Improved ---> ema_val_loss: -9.509647712707519, best_val_loss: -9.502087879180907. Saving the model...
+Improved ---> ema_val_loss: -9.531952001571653, best_val_loss: -9.509647712707519. Saving the model...
+Improved ---> ema_val_loss: -9.537806483650206, best_val_loss: -9.531952001571653. Saving the model...
+Improved ---> ema_val_loss: -9.552764492015838, best_val_loss: -9.537806483650206. Saving the model...
+Improved ---> ema_val_loss: -9.554812627779006, best_val_loss: -9.552764492015838. Saving the model...
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -157.7176, Average Validation Loss: -9.547412554423016
+__________________________________________________________________________________________
+Improved ---> ema_val_loss: -9.558443493070792, best_val_loss: -9.554812627779006. Saving the model...
+Did not improve ---> ema_val_loss: -9.553321991856707, best_val_loss: -9.558443493070792, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.548964417126843, best_val_loss: -9.558443493070792, no_improvement_count: 1, stabilization_patience: 4
+Improved ---> ema_val_loss: -9.563163126809346, best_val_loss: -9.558443493070792. Saving the model...
+Did not improve ---> ema_val_loss: -9.552905547332827, best_val_loss: -9.563163126809346, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.542191592254683, best_val_loss: -9.563163126809346, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.547134174087555, best_val_loss: -9.563163126809346, no_improvement_count: 2, stabilization_patience: 4
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -173.4915, Average Validation Loss: -9.54974399294172
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -9.539395794496176, best_val_loss: -9.563163126809346, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+Improved ---> ema_val_loss: -10.292670525767074, best_val_loss: -9.563163126809346. Saving the model...
+Did not improve ---> ema_val_loss: -10.067196657618249, best_val_loss: -10.292670525767074, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.912927114220713, best_val_loss: -10.292670525767074, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.796365330891389, best_val_loss: -10.292670525767074, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.708284951442087, best_val_loss: -10.292670525767074, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+Did not improve ---> ema_val_loss: -9.578877564306579, best_val_loss: -10.292670525767074, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -142.0525, Average Validation Loss: -9.852826549893333
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -9.566939005479082, best_val_loss: -10.292670525767074, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.564166588045563, best_val_loss: -10.292670525767074, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.556567221601986, best_val_loss: -10.292670525767074, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 4
+Did not improve ---> ema_val_loss: -8.577283426924673, best_val_loss: -10.292670525767074, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -7.779076130551982, best_val_loss: -10.292670525767074, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.10082385336759, best_val_loss: -10.292670525767074, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -8.31105433083357, best_val_loss: -10.292670525767074, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 4 epochs due to no further improvement.
+ total_steps   ---->   56
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [4/10], Average Training Loss: -128.9018, Average Validation Loss: -8.356808049338206
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -157.717647           -9.547413
+    2       -173.491502           -9.549744
+    3       -142.052458           -9.852827
+    4       -128.901784           -8.356808
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 4.549902439117432 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1247 1247
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2606390416622162 pi_11:  0.47872194647789 pi_12:  0.2606390416622162
+pi_20:  0.2606390416622162 pi_21:  0.2606390416622162 pi_22:  0.47872194647789
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(2.9714, device='cuda:0')
+Y2_beh mean:  tensor(3.6278, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.5993, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6583, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.0734, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.7318, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [1, 1]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.3757, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(4.9187, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.2944, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.019139528274536133 seconds
+
+Y1_DS+Y2_DS mean: 9.294425964355469
+Total time taken to run eval_DTR: 0.03202390670776367 seconds 
+
+
+Replications_M1:  93%|██████████████████████████████████████████████████████████████████████████████████████████████▎      | 14/15 [01:19<00:04,  4.61s/it]
+Replication # -------------->>>>>  15
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 14 14
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+Training started!
+
+***************************************** Train -> Agent #: 0*****************************************
+
+Improved ---> ema_val_loss: -11.436225255330404, best_val_loss: inf. Saving the model...
+Improved ---> ema_val_loss: -12.715889771779377, best_val_loss: -11.436225255330404. Saving the model...
+Improved ---> ema_val_loss: -13.594242795308428, best_val_loss: -12.715889771779377. Saving the model...
+Improved ---> ema_val_loss: -14.206075824101763, best_val_loss: -13.594242795308428. Saving the model...
+Improved ---> ema_val_loss: -14.751656116803485, best_val_loss: -14.206075824101763. Saving the model...
+Improved ---> ema_val_loss: -15.714606852563218, best_val_loss: -14.751656116803485. Saving the model...
+Did not improve ---> ema_val_loss: -15.689596954844788, best_val_loss: -15.714606852563218, no_improvement_count: 0, stabilization_patience: 4
+ total_steps   ---->   14
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [1/10], Average Training Loss: -152.2334, Average Validation Loss: -15.433261076609293
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -15.656687709394769, best_val_loss: -15.714606852563218, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -15.637980489822798, best_val_loss: -15.714606852563218, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -15.651237460200788, best_val_loss: -15.714606852563218, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 2
+Did not improve ---> ema_val_loss: -13.19073751425481, best_val_loss: -15.714606852563218, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -11.477024145911288, best_val_loss: -15.714606852563218, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.121966743065027, best_val_loss: -15.714606852563218, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.236858730033214, best_val_loss: -15.714606852563218, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 2
+ total_steps   ---->   28
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [2/10], Average Training Loss: -142.5368, Average Validation Loss: -10.845157657350812
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.096253362457574, best_val_loss: -15.714606852563218, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -12.539370275549526, best_val_loss: -15.714606852563218, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -13.469286878813012, best_val_loss: -15.714606852563218, no_improvement_count: 2, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -14.1088149268787, best_val_loss: -15.714606852563218, no_improvement_count: 3, stabilization_patience: 4
+Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch 3
+Did not improve ---> ema_val_loss: -11.470491365944607, best_val_loss: -15.714606852563218, no_improvement_count: 0, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -9.236238413501464, best_val_loss: -15.714606852563218, no_improvement_count: 1, stabilization_patience: 4
+Did not improve ---> ema_val_loss: -10.220150305245397, best_val_loss: -15.714606852563218, no_improvement_count: 2, stabilization_patience: 4
+ total_steps   ---->   42
+ num_batches   ---->   14
+ num_val_steps   ---->   7
+
+Epoch [3/10], Average Training Loss: -167.9706, Average Validation Loss: -12.062136076745531
+__________________________________________________________________________________________
+Did not improve ---> ema_val_loss: -11.649190882235619, best_val_loss: -15.714606852563218, no_improvement_count: 3, stabilization_patience: 4
+Early stopping after 4 epochs due to no further improvement.
+ total_steps   ---->   44
+ num_batches   ---->   2
+ num_val_steps   ---->   1
+
+Epoch [4/10], Average Training Loss: -151.6978, Average Validation Loss: -14.983618895212809
+__________________________________________________________________________________________
+
+LOSS TABLE: 
+Epoch Avg Training Loss Avg Validation Loss
+    1       -152.233398          -15.433261
+    2       -142.536847          -10.845158
+    3        -167.97063          -12.062136
+    4       -151.697807          -14.983619
+
+Model stage 1 saved successfully at models/11885873/best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+Model stage 2 saved successfully at models/11885873/best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+Total time taken to run surr_opt: 3.579793930053711 seconds
+Evaluation started
+
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+config_seed,  replication_seed, seed_value:  0 1248 1248
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+ SEED ::::::::::------------------------------>>>>>>>>>>>>>>>>> 
+
+==========================================================================================
+pi_10:  0.2564156651496887 pi_11:  0.48716869950294495 pi_12:  0.2564156651496887
+pi_20:  0.2564156651496887 pi_21:  0.2564156651496887 pi_22:  0.48716869950294495
+==========================================================================================
+
+============================================================
+Y1_beh mean:  tensor(3.0024, device='cuda:0')
+Y2_beh mean:  tensor(3.7134, device='cuda:0')
+Y1_beh+Y2_beh mean:  tensor(6.7159, device='cuda:0')
+
+Unique- Optimal treat Stage 1 tensor([1, 2], device='cuda:0')
+Unique- Optimal treat Stage 2 tensor([2, 3], device='cuda:0')
+
+Y1_g1_opt mean:  tensor(4.6807, device='cuda:0')
+Y2_g2_opt mean:  tensor(5.1316, device='cuda:0')
+Y1_g1_opt+Y2_g2_opt mean:  tensor(9.8123, device='cuda:0')
+============================================================
+
+***************************************** Test -> Agent #: 0*****************************************
+
+model_filename ------------>  best_model_stage_surr_1_15000_config_number_0_ensemble_num_0.pt
+
+model_filename ------------>  best_model_stage_surr_2_15000_config_number_0_ensemble_num_0.pt
+
+
+First 5 Ensemble Predictions and Majority Votes for A1 (stacked format):
+Sample 1:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 2:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 3:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 4:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+Sample 5:
+Ensemble A1 predictions + Voted A1 action: [2, 2]
+
+First 5 Ensemble Predictions and Majority Votes for A2 (stacked format):
+Sample 1:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 2:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 3:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 4:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+Sample 5:
+  Ensemble A2 predictions + Voted A2 action: [3, 3]
+
+============================================================
+Method Name:  DS
+Estimated torch.mean(Y1_di): tensor(4.5137, device='cuda:0')
+Estimated torch.mean(Y2_di): tensor(5.0041, device='cuda:0')
+Estimated torch.mean(Y1_di + Y2_di): tensor(9.5178, device='cuda:0')
+============================================================
+
+
+Total time taken to run evaluate_method ('DS'): 0.018956661224365234 seconds
+
+Y1_DS+Y2_DS mean: 9.517849922180176
+Total time taken to run eval_DTR: 0.031560659408569336 seconds 
+
+
+Replications_M1: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████| 15/15 [01:22<00:00,  4.31s/it]Replications_M1: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████| 15/15 [01:22<00:00,  5.53s/it]
+Configuration {}, replication 0 completed successfully.
+Performances for configuration: %s {}
+performance_DQL_mean: %s nan
+performance_DS_mean: %s 8.833186848958333
+performance_Tao_mean: %s nan
+
+
+
+
+Behavioral Value Functions across all simulations:
+Configuration 1: [6.704007148742676, 6.675475120544434, 6.6417555809021, 6.720996856689453, 6.685186862945557, 6.6756720542907715, 6.701207160949707, 6.712183475494385, 6.693180084228516, 6.66337251663208, 6.7427592277526855, 6.665003299713135, 6.648176193237305, 6.5992512702941895, 6.715853214263916]
+
+
+Optimal Value Functions across all simulations:
+Configuration 1: [9.80288028717041, 9.77704906463623, 9.777194023132324, 9.824586868286133, 9.786892890930176, 9.773966789245605, 9.807600021362305, 9.814105033874512, 9.797300338745117, 9.761679649353027, 9.801748275756836, 9.797152519226074, 9.785520553588867, 9.731776237487793, 9.8123140335083]
+
+
+DQL Value Functions across all simulations:
+Configuration 1: [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+
+DS Value Functions across all simulations:
+Configuration 1: [9.510140419006348, 9.216658592224121, 9.483431816101074, 9.531301498413086, 3.7124183177948, 9.486289024353027, 9.518322944641113, 9.5253324508667, 9.495373725891113, 5.80762243270874, 9.509456634521484, 9.390093803405762, 9.499076843261719, 9.294425964355469, 9.517849922180176]
+
+
+Tao Value Functions across all simulations:
+Configuration 1: [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+Data saved successfully in the folder: %s data/11885873
+
+Unique values for DQL:
+Predicted: {'Predicted_A1': set(), 'Predicted_A2': set()}
+
+
+Unique values for DS:
+Predicted: {'Predicted_A1': {1, 2, 3}, 'Predicted_A2': {1, 2, 3}}
+
+TrainVval Plot for Direct search saved as: data/11885873/run_trainVval_0_directSearch.png
+
+
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<--------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<-----------------------FINAL RESULTS------------------------>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<--------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>
+Configuration: %s
+Average Performance:
+ %s
+ {} {
+    "Behavioral": {
+        "Method's Value fn.": 6.682938639322916,
+        "Method's Value fn. SD": 0.0364242734005339
+    },
+    "Optimal": {
+        "Method's Value fn.": 9.790118408203124,
+        "Method's Value fn. SD": 0.023609474684465944
+    },
+    "DQL": {
+        "Method's Value fn.": NaN,
+        "Method's Value fn. SD": NaN
+    },
+    "DS": {
+        "Method's Value fn.": 8.833186848958333,
+        "Method's Value fn. SD": 1.7028908468001511
+    },
+    "Tao": {
+        "Method's Value fn.": NaN,
+        "Method's Value fn. SD": NaN
+    }
+}
+End time: 2024-11-05 03:56:04
+Total time taken: 128.53 seconds
