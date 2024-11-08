@@ -27,7 +27,7 @@ Ensure you have [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [
 Clone the repository using the following command:
 
 ```sh
-git clone https://github.com/nilson01/ApplicationDirectSearch.git
+git clone https://github.com/nilson01/SimulationDirectSearch.git
 cd ApplicationDirectSearch
 ```
 
