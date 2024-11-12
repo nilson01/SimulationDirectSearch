@@ -1522,16 +1522,6 @@ def simulations(V_replications, params, config_number):
     # params['gamma2'] = torch.tensor([i / (params['input_dim']**0.5) for i in range(1, params['input_dim'] + 1)], device=device)
     # params['gamma1_prime'] = torch.tensor([i / (params['input_dim']**0.5) for i in range(params['input_dim'], 0, -1)], device=device)
     # params['gamma2_prime'] = torch.tensor([i / (params['input_dim']**0.5) for i in range(params['input_dim'], 0, -1)], device=device)
-
-
-    # params['delta_A1'] =  torch.tensor([2.0, 3.0, 1.5], device=device) # Amplify difference, Optimal action is A1= 2
-    # params['delta_A2'] =  torch.tensor([2.5, 1.5, 3.0], device=device) # Optimal action is A2= 3
-    
-
-    # params['lambda_val'] = torch.tensor(0.3)  # Dependency on Y1 in Y2
-
-    # params['eta_A1'] = torch.tensor([1.0, 2.5, 2.0], device=device)
-    # params['eta_A2'] = torch.tensor([2.0, 1.0, 2.5], device=device)
     
     # params['delta_A1'] =  torch.tensor([1.0, 10.0, 1.0], device=device)  # Amplify difference, Optimal action is A1=2
     # params['delta_A2'] =  torch.tensor([1.0, 1.0, 10.0], device=device)  # Optimal action is A2=2
@@ -1552,14 +1542,24 @@ def simulations(V_replications, params, config_number):
         params['eta_A2'] = torch.tensor([5.0, 1.5, 3.5], device=device)
 
     elif params["t_difficulty"] == "medium":
-        # Medium: Values are moderately spaced, moderate dependency
-        params['delta_A1'] = torch.tensor([3.0, 2.0, 2.5], device=device)
-        params['delta_A2'] = torch.tensor([2.8, 2.5, 3.2], device=device)
+#         # Medium: Values are moderately spaced, moderate dependency
+#         params['delta_A1'] = torch.tensor([3.0, 2.0, 2.5], device=device)
+#         params['delta_A2'] = torch.tensor([2.8, 2.5, 3.2], device=device)
 
-        params['lambda_val'] = torch.tensor(0.3, device=device)  # Moderate dependency
+#         params['lambda_val'] = torch.tensor(0.3, device=device)  # Moderate dependency
 
-        params['eta_A1'] = torch.tensor([2.5, 2.0, 3.0], device=device)
-        params['eta_A2'] = torch.tensor([3.0, 2.0, 3.5], device=device)
+#         params['eta_A1'] = torch.tensor([2.5, 2.0, 3.0], device=device)
+#         params['eta_A2'] = torch.tensor([3.0, 2.0, 3.5], device=device)
+        
+
+        params['delta_A1'] =  torch.tensor([2.0, 3.0, 1.5], device=device) # Amplify difference, Optimal action is A1= 2
+        params['delta_A2'] =  torch.tensor([2.5, 1.5, 3.0], device=device) # Optimal action is A2= 3
+
+        params['lambda_val'] = torch.tensor(0.3, device=device) # Dependency on Y1 in Y2
+
+        params['eta_A1'] = torch.tensor([1.0, 2.5, 2.0], device=device)
+        params['eta_A2'] = torch.tensor([2.0, 1.0, 2.5], device=device)
+
 
     else:  # Difficult: Values are close together, high dependency
         params['delta_A1'] = torch.tensor([2.5, 2.7, 2.6], device=device)

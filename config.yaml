@@ -6,8 +6,12 @@ run_DQlearning: False
 run_surr_opt: True 
 run_adaptive_contrast_tao: False 
 setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new' 
-num_replications: 50 # 9, 15, 30, 100
+num_replications: 15 # 9, 15, 30, 100
 sample_size: 15000 # 15000, 30000, 10000  # Number of samples to be used 
+# new scheme
+input_dim: 100 #10, 50, 100 # only for new scheme
+t_difficulty: "medium" # easy, medium, difficult
+
 
 # STANDARD 
 batch_size: 800  #700, 300, 800  # Batch size calculated as a proportion of sample size
@@ -15,7 +19,7 @@ batches_to_sample: 18 # 30 # Not used- ignore
 
 optimizer_lr: 0.1 # 0.01, 0.07
 eval_freq: 2 #  2, 3  Total steps per epoch = sample size/batch size = 15000/ 800 = 18, 
-n_epoch: 20 # 10, 60, 150, 150  # Number of training epochs
+n_epoch: 10 # 10, 60, 150, 150  # Number of training epochs
 num_layers: 4 # 4
 activation_function: 'elu' # elu, relu, sigmoid, tanh, leakyrelu, none
 hidden_dim_stage1: 40  # Number of neurons in the hidden layer of stage 1
@@ -28,7 +32,7 @@ use_scheduler: True # True, False
 scheduler_type: 'reducelronplateau'  # Type of learning rate scheduler, can be 'reducelronplateau', 'steplr', or 'cosineannealing'
 factor: 0.1 # 0.1, 0.5, 0.8 only applies for reducelronplateau; only 1% of the original learning rate remains after the reduction; If the LR was 0.001, it becomes 0.00001.
 
-stabilization_patience: 15  # V1 3, 5, 7 
+stabilization_patience: 5  # V1 3, 5, 7 
 #### V1: steps_per_epoch = sample_size // batch_size ---->  evaluations_per_epoch = steps_per_epoch // eval_freq ---->  stabilization_patience = evaluations_per_epoch // stabilization_patience
 #### V2: steps_per_epoch = batches_to_sample ---->  evaluations_per_epoch = steps_per_epoch // eval_freq ---->  stabilization_patience = evaluations_per_epoch // stabilization_patience
 reinitializations_allowed: 3
@@ -67,9 +71,6 @@ f: "square" #'square', arctan, sin, exp_half, exp, tan
 m1 : 'sin'
 m2: 'sin'
 
-# # new scheme
-input_dim: 100 #10, 50, 100 # only for new scheme
-t_difficulty: "medium" # easy, medium, difficult
 
 # f_model: 'model_name'  # DQlearning, surr_opt, tao - igore here
 noiseless: False # True, False  # Boolean flag to indicate if noise should be excluded in simulations
