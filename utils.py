@@ -434,8 +434,8 @@ class NNClass(nn.Module):
                 for _ in range(num_hidden_layers):
                     layers.append(nn.Linear(hidden_dim, hidden_dim))
                     if activation_fn is not Identity:  # Only add activation if it's not Identity                         
-                        layers.append(activation_fn(alpha=0.4))
-                        # layers.append(activation_fn())
+                        # layers.append(activation_fn(alpha=0.4))
+                        layers.append(activation_fn())
                     layers.append(nn.Dropout(dropout_rate))
                     # layers.append(nn.BatchNorm1d(hidden_dim))
 

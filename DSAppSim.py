@@ -22,11 +22,7 @@ from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import numpy as np
 from itertools import islice
 
-import rpy2.robjects as ro
-from rpy2.robjects import numpy2ri
-numpy2ri.activate()
-# Load the R script to avoid dynamic loading
-ro.r.source("ACWL_tao.R")
+
 
 # Generate Data
 def generate_and_preprocess_data(params, replication_seed, config_seed, run='train'):
@@ -1497,6 +1493,7 @@ def adaptive_contrast_tao(all_data, contrast, config_number, job_id, setting):
 
 
 def simulations(V_replications, params, config_number):
+    
 
     columns = ['Behavioral_A1', 'Behavioral_A2', 'Predicted_A1', 'Predicted_A2']
 
@@ -1972,7 +1969,7 @@ def main(job_id):
     
     # # Define parameter grid for grid search
     # Empty Grid
-    param_grid = {}
+    # param_grid = {}
     
     # param_grid = {  
     #     'option_sur': [1,2,3,4,5], 
@@ -2018,6 +2015,25 @@ def main(job_id):
     #     'dropout_rate': [0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
     #     'n_epoch': [60], #60, 150
     # }
+    
+    param_grid = {
+        'activation_function': [ 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
+        'learning_rate': [0.01], # 0.07
+        'num_layers': [4], # 2, 4, => 0 means truly linear model, here num_layers means --> number of hidden layers
+        'batch_size': [200, 800], #300
+        'add_ll_batch_norm': [True],  #5,10  Number of neurons in the hidden layer of stage 1
+        'dropout_rate': [0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
+        'n_epoch': [10], #20, 60, 150
+    }
+    
+    
+    
+    if config['run_adaptive_contrast_tao']:
+        import rpy2.robjects as ro
+        from rpy2.robjects import numpy2ri
+        numpy2ri.activate()
+        # Load the R script to avoid dynamic loading
+        ro.r.source("ACWL_tao.R")
 
 
     # Perform operations whose output should go to the file
@@ -2035,41 +2051,7 @@ def main(job_id):
 
      
 
-# class FlushFile:
-#     """File-like wrapper that flushes on every write."""
-#     def __init__(self, f):
-#         self.f = f
 
-#     def write(self, x):
-#         self.f.write(x)
-#         self.f.flush()  # Flush output after write
-
-#     def flush(self):
-#         self.f.flush()
-
-    
-# if __name__ == '__main__':
-#     multiprocessing.set_start_method('spawn', force=True)
-    
-#     # Record the start time
-#     start_time = time.time()
-#     start_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
-#     print(f'Start time: {start_time_str}')
-    
-#     sys.stdout = FlushFile(sys.stdout)
-#     main()
-    
-#     # Record the end time
-#     end_time = time.time()
-#     end_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))
-#     print(f'End time: {end_time_str}')
-    
-#     # Calculate and log the total time taken
-#     total_time = end_time - start_time
-#     print(f'Total time taken: {total_time:.2f} seconds')
-
-
-    
 
 
 class FlushFile:
@@ -2088,52 +2070,6 @@ class FlushFile:
         self.f.flush()
         self.logfile.flush()
 
-
-
-
-
-# if __name__ == '__main__':
-#     multiprocessing.set_start_method('spawn', force=True)
-
-#     # Get the SLURM_JOB_ID from environment variables
-#     job_id = os.getenv('SLURM_JOB_ID')
-
-#     # If job_id is None, set it to the current date and time formatted as a string
-#     if job_id is None:
-#         job_id = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
-
-#     # Ensure the 'data/job_id' directory exists
-#     log_dir = os.path.join('data', job_id)
-#     os.makedirs(log_dir, exist_ok=True)  # Creates the directory if it doesn't exist
-
-#     # Create a timestamp-based filename
-#     log_time_str = time.strftime('%Y%m%d_%H%M%S', time.localtime(time.time()))  # e.g., '20231026_142530'
-#     log_filename = f"output_log_{log_time_str}.txt"
-    
-#     # Full path for the log file
-#     log_filepath = os.path.join(log_dir, log_filename)
-    
-#     # Open the log file in write mode
-#     with open(log_filepath, 'w') as logfile:
-#         # Set stdout to write to both terminal and logfile
-#         sys.stdout = FlushFile(sys.stdout, logfile)
-        
-#         # Record the start time
-#         start_time = time.time()
-#         start_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
-#         print(f'Start time: {start_time_str}')
-        
-#         # Call the main function and pass the job_id
-#         main(job_id)
-        
-#         # Record the end time
-#         end_time = time.time()
-#         end_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))
-#         print(f'End time: {end_time_str}')
-        
-#         # Calculate and log the total time taken
-#         total_time = end_time - start_time
-#         print(f'Total time taken: {total_time:.2f} seconds')
 
 
 
