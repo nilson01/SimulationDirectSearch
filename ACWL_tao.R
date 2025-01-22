@@ -284,7 +284,7 @@ train_ACWL <- function(job_id, S1, S2, A1, A2, probs1, probs2, R1, R2, g1.opt, g
 
 
 
-test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, param_m1, param_m2, setting= "tao", func = "square", neu = 10, alpha = 10, u = 10,
+test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, param_m1, Z1, Z2, param_m2, setting= "tao", func = "square", neu = 10, alpha = 10, u = 10,
                       gamma1 = numeric(40), gamma1_prime = numeric(40), 
                       delta_A1 = c(2.5, 1.5, 3.0), eta_A1 = c(2.0, 1.0, 2.5), 
                       gamma2 = numeric(40), gamma2_prime = numeric(40), 
@@ -319,8 +319,8 @@ test_ACWL <- function(S1, S2, g1k, g2k, noiseless, config_number, job_id, param_
   for (k in 1:ni) {
     X0.k <- S1[k, ]  
 
-    z1 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
-    z2 <- rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
+    z1 <- Z1[k] #rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
+    z2 <- Z2[k] #rnorm(1, mean = 0, sd = ifelse(noiseless, 0, 1))
 
     ################################    ACWL  ################################
 

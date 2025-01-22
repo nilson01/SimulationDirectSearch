@@ -23,6 +23,12 @@ import numpy as np
 from itertools import islice
 
 
+import rpy2.robjects as ro
+from rpy2.robjects import numpy2ri
+numpy2ri.activate()
+# Load the R script to avoid dynamic loading
+ro.r.source("ACWL_tao.R")
+
  
 # Generate Data
 def generate_and_preprocess_data(params, replication_seed, config_seed, run='train'):
@@ -1361,7 +1367,7 @@ def DQlearning(tuple_train, tuple_val, params, config_number, seed_value):
 
 
 
-def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
+def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number, Z1, Z2):
 
     # Convert test input from PyTorch tensor to numpy array
     S1 = S1.cpu().numpy()
@@ -1389,7 +1395,6 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
     lambda_val_np = params_ds['lambda_val'].item()
 
 
-
     # Call the R function with the parameters
     results = ro.globalenv['test_ACWL'](S1, S2, d1_star.cpu().numpy(), d2_star.cpu().numpy(), params_ds['noiseless'], 
                                         config_number, params_ds['job_id'], param_m1 = params_ds['m1'], param_m2 = params_ds['m2'],
@@ -1402,7 +1407,9 @@ def evaluate_tao(S1, S2, d1_star, d2_star, params_ds, config_number):
                                         gamma2=gamma2_np, 
                                         gamma2_prime=gamma2_prime_np, 
                                         delta_A2=delta_A2_np, 
-                                        eta_A2=eta_A2_np,         
+                                        eta_A2=eta_A2_np,    
+                                        Z1 = Z1.cpu().numpy(), 
+                                        Z2 = Z2.cpu().numpy(),     
                                         # lambda_val=lambda_val_np
                                         )
 
@@ -1447,7 +1454,7 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
     if params_ds.get('run_adaptive_contrast_tao', True):
         start_time = time.time()  # Start time recording
         # A1_Tao, A2_Tao = evaluate_tao(test_input_stage1, test_O2, A1_tensor_test, A2_tensor_test, Y1_tensor, Y2_tensor, params_ds, config_number)
-        A1_Tao, A2_Tao = evaluate_tao(test_input_stage1, test_O2, d1_star, d2_star, params_ds, config_number)
+        A1_Tao, A2_Tao = evaluate_tao(test_input_stage1, test_O2, d1_star, d2_star, params_ds, config_number, Z1, Z2)
 
         end_time = time.time()  # End time recording
         print(f"Total time taken to run evaluate_tao: { end_time - start_time} seconds")
