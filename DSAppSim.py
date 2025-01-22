@@ -1084,17 +1084,17 @@ def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option
     reinitializations_allowed =  params['reinitializations_allowed'] # params.get('reinitializations_allowed', 2)  # Limit reinitializations
 
     # Initialize models
-    nn_stage1 = initialize_and_prepare_model(1, params)
-    nn_stage2 = initialize_and_prepare_model(2, params)
+    nn_stage1 = initialize_and_prepare_model(1, params, seed_value)
+    nn_stage2 = initialize_and_prepare_model(2, params, seed_value)
 
-    # Check for the initializer type in params and apply accordingly
-    if params['initializer'] == 'he':
-        nn_stage1.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
-        nn_stage2.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
+    # # Check for the initializer type in params and apply accordingly
+    # if params['initializer'] == 'he':
+    #     nn_stage1.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
+    #     nn_stage2.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
 
-    else:
-        nn_stage1.reset_weights()  # Custom reset weights check the NN class
-        nn_stage2.reset_weights()  
+    # else:
+    #     nn_stage1.reset_weights()  # Custom reset weights check the NN class
+    #     nn_stage2.reset_weights()  
 
     
 
@@ -1244,8 +1244,8 @@ def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option
                 if reinitialization_count < reinitializations_allowed and no_improvement_count >= stabilization_patience:
                     print(f"Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch {epoch + 1}")
                     
-                    nn_stage1 = initialize_and_prepare_model(1, params)  # Reinitialize model 1
-                    nn_stage2 = initialize_and_prepare_model(2, params)  # Reinitialize model 2
+                    nn_stage1 = initialize_and_prepare_model(1, params, seed_value+reinitialization_count)  # Reinitialize model 1
+                    nn_stage2 = initialize_and_prepare_model(2, params, seed_value+reinitialization_count+123)  # Reinitialize model 2
                     optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
                     no_improvement_count = 0  # Reset counter after reinitialization
                     reinitialization_count += 1

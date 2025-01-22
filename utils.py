@@ -1156,14 +1156,14 @@ def evaluate_model(nn_stage1, nn_stage2, val_loader, params):
 
 
 
-def initialize_and_prepare_model(stage, params):
+def initialize_and_prepare_model(stage, params, seed_value):
     model = initialize_nn(params, stage).to(params['device'])
     
-    # # Check for the initializer type in params and apply accordingly
-    # if params['initializer'] == 'he':
-    #     model.he_initializer()  # He initialization (aka Kaiming initialization)
-    # else:
-    #     model.reset_weights()  # Custom reset weights to a specific constant eg. 0.1
+    # Check for the initializer type in params and apply accordingly
+    if params['initializer'] == 'he':
+        model.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
+    else:
+        model.reset_weights()  # Custom reset weights to a specific constant eg. 0.1
     
     return model
 
