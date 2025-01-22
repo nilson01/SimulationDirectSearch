@@ -1,4 +1,3 @@
-
 # Network parameters configuration
 
 # Models to run True False 
@@ -6,11 +5,11 @@ run_DQlearning: True
 run_surr_opt: False 
 run_adaptive_contrast_tao: False 
 setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new' 
-num_replications: 9 # 9, 15, 30, 100
-sample_size: 15000 # 15000, 30000, 10000  # Number of samples to be used 
+num_replications: 4 # 9, 15, 30, 100
+sample_size: 1000 # 15000, 30000, 10000  # Number of samples to be used 
 # new scheme
 input_dim: 3 #10, 50, 100 # only for new scheme
-t_difficulty: "easy" # easy, medium, difficult
+t_difficulty: "medium" # , medium, # only considering medum for now.
 
 
 # STANDARD 
@@ -101,3 +100,17 @@ initializer: 'he'  # He initialization method (Kaiming initialization)
 contrast: 1
 
 # {"dropout_rate": 0.4, "ema_alpha": 0.1, "factor": 0.1, "optimizer_lr": 0.1} 
+
+
+# not fully integrated yet for passing parameters.
+dql_params:
+  num_layers: 1
+  hidden_dim_stage1: 4
+  hidden_dim_stage2: 4
+  activation_function: elu # relu: [153.8863690458238, 152.51445276290178, 154.16300678253174, 152.50242083519697], elu
+  optimizer_lr: 0.07
+  batch_size: 200 
+  n_epoch: 150 
+  gradient_clipping: False # True, False 
+  add_ll_batch_norm: False 
+  dropout_rate: 0

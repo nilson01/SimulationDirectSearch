@@ -370,15 +370,16 @@ def initialize_nn(params, stage):
 
 
 
-def batches(N, batch_size):
+def batches(N, batch_size, seed_value):
     # Create a tensor of indices from 0 to N-1
     indices = torch.arange(N)
 
     # Save the current random state
     rng_state = torch.get_rng_state()
 
-    # Optionally, set a different random seed for the shuffle (or just let it be random)
-    torch.manual_seed(torch.seed())  # Generates a random seed for this shuffle
+    # set a different random seed for the shuffle (or just let it be random)
+    # torch.manual_seed(torch.seed())  # ex. using a random seed for this shuffle
+    torch.manual_seed(seed_value)  # use the seed for reproduciility
 
     # Shuffle the indices
     indices = indices[torch.randperm(N)]
@@ -453,12 +454,22 @@ class NNClass(nn.Module):
             outputs.append(network(x))
         return outputs
 
-    def he_initializer(self):
+    # def he_initializer(self, seed=12345):
+    #     for network in self.networks:
+    #         for layer in network:
+    #             if isinstance(layer, nn.Linear):
+    #                 nn.init.kaiming_normal_(layer.weight, mode='fan_out', nonlinearity='relu')
+    #                 nn.init.constant_(layer.bias, 0)  # Biases can be initialized to zero
+
+    def he_initializer(self, seed=12345):
+        if seed is not None:
+            torch.manual_seed(seed)  # Set the seed for reproducibility
         for network in self.networks:
             for layer in network:
                 if isinstance(layer, nn.Linear):
                     nn.init.kaiming_normal_(layer.weight, mode='fan_out', nonlinearity='relu')
                     nn.init.constant_(layer.bias, 0)  # Biases can be initialized to zero
+
 
     def reset_weights(self):
         for network in self.networks:
@@ -1074,7 +1085,7 @@ def main_loss_gamma(stage1_outputs, stage2_outputs, A1, A2, Ci, option, surrogat
 
 
 
-def process_batches(model1, model2, data, params, optimizer, option_sur, is_train=True):
+def process_batches(model1, model2, data, params, optimizer, option_sur, seed_value, is_train=True):
     batch_size = params['batch_size']
     total_loss = 0
     num_batches = (data['input1'].shape[0] + batch_size - 1) // batch_size
@@ -1148,11 +1159,11 @@ def evaluate_model(nn_stage1, nn_stage2, val_loader, params):
 def initialize_and_prepare_model(stage, params):
     model = initialize_nn(params, stage).to(params['device'])
     
-    # Check for the initializer type in params and apply accordingly
-    if params['initializer'] == 'he':
-        model.he_initializer()  # He initialization (aka Kaiming initialization)
-    else:
-        model.reset_weights()  # Custom reset weights to a specific constant eg. 0.1
+    # # Check for the initializer type in params and apply accordingly
+    # if params['initializer'] == 'he':
+    #     model.he_initializer()  # He initialization (aka Kaiming initialization)
+    # else:
+    #     model.reset_weights()  # Custom reset weights to a specific constant eg. 0.1
     
     return model
 
@@ -1210,7 +1221,7 @@ def update_scheduler(scheduler, params, val_loss=None):
 
 # 3. Q learning utils
 
-def process_batches_DQL(model, inputs, actions, targets, params, optimizer, is_train=True):
+def process_batches_DQL(model, inputs, actions, targets, params, optimizer, seed_value, is_train=True):
     batch_size = params['batch_size']
     total_loss = 0
     num_batches = (inputs.shape[0] + batch_size - 1) // batch_size
@@ -1223,7 +1234,7 @@ def process_batches_DQL(model, inputs, actions, targets, params, optimizer, is_t
     else:
         model.eval()
 
-    for batch_idx in batches(inputs.shape[0], batch_size):
+    for batch_idx in batches(inputs.shape[0], batch_size, seed_value):
 
         with torch.set_grad_enabled(is_train):
                         
@@ -1249,7 +1260,7 @@ def process_batches_DQL(model, inputs, actions, targets, params, optimizer, is_t
 
 
 
-def train_and_validate(config_number, model, optimizer, scheduler, train_inputs, train_actions, train_targets, val_inputs, val_actions, val_targets, params, stage_number):
+def train_and_validate(config_number, model, optimizer, scheduler, train_inputs, train_actions, train_targets, val_inputs, val_actions, val_targets, params, seed_value, stage_number):
 
     batch_size, device, n_epoch, sample_size = params['batch_size'], params['device'], params['n_epoch'], params['sample_size']
     train_losses, val_losses = [], []
@@ -1259,10 +1270,10 @@ def train_and_validate(config_number, model, optimizer, scheduler, train_inputs,
 
     for epoch in range(n_epoch):
         
-        train_loss = process_batches_DQL(model, train_inputs, train_actions, train_targets, params, optimizer, is_train=True)
+        train_loss = process_batches_DQL(model, train_inputs, train_actions, train_targets, params, optimizer, seed_value, is_train=True)
         train_losses.append(train_loss)
 
-        val_loss = process_batches_DQL(model, val_inputs, val_actions, val_targets, params, optimizer, is_train=False)
+        val_loss = process_batches_DQL(model, val_inputs, val_actions, val_targets, params, optimizer, seed_value, is_train=False)
         val_losses.append(val_loss)
 
         if val_loss < best_val_loss:
@@ -1290,7 +1301,7 @@ def train_and_validate(config_number, model, optimizer, scheduler, train_inputs,
 
 def initialize_model_and_optimizer(params, stage):
     nn = initialize_nn(params, stage).to(device)
-    
+
         
     # Select optimizer based on params
     if params['optimizer_type'] == 'adam':

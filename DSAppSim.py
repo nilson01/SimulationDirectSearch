@@ -23,7 +23,7 @@ import numpy as np
 from itertools import islice
 
 
-
+ 
 # Generate Data
 def generate_and_preprocess_data(params, replication_seed, config_seed, run='train'):
 
@@ -1055,7 +1055,8 @@ class CustomDataset(Dataset):
 #     return loader
 
 
-def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur):
+
+def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur, seed_value):
     sample_size = params['sample_size']
     device = params['device']
     n_epoch = params['n_epoch']
@@ -1080,6 +1081,17 @@ def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option
     nn_stage1 = initialize_and_prepare_model(1, params)
     nn_stage2 = initialize_and_prepare_model(2, params)
 
+    # Check for the initializer type in params and apply accordingly
+    if params['initializer'] == 'he':
+        nn_stage1.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
+        nn_stage2.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
+
+    else:
+        nn_stage1.reset_weights()  # Custom reset weights check the NN class
+        nn_stage2.reset_weights()  
+
+    
+
     # Initialize optimizer and scheduler
     optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
 
@@ -1093,12 +1105,31 @@ def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option
         'A1': tuple_val[5], 'A2': tuple_val[6]
     }
 
+    # Create a generator for DataLoader
+    data_gen = torch.Generator()
+    data_gen.manual_seed(seed_value)
+
     # Create datasets and data loaders
     train_dataset = CustomDataset(train_data)
     val_dataset = CustomDataset(val_data)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    # train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    # val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=batch_size, 
+        shuffle=True, 
+        generator=data_gen  # Control shuffling with fixed seed
+    )
+
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=batch_size, 
+        shuffle=True, 
+        generator=data_gen  # Control shuffling with fixed seed
+    )
+
 
     # Training variables
     train_losses = []
@@ -1298,23 +1329,33 @@ def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option
 
 
 
-def DQlearning(tuple_train, tuple_val, params, config_number):
+def DQlearning(tuple_train, tuple_val, params, config_number, seed_value):
     train_input_stage1, train_input_stage2, _, train_Y1, train_Y2, train_A1, train_A2 = tuple_train
     val_input_stage1, val_input_stage2, _, val_Y1, val_Y2, val_A1, val_A2 = tuple_val
 
     nn_stage1, optimizer_1, scheduler_1 = initialize_model_and_optimizer(params, 1)
     nn_stage2, optimizer_2, scheduler_2 = initialize_model_and_optimizer(params, 2)
 
+    # Check for the initializer type in params and apply accordingly
+    if params['initializer'] == 'he':
+        nn_stage1.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
+        nn_stage2.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
+
+    else:
+        nn_stage1.reset_weights()  # Custom reset weights check the NN class
+        nn_stage2.reset_weights()  
+
+
     train_losses_stage2, val_losses_stage2, epoch_num_model_2 = train_and_validate(config_number, nn_stage2, optimizer_2, scheduler_2, 
                                                                                    train_input_stage2, train_A2, train_Y2, 
-                                                                                   val_input_stage2, val_A2, val_Y2, params, 2)
+                                                                                   val_input_stage2, val_A2, val_Y2, params, seed_value+2345, 2)
 
     train_Y1_hat = evaluate_model_on_actions(nn_stage2, train_input_stage2, train_A2) + train_Y1
     val_Y1_hat = evaluate_model_on_actions(nn_stage2, val_input_stage2, val_A2) + val_Y1
 
     train_losses_stage1, val_losses_stage1, epoch_num_model_1 = train_and_validate(config_number, nn_stage1, optimizer_1, scheduler_1, 
                                                                                    train_input_stage1, train_A1, train_Y1_hat, 
-                                                                                   val_input_stage1, val_A1, val_Y1_hat, params, 1)
+                                                                                   val_input_stage1, val_A1, val_Y1_hat, params, seed_value+123, 1)
 
     return (train_losses_stage1, train_losses_stage2, val_losses_stage1, val_losses_stage2)
 
@@ -1378,7 +1419,18 @@ def eval_DTR(V_replications, num_replications, df_DQL, df_DS, df_Tao, params_dql
 
     # Generate and preprocess data for evaluation
     processed_result = generate_and_preprocess_data(params_ds, replication_seed=num_replications+1234, config_seed=config_number, run='test')
+
+
     test_input_stage1, test_input_stage2, test_O2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test, P_A1_g_H1, P_A2_g_H2, d1_star, d2_star, Z1, Z2, Y1_g1_opt, Y2_g2_opt  = processed_result
+
+
+
+    # # Debug print for processed_result
+    # print("========== DEBUG: Eval processed_result ==========")
+    # print(test_input_stage1)
+    # print("=============================================")
+
+
     train_tensors = [test_input_stage1, test_input_stage2, Y1_tensor, Y2_tensor, A1_tensor_test, A2_tensor_test]
 
     # Append policy values for DS
@@ -1591,10 +1643,22 @@ def simulations(V_replications, params, config_number):
         print(f"\nReplication # -------------->>>>>  {replication+1}")
 
         seed_value = config_number * 100 + replication 
-        torch.manual_seed(seed_value)
 
         # Generate and preprocess data for training
         tuple_train, tuple_val, adapC_tao_Data = generate_and_preprocess_data(params, replication_seed=replication, config_seed=config_number, run='train')
+
+        # # Debug print for processed_result
+        # print("========== DEBUG: Train tuple_train ==========")
+        # print(tuple_train[0])
+        # print("=============================================")
+
+
+        # # Debug print for processed_result
+        # print("========== DEBUG: Train tuple_val ==========")
+        # print(tuple_val[0])
+        # print("=============================================")
+
+
 
         # Estimate treatment regime : model --> surr_opt
         print("Training started!")
@@ -1613,7 +1677,7 @@ def simulations(V_replications, params, config_number):
             params_DQL_u['input_dim_stage2'] = params['input_dim_stage2'] + 1 # Ex. TAO: 7 + 1 = 8 # (H_2, A_2)
 
             start_time = time.time()  # Start time recording
-            trn_val_loss_tpl_DQL = DQlearning(tuple_train, tuple_val, params_DQL_u, config_number)
+            trn_val_loss_tpl_DQL = DQlearning(tuple_train, tuple_val, params_DQL_u, config_number, seed_value)
             end_time = time.time()  # End time recording
             print(f"Total time taken to run DQlearning: { end_time - start_time} seconds")
             # Store losses 
@@ -1633,9 +1697,9 @@ def simulations(V_replications, params, config_number):
                     option_sur = params['option_sur']
                 else:
                     option_sur = ensemble_num+1
-                trn_val_loss_tpl_DS, epoch_num_model_DS = surr_opt(tuple_train, tuple_val, params_DS_u, config_number, ensemble_num, option_sur)
+                trn_val_loss_tpl_DS, epoch_num_model_DS = surr_opt(tuple_train, tuple_val, params_DS_u, config_number, ensemble_num, option_sur, seed_value)
 
-            end_time = time.time()  # End time recording
+            end_time = time.time()  # End time recording 
             print(f"Total time taken to run surr_opt: { end_time - start_time} seconds")
             # Append epoch model results from surr_opt
             epoch_num_model_lst.append(epoch_num_model_DS)
@@ -1969,7 +2033,7 @@ def main(job_id):
     
     # # Define parameter grid for grid search
     # Empty Grid
-    # param_grid = {}
+    param_grid = {}
     
     # param_grid = {  
     #     'option_sur': [1,2,3,4,5], 
@@ -2016,15 +2080,15 @@ def main(job_id):
     #     'n_epoch': [60], #60, 150
     # }
     
-    param_grid = {
-        'activation_function': [ 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
-        'learning_rate': [0.01], # 0.07
-        'num_layers': [4], # 2, 4, => 0 means truly linear model, here num_layers means --> number of hidden layers
-        'batch_size': [200, 800], #300
-        'add_ll_batch_norm': [True],  #5,10  Number of neurons in the hidden layer of stage 1
-        'dropout_rate': [0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
-        'n_epoch': [10], #20, 60, 150
-    }
+    # param_grid = {
+    #     'activation_function': [ 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'], # 'elu', 'relu', 'leakyrelu', 'none', 'sigmoid', 'tanh'
+    #     'learning_rate': [0.01], # 0.07
+    #     'num_layers': [4], # 2, 4, => 0 means truly linear model, here num_layers means --> number of hidden layers
+    #     'batch_size': [200, 800], #300
+    #     'add_ll_batch_norm': [True],  #5,10  Number of neurons in the hidden layer of stage 1
+    #     'dropout_rate': [0.4],  # 0, 0.1, 0.4 Dropout rate to prevent overfitting
+    #     'n_epoch': [10], #20, 60, 150
+    # }
     
     
     
