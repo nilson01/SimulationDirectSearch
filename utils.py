@@ -1099,7 +1099,7 @@ def process_batches(model1, model2, data, params, optimizer, option_sur, seed_va
         model1.eval()
         model2.eval()
 
-    for batch_idx in batches(data['input1'].shape[0], batch_size):
+    for batch_idx in batches(data['input1'].shape[0], batch_size, seed_value):
         batch_data = {k: v[batch_idx].to(params['device']) for k, v in data.items()}
 
         with torch.set_grad_enabled(is_train):

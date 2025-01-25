@@ -1,74 +1,113 @@
+
+
 # Network parameters configuration
 
-# Models to run True False 
-run_DQlearning: True 
-run_surr_opt: True 
-run_adaptive_contrast_tao: True 
-setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new' 
-num_replications: 4 # 9, 15, 30, 100
-sample_size: 1000 # 15000, 30000, 10000  # Number of samples to be used 
+
+# Models to run True False
+run_DQlearning: False
+run_surr_opt: True
+run_adaptive_contrast_tao: False
+setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new'
+num_replications: 30 # 9, 15, 30, 100
+sample_size: 5000 # 15000, 30000, 10000  # Number of samples to be used
 # new scheme
 input_dim: 3 #10, 50, 100 # only for new scheme
-t_difficulty: "medium" # , medium, # only considering medum for now.
+t_difficulty: "medium" # easy, medium, difficult
 
-
-# STANDARD 
+# STANDARD
 batch_size: 800  #700, 300, 800  # Batch size calculated as a proportion of sample size
 batches_to_sample: 18 # 30 # Not used- ignore
 
-optimizer_lr: 0.1 # 0.01, 0.07
-eval_freq: 2 #  2, 3  Total steps per epoch = sample size/batch size = 15000/ 800 = 18, 
+
+optimizer_lr: 0.05 # 0.1 # 0.01, 0.07
+eval_freq: 2 #  2, 3  Total steps per epoch = sample size/batch size = 15000/ 800 = 18,
 n_epoch: 10 # 10, 60, 150, 150  # Number of training epochs
-num_layers: 4 # 4
-activation_function: 'elu' # elu, relu, sigmoid, tanh, leakyrelu, none
-hidden_dim_stage1: 40  # Number of neurons in the hidden layer of stage 1
-hidden_dim_stage2: 40  # Number of neurons in the hidden layer of stage 2
-add_ll_batch_norm: False # False, True 
+num_layers: 2 # 4
+activation_function: 'relu' # elu, relu, sigmoid, tanh, leakyrelu, none
+hidden_dim_stage1: 20 #40  # Number of neurons in the hidden layer of stage 1
+hidden_dim_stage2: 20 #40  # Number of neurons in the hidden layer of stage 2
+add_ll_batch_norm: False # False, True
 scheduler_step_size: 30  # Step size for StepLR, defines the number of epochs before the next LR decay
-scheduler_gamma: 0.8 
+scheduler_gamma: 0.8
+
+
+
 
 use_scheduler: True # True, False
 scheduler_type: 'reducelronplateau'  # Type of learning rate scheduler, can be 'reducelronplateau', 'steplr', or 'cosineannealing'
-factor: 0.1 # 0.1, 0.5, 0.8 only applies for reducelronplateau; only 1% of the original learning rate remains after the reduction; If the LR was 0.001, it becomes 0.00001.
+factor: 0.8 # 0.1, 0.5, 0.8 only applies for reducelronplateau; only 1% of the original learning rate remains after the reduction; If the LR was 0.001, it becomes 0.00001.
 
-stabilization_patience: 5  # V1 3, 5, 7 
+
+
+
+stabilization_patience: 6 #7 #5 #5  # V1 3, 5, 7
 #### V1: steps_per_epoch = sample_size // batch_size ---->  evaluations_per_epoch = steps_per_epoch // eval_freq ---->  stabilization_patience = evaluations_per_epoch // stabilization_patience
 #### V2: steps_per_epoch = batches_to_sample ---->  evaluations_per_epoch = steps_per_epoch // eval_freq ---->  stabilization_patience = evaluations_per_epoch // stabilization_patience
-reinitializations_allowed: 3
+reinitializations_allowed: 3 #3
 early_stopping: True # True, False   # Enable early stopping to avoid overfitting once we reach enough reinitializations
-# early_stopping_patience:  stabilization_patience used 
+# early_stopping_patience:  stabilization_patience used
+
+
+
 
 ema_alpha: 0.1 # 0.1, 0.4, 0.8 # EMA_new = (alpha * val_loss_new) + ((1 - alpha) * EMA_previous)  # High alpha (~1): more responsive, less smooth; Low alpha (~0): less responsive, smoother  to recent changes
 
 
+
+
+
+
+
+
 optimizer_type: 'adam'  # Optimizer type, can be 'adam' or 'rmsprop'
 dropout_rate: 0.4  # 0.3 Dropout rate to prevent overfitting
-gradient_clipping: True # True, False 
-phi_ensemble: False ## True, False if this is true keep ensemble_count to 5 
+gradient_clipping: True # True, False
+phi_ensemble: False ## True, False if this is true keep ensemble_count to 5
 ensemble_count: 1 # 1, 5, 7
 
-# # scheme_5 constants 
-# C1: 3.0 
-# C2: 3.0 
-# beta: 1 
-# cnst: 1 # 1, 5, 10, 20, 30, 100 
 
-# # scheme_6 constants 
-# C1: 5.0 
-# C2: 5.0 
-# beta: 1 
-# cnst: 10 # 10 
-# b: 2 
 
-# scheme 8 
-C1: 3.0 
-C2: 3.0 
-neu: 5 # 10 
-u: 5 # 10 
+
+# phi_ensemble: True ## True, False if this is true keep ensemble_count to 5
+# ensemble_count: 5 # 1, 5, 7
+
+
+
+
+# # scheme_5 constants
+# C1: 3.0
+# C2: 3.0
+# beta: 1
+# cnst: 1 # 1, 5, 10, 20, 30, 100
+
+
+
+
+# # scheme_6 constants
+# C1: 5.0
+# C2: 5.0
+# beta: 1
+# cnst: 10 # 10
+# b: 2
+
+
+
+
+# scheme 8
+C1: 3.0
+C2: 3.0
+neu: 5 # 10
+u: 5 # 10
 alpha: 5 # 10
 f: "square" #'square', arctan, sin, exp_half, exp, tan
 m1 : 'sin'
 m2: 'sin'
+
+
+
+
+
+
 
 
 # f_model: 'model_name'  # DQlearning, surr_opt, tao - igore here
@@ -76,41 +115,58 @@ noiseless: False # True, False  # Boolean flag to indicate if noise should be ex
 use_m_propen: True # True, False
 interaction_terms: False
 
+
+
+
 surrogate_num: 1 # 1  # Indicates the surrogate model configuration number
 option_sur: 1 # 1, 4, new:5  # Specifies the operational mode or variant of the surrogate model
 
+
+
+
 device: None  # Computation device, dynamically set to 'cuda' if GPU is available
-# job_id: tao 
+# job_id: tao
+
+
+
 
 training_validation_prop: 0.7  # Proportion of data for training vs validation
 num_networks: 2  # Number of parallel networks or models
 
-#  Input dimension for stage 1, [O1] --> [x1, x2, x3, x4, x5] input_dim_stage1: 5 
-#  Input dimension for stage 2, includes [O1, A1, Y1, O2] input_dim_stage2: 7 
+
+
+
+#  Input dimension for stage 1, [O1] --> [x1, x2, x3, x4, x5] input_dim_stage1: 5
+#  Input dimension for stage 2, includes [O1, A1, Y1, O2] input_dim_stage2: 7
+
+
+
 
 output_dim_stage1: 1  # Output dimension for stage 1
 output_dim_stage2: 1  # Output dimension for stage 2
 optimizer_weight_decay: 0.001  # Weight decay (L2 regularization) helps prevent overfitting
 
 
+
+
+
+
+
+
 # scheduler_step_size: 30  # Step size for StepLR, defines the number of epochs before the next LR decay
 # scheduler_gamma: 0.8  # Decay rate for learning rate under StepLR
 initializer: 'he'  # He initialization method (Kaiming initialization)
 
+
+
+
 contrast: 1
 
-# {"dropout_rate": 0.4, "ema_alpha": 0.1, "factor": 0.1, "optimizer_lr": 0.1} 
 
 
-# not fully integrated yet for passing parameters.
-dql_params:
-  num_layers: 1
-  hidden_dim_stage1: 4
-  hidden_dim_stage2: 4
-  activation_function: elu # relu: [153.8863690458238, 152.51445276290178, 154.16300678253174, 152.50242083519697], elu
-  optimizer_lr: 0.07
-  batch_size: 200 
-  n_epoch: 150 
-  gradient_clipping: False # True, False 
-  add_ll_batch_norm: False 
-  dropout_rate: 0
+
+# {"dropout_rate": 0.4, "ema_alpha": 0.1, "factor": 0.1, "optimizer_lr": 0.1}
+
+
+
+
