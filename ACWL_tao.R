@@ -1,6 +1,7 @@
 
 library(rpart)
 require(nnet)
+set.seed(42)  # Replace 42 with any integer
 
 
 

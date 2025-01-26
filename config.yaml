@@ -1,27 +1,25 @@
 
-
 # Network parameters configuration
 
-
 # Models to run True False
-run_DQlearning: False
-run_surr_opt: True
+run_DQlearning: True
+run_surr_opt: False
 run_adaptive_contrast_tao: False
 setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new'
-num_replications: 30 # 9, 15, 30, 100
-sample_size: 5000 # 15000, 30000, 10000  # Number of samples to be used
+num_replications: 100 # 9, 15, 30, 100
+sample_size: 15000 # 15000, 30000, 10000  # Number of samples to be used
 # new scheme
-input_dim: 3 #10, 50, 100 # only for new scheme
+input_dim: 100 #10, 50, 100 # only for new scheme
 t_difficulty: "medium" # easy, medium, difficult
 
 # STANDARD
-batch_size: 800  #700, 300, 800  # Batch size calculated as a proportion of sample size
+batch_size: 1600  #700, 300, 800  # Batch size calculated as a proportion of sample size
 batches_to_sample: 18 # 30 # Not used- ignore
 
 
-optimizer_lr: 0.05 # 0.1 # 0.01, 0.07
+optimizer_lr: 0.2 # 0.1 # 0.01, 0.07
 eval_freq: 2 #  2, 3  Total steps per epoch = sample size/batch size = 15000/ 800 = 18,
-n_epoch: 10 # 10, 60, 150, 150  # Number of training epochs
+n_epoch: 60 # 10, 60, 150, 150  # Number of training epochs
 num_layers: 2 # 4
 activation_function: 'relu' # elu, relu, sigmoid, tanh, leakyrelu, none
 hidden_dim_stage1: 20 #40  # Number of neurons in the hidden layer of stage 1
@@ -40,7 +38,7 @@ factor: 0.8 # 0.1, 0.5, 0.8 only applies for reducelronplateau; only 1% of the o
 
 
 
-stabilization_patience: 6 #7 #5 #5  # V1 3, 5, 7
+stabilization_patience: 3 #6 7 #5 #5  # V1 3, 5, 7
 #### V1: steps_per_epoch = sample_size // batch_size ---->  evaluations_per_epoch = steps_per_epoch // eval_freq ---->  stabilization_patience = evaluations_per_epoch // stabilization_patience
 #### V2: steps_per_epoch = batches_to_sample ---->  evaluations_per_epoch = steps_per_epoch // eval_freq ---->  stabilization_patience = evaluations_per_epoch // stabilization_patience
 reinitializations_allowed: 3 #3
@@ -62,9 +60,9 @@ ema_alpha: 0.1 # 0.1, 0.4, 0.8 # EMA_new = (alpha * val_loss_new) + ((1 - alpha)
 optimizer_type: 'adam'  # Optimizer type, can be 'adam' or 'rmsprop'
 dropout_rate: 0.4  # 0.3 Dropout rate to prevent overfitting
 gradient_clipping: True # True, False
+
 phi_ensemble: False ## True, False if this is true keep ensemble_count to 5
 ensemble_count: 1 # 1, 5, 7
-
 
 
 
@@ -166,6 +164,7 @@ contrast: 1
 
 
 # {"dropout_rate": 0.4, "ema_alpha": 0.1, "factor": 0.1, "optimizer_lr": 0.1}
+
 
 
 
