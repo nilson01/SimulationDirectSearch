@@ -1,15 +1,13 @@
-
 # Network parameters configuration
-
-# Models to run True False
+# Models to run- True False
 run_DQlearning: True
-run_surr_opt: False
-run_adaptive_contrast_tao: False
+run_surr_opt: flased
+run_adaptive_contrast_tao: Tr√ßßßue
 setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new'
 num_replications: 100 # 9, 15, 30, 100
-sample_size: 15000 # 15000, 30000, 10000  # Number of samples to be used
+sample_size: 5000 # 15000, 30000, 10000  # Number of samples to be used
 # new scheme
-input_dim: 100 #10, 50, 100 # only for new scheme
+input_dim: 3 #10, 50, 100 # only for new scheme
 t_difficulty: "medium" # easy, medium, difficult
 
 # STANDARD
@@ -167,5 +165,33 @@ contrast: 1
 
 
 
+
+dql_params:
+  num_layers: 4
+  hidden_dim_stage1: 40
+  hidden_dim_stage2: 20
+  activation_function: relu # relu: [153.8863690458238, 152.51445276290178, 154.16300678253174, 152.50242083519697], elu
+  optimizer_lr: 0.05
+  dropout_rate: 0.1
+  batch_size: 800 
+  n_epoch: 30 
+  gradient_clipping: True # True, False 
+  early_stopping: True 
+  stabilization_patience: 3 #6 7 #5 #5  # V1 3, 5, 7
+  reinitializations_allowed: 3 #3
+
+
+
+# dql_params:
+#   num_layers: 4
+#   hidden_dim_stage1: 40
+#   hidden_dim_stage2: 20
+#   activation_function: relu # relu: [153.8863690458238, 152.51445276290178, 154.16300678253174, 152.50242083519697], elu
+#   optimizer_lr: 0.05
+#   batch_size: 800 
+#   n_epoch: 30 
+#   gradient_clipping: True # True, False 
+#   add_ll_batch_norm: False 
+#   dropout_rate: 0.1
 
 

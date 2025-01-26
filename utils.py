@@ -48,7 +48,7 @@ def extract_unique_treatment_values(df, columns_to_process, name):
     return unique_values
 
 
-def save_simulation_data(all_performances_Beh, all_performances_Opt, all_performances_DQL, all_performances_DS,  all_performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, folder):
+def save_simulation_data(all_performances_Beh, all_performances_Opt, all_performances_DQL, all_performances_DS,  all_performances_Tao, all_dfs_DQL, all_dfs_DS, all_losses_dicts, all_epoch_num_lists, results, all_configurations,folder):
     # Check if the folder exists, if not, create it
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -104,6 +104,7 @@ def save_simulation_data(all_performances_Beh, all_performances_Opt, all_perform
     losses_path = os.path.join(folder, 'losses_dicts.pkl')
     epochs_path = os.path.join(folder, 'epoch_num_lists.pkl')
     results_path = os.path.join(folder, 'simulation_results.pkl')
+    configs_path = os.path.join(folder, 'simulation_configs.pkl')
 
 
     df_sim_VF_path_DQL = os.path.join(folder, 'sim_VF_data_DQL.pkl')
@@ -139,6 +140,8 @@ def save_simulation_data(all_performances_Beh, all_performances_Opt, all_perform
         pickle.dump(all_epoch_num_lists, f)
     with open(results_path, 'wb') as f:
         pickle.dump(results, f)
+    with open(configs_path, 'wb') as f:
+        pickle.dump(all_configurations, f)
 
     print("Data saved successfully in the folder: %s", folder)
 
@@ -191,6 +194,7 @@ def load_and_process_data(params, folder):
     losses_path = os.path.join(folder, 'losses_dicts.pkl')
     epochs_path = os.path.join(folder, 'epoch_num_lists.pkl')
     results_path = os.path.join(folder, 'simulation_results.pkl')
+    configs_path = os.path.join(folder, 'simulation_configs.pkl')
 
     # Load DataFrames
     with open(df_path_DQL, 'rb') as f:
@@ -205,7 +209,10 @@ def load_and_process_data(params, folder):
         all_epoch_num_lists = pickle.load(f)
     with open(results_path, 'rb') as f:
         results = pickle.load(f)
-    
+    with open(configs_path, 'rb') as f:
+        configs = pickle.load(f)
+
+
     # Extract and process unique values for both DQL and DS
     columns_to_process = {
         'Predicted': ['Predicted_A1', 'Predicted_A2'],
@@ -214,6 +221,9 @@ def load_and_process_data(params, folder):
     unique_values_DQL = extract_unique_treatment_values(global_df_DQL, columns_to_process, name = "DQL")
     unique_values_DS = extract_unique_treatment_values(global_df_DS, columns_to_process, name = "DS")
     
+    print("unique_values_DQL: ", unique_values_DQL)
+    print("unique_values_DS: ", unique_values_DS)
+
     train_size = int(params['training_validation_prop'] * params['sample_size'])
  
     # Process and plot results from all simulations
@@ -229,8 +239,32 @@ def load_and_process_data(params, folder):
         if method_losses_dicts.get('DS'):
             plot_simulation_surLoss_losses_in_grid(selected_indices, method_losses_dicts['DS'], train_size, run_name, folder)
 
+
     # Print results for each configuration
     print("\n\n")
+    # print("configs: ", json.dumps(configs, indent=4))
+
+    # # Custom serializer to handle non-serializable objects like 'device'
+    # def custom_serializer(obj):
+    #     if isinstance(obj, torch.device):  # Handle torch.device type, convert to string
+    #         return str(obj)
+    #     raise TypeError(f"Type {type(obj)} not serializable")
+
+
+    # Custom serializer to handle non-serializable objects
+    def custom_serializer(obj):
+        if isinstance(obj, torch.device):  # Handle torch.device type
+            return str(obj)
+        elif isinstance(obj, torch.Tensor):  # Handle torch.Tensor type
+            return obj.tolist()  # Convert tensor to a list
+        raise TypeError(f"Type {type(obj)} not serializable")
+
+
+    # Pretty-print the configs with a custom serializer
+    print("configs: ", json.dumps(configs, indent=4, default=custom_serializer))
+
+
+
     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<--------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>")
     print("<<<<<<<<<<<<<<<<<<<<<<<<-----------------------FINAL RESULTS------------------------>>>>>>>>>>>>>>>>>>>>>>>")
     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<--------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -1765,8 +1799,13 @@ def calculate_reward_stage1(O1, A1, g1_opt, Z1, params):
         lambda_param = params['lambda_val']  # Scalar
 
         # Compute components
-        sin_component = torch.sin(torch.matmul(O1, params['gamma1']))
-        cos_component = torch.cos(torch.matmul(O1, params['gamma1_prime']))
+        # sin_component = torch.sin(torch.matmul(O1, params['gamma1']))
+        # cos_component = torch.cos(torch.matmul(O1, params['gamma1_prime']))
+
+
+        sin_component = torch.sin(torch.matmul(O1, torch.ones(params['input_dim'], device=device)))
+        cos_component = torch.cos(torch.matmul(O1, torch.ones(params['input_dim'], device=device)))
+
 
         # Introduce non-linear interactions between covariates and actions
         interaction_term = (O1[:, 0] * A1.float()).tanh()  # Example non-linear interaction
@@ -1979,8 +2018,11 @@ def calculate_reward_stage2(O1, A1, O2, A2, g2_opt, Z2, params, **kwargs):
         lambda_param = params['lambda_val']  # Scalar
 
         # Compute components
-        cos_component = torch.cos(torch.matmul(O1, params['gamma2']  ))
-        sin_component = torch.sin(torch.matmul(O1, params['gamma2_prime']))
+        # cos_component = torch.cos(torch.matmul(O1, params['gamma2']  ))
+        # sin_component = torch.sin(torch.matmul(O1, params['gamma2_prime']))
+
+        cos_component = torch.cos(torch.matmul(O1, torch.ones(params['input_dim'], device=device)))
+        sin_component = torch.sin(torch.matmul(O1, torch.ones(params['input_dim'], device=device)))
 
         # Introduce a non-linear interaction between current and previous actions
         interaction_term = (A1.float() * A2.float()).tanh()  # Non-linear interaction of actions
@@ -2121,12 +2163,34 @@ def evaluate_method_DS(method_name, params, config_number, df, test_input_stage1
     }
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
+    # Duplicate the params dictionary
+    param_W = params.copy()
+
+    # Update specific values in param_W  if testing is fixed 
+    param_W.update({
+        'num_networks': 1,
+    }) 
+    
+    if params["f_model"]!="DQlearning":
+        param_W.update({
+              'input_dim_stage1': params['input_dim_stage1'] + 1, # (H_1, A_1)
+              'input_dim_stage2': params['input_dim_stage2'] + 1, # (H_2, A_2)
+          })
+
+    print()
+    print()
+    print("<<<<<<<<<<<<<<<<-------------------param_W(DQL)------------------->>>>>>>>>>>>>>>>>")
+    print(param_W)
+    print()
+    print()
+
+
     V_replications_M1_pred = calculate_policy_valuefunc(method_name, test_input_stage1, test_O2, params, A1, A2,  d1_star, d2_star, Z1, Z2)
 
     # Calculate policy values using the DR estimator
     # V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
 
-    return df, V_replications_M1_pred
+    return df, V_replications_M1_pred, param_W
 
 
 
@@ -2159,9 +2223,19 @@ def evaluate_method_DQL(method_name, params, config_number, df, test_input_stage
     }
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
+
+    # Duplicate the params dictionary
+    param_W = params.copy()
+
+    # Update specific values in param_W  if testing is fixed 
+    param_W.update({
+        'num_networks': 1,
+    }) 
+
+
     V_replications_M1_pred = calculate_policy_valuefunc(method_name, test_input_stage1, test_O2, params, A1, A2,  d1_star, d2_star, Z1, Z2)
 
     # Calculate policy values using the DR estimator
     # V_replications_M1_pred = calculate_policy_values_W_estimator(train_tensors, params, A1, A2, P_A1_g_H1, P_A2_g_H2, config_number)
 
-    return df, V_replications_M1_pred
+    return df, V_replications_M1_pred, param_W
