@@ -1,16 +1,15 @@
 
-
 # Network parameters configuration
 
 # Models to run True False
 run_DQlearning: True
-run_surr_opt: False
-run_adaptive_contrast_tao: False
+run_surr_opt: True
+run_adaptive_contrast_tao: True
 setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new'
 num_replications: 100 # 9, 15, 30, 100
-sample_size: 5000 # 15000, 30000, 10000  # Number of samples to be used
+sample_size: 15000 # 15000, 30000, 10000  # Number of samples to be used
 # new scheme
-input_dim: 3 #10, 50, 100 # only for new scheme
+input_dim: 100 #10, 50, 100 # only for new scheme
 t_difficulty: "medium" # easy, medium, difficult
 
 # STANDARD
@@ -194,16 +193,17 @@ dql_params:
 
 
 
+
 # # Network parameters configuration
 # # Models to run- True False
 # run_DQlearning: True
 # run_surr_opt: True
-# run_adaptive_contrast_tao: True
+# run_adaptive_contrast_tao: False
 # setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new'
-# num_replications: 10 # 9, 15, 30, 100
-# sample_size: 15000 # 15000, 30000, 10000  # Number of samples to be used
+# num_replications: 3 # 9, 15, 30, 100
+# sample_size: 5000 # 15000, 30000, 10000  # Number of samples to be used
 # # new scheme
-# input_dim: 3 #10, 50, 100 # only for new scheme
+# input_dim: 100 #10, 50, 100 # only for new scheme
 # t_difficulty: "medium" # easy, medium, difficult
 
 # # STANDARD

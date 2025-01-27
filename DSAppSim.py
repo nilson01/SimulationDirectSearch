@@ -810,56 +810,56 @@ def generate_and_preprocess_data(params, replication_seed, config_seed, run='tra
 
 
 
-def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur, seed_value):
-# def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur):
+# def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur, seed_value):
+# # def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur):
     
-    sample_size = params['sample_size'] 
+#     sample_size = params['sample_size'] 
     
-    train_losses, val_losses = [], []
-    best_val_loss, best_model_stage1_params, best_model_stage2_params, epoch_num_model = float('inf'), None, None, 0
+#     train_losses, val_losses = [], []
+#     best_val_loss, best_model_stage1_params, best_model_stage2_params, epoch_num_model = float('inf'), None, None, 0
 
-    nn_stage1 = initialize_and_prepare_model(1, params, seed_value)
-    nn_stage2 = initialize_and_prepare_model(2, params, seed_value)
+#     nn_stage1 = initialize_and_prepare_model(1, params, seed_value)
+#     nn_stage2 = initialize_and_prepare_model(2, params, seed_value)
 
-    optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
+#     optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
 
-    #  Training and Validation data
-    train_data = {'input1': tuple_train[0], 'input2': tuple_train[1], 'Ci': tuple_train[2], 'A1': tuple_train[5], 'A2': tuple_train[6]}
-    val_data = {'input1': tuple_val[0], 'input2': tuple_val[1], 'Ci': tuple_val[2], 'A1': tuple_val[5], 'A2': tuple_val[6]}
+#     #  Training and Validation data
+#     train_data = {'input1': tuple_train[0], 'input2': tuple_train[1], 'Ci': tuple_train[2], 'A1': tuple_train[5], 'A2': tuple_train[6]}
+#     val_data = {'input1': tuple_val[0], 'input2': tuple_val[1], 'Ci': tuple_val[2], 'A1': tuple_val[5], 'A2': tuple_val[6]}
 
 
-    # Training and Validation loop for both stages
-    for epoch in range(params['n_epoch']):
+#     # Training and Validation loop for both stages
+#     for epoch in range(params['n_epoch']):
 
-        train_loss = process_batches(nn_stage1, nn_stage2, train_data, params, optimizer, option_sur=option_sur, seed_value=seed_value, is_train=True)
-        train_losses.append(train_loss)
+#         train_loss = process_batches(nn_stage1, nn_stage2, train_data, params, optimizer, option_sur=option_sur, seed_value=seed_value, is_train=True)
+#         train_losses.append(train_loss)
 
-        val_loss = process_batches(nn_stage1, nn_stage2, val_data, params, optimizer, option_sur=option_sur, seed_value=seed_value, is_train=False)
-        val_losses.append(val_loss)
+#         val_loss = process_batches(nn_stage1, nn_stage2, val_data, params, optimizer, option_sur=option_sur, seed_value=seed_value, is_train=False)
+#         val_losses.append(val_loss)
 
-        if val_loss < best_val_loss:
-            epoch_num_model = epoch
-            best_val_loss = val_loss
-            best_model_stage1_params = nn_stage1.state_dict()
-            best_model_stage2_params = nn_stage2.state_dict()
+#         if val_loss < best_val_loss:
+#             epoch_num_model = epoch
+#             best_val_loss = val_loss
+#             best_model_stage1_params = nn_stage1.state_dict()
+#             best_model_stage2_params = nn_stage2.state_dict()
 
-        # Update the scheduler with the current epoch's validation loss
-        update_scheduler(scheduler, params, val_loss)
+#         # Update the scheduler with the current epoch's validation loss
+#         update_scheduler(scheduler, params, val_loss)
 
-    model_dir = f"models/{params['job_id']}"
-    # Check if the directory exists, if not, create it
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
+#     model_dir = f"models/{params['job_id']}"
+#     # Check if the directory exists, if not, create it
+#     if not os.path.exists(model_dir):
+#         os.makedirs(model_dir)
     
-    # Define file paths for saving models
-    model_path_stage1 = os.path.join(model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
-    model_path_stage2 = os.path.join(model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+#     # Define file paths for saving models
+#     model_path_stage1 = os.path.join(model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+#     model_path_stage2 = os.path.join(model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
         
-    # Save the models
-    torch.save(best_model_stage1_params, model_path_stage1)
-    torch.save(best_model_stage2_params, model_path_stage2)
+#     # Save the models
+#     torch.save(best_model_stage1_params, model_path_stage1)
+#     torch.save(best_model_stage2_params, model_path_stage2)
     
-    return ((train_losses, val_losses), epoch_num_model)
+#     return ((train_losses, val_losses), epoch_num_model)
 
 
 
@@ -880,276 +880,276 @@ class CustomDataset(Dataset):
 
 
 
-# def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur, seed_value):
-#     sample_size = params['sample_size']
-#     device = params['device']
-#     n_epoch = params['n_epoch']
-#     batch_size = params['batch_size']
-#     # batches_to_sample =  params['batches_to_sample']
+def surr_opt(tuple_train, tuple_val, params, config_number, ensemble_num, option_sur, seed_value):
+    sample_size = params['sample_size']
+    device = params['device']
+    n_epoch = params['n_epoch']
+    batch_size = params['batch_size']
+    # batches_to_sample =  params['batches_to_sample']
     
-#     eval_freq =  params['eval_freq'] # params.get('eval_freq', 10)  # Evaluate every 10 steps by default
-#     # early_stopping_patience =  params['early_stopping_patience'] # params.get('early_stopping_patience', 10)  
-#     ema_alpha =  params['ema_alpha']
-#     stabilization_patience =  params['stabilization_patience'] # params.get('stabilization_patience', 5)  # New stabilization check threshold
+    eval_freq =  params['eval_freq'] # params.get('eval_freq', 10)  # Evaluate every 10 steps by default
+    # early_stopping_patience =  params['early_stopping_patience'] # params.get('early_stopping_patience', 10)  
+    ema_alpha =  params['ema_alpha']
+    stabilization_patience =  params['stabilization_patience'] # params.get('stabilization_patience', 5)  # New stabilization check threshold
     
-#     # # Calculate the number of steps (batches) per epoch
-#     # steps_per_epoch = sample_size // batch_size
-#     # # Calculate evaluations per epoch based on eval_freq
-#     # evaluations_per_epoch = steps_per_epoch // eval_freq
-#     # # Set stabilization_patience as a multiple of evaluations per epoch
-#     # stabilization_patience = evaluations_per_epoch //  params['stabilization_patience']
+    # # Calculate the number of steps (batches) per epoch
+    # steps_per_epoch = sample_size // batch_size
+    # # Calculate evaluations per epoch based on eval_freq
+    # evaluations_per_epoch = steps_per_epoch // eval_freq
+    # # Set stabilization_patience as a multiple of evaluations per epoch
+    # stabilization_patience = evaluations_per_epoch //  params['stabilization_patience']
     
-#     reinitializations_allowed =  params['reinitializations_allowed'] # params.get('reinitializations_allowed', 2)  # Limit reinitializations
+    reinitializations_allowed =  params['reinitializations_allowed'] # params.get('reinitializations_allowed', 2)  # Limit reinitializations
 
-#     # Initialize models
-#     nn_stage1 = initialize_and_prepare_model(1, params, seed_value)
-#     nn_stage2 = initialize_and_prepare_model(2, params, seed_value)
+    # Initialize models
+    nn_stage1 = initialize_and_prepare_model(1, params, seed_value)
+    nn_stage2 = initialize_and_prepare_model(2, params, seed_value)
 
-#     # # Check for the initializer type in params and apply accordingly
-#     # if params['initializer'] == 'he':
-#     #     nn_stage1.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
-#     #     nn_stage2.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
+    # # Check for the initializer type in params and apply accordingly
+    # if params['initializer'] == 'he':
+    #     nn_stage1.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
+    #     nn_stage2.he_initializer(seed=seed_value)  # He initialization (aka Kaiming initialization)
 
-#     # else:
-#     #     nn_stage1.reset_weights()  # Custom reset weights check the NN class
-#     #     nn_stage2.reset_weights()  
+    # else:
+    #     nn_stage1.reset_weights()  # Custom reset weights check the NN class
+    #     nn_stage2.reset_weights()  
 
     
 
-#     # Initialize optimizer and scheduler
-#     optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
+    # Initialize optimizer and scheduler
+    optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
 
-#     # Prepare training and validation data
-#     train_data = {
-#         'input1': tuple_train[0], 'input2': tuple_train[1], 'Ci': tuple_train[2],
-#         'A1': tuple_train[5], 'A2': tuple_train[6]
-#     }
-#     val_data = {
-#         'input1': tuple_val[0], 'input2': tuple_val[1], 'Ci': tuple_val[2],
-#         'A1': tuple_val[5], 'A2': tuple_val[6]
-#     }
+    # Prepare training and validation data
+    train_data = {
+        'input1': tuple_train[0], 'input2': tuple_train[1], 'Ci': tuple_train[2],
+        'A1': tuple_train[5], 'A2': tuple_train[6]
+    }
+    val_data = {
+        'input1': tuple_val[0], 'input2': tuple_val[1], 'Ci': tuple_val[2],
+        'A1': tuple_val[5], 'A2': tuple_val[6]
+    }
 
-#     # Create a generator for DataLoader
-#     data_gen = torch.Generator()
-#     data_gen.manual_seed(seed_value)
+    # Create a generator for DataLoader
+    data_gen = torch.Generator()
+    data_gen.manual_seed(seed_value)
 
-#     # Create datasets and data loaders
-#     train_dataset = CustomDataset(train_data)
-#     val_dataset = CustomDataset(val_data)
+    # Create datasets and data loaders
+    train_dataset = CustomDataset(train_data)
+    val_dataset = CustomDataset(val_data)
 
-#     # train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-#     # val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    # train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    # val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
-#     train_loader = DataLoader(
-#         train_dataset, 
-#         batch_size=batch_size, 
-#         shuffle=True, 
-#         generator=data_gen  # Control shuffling with fixed seed
-#     )
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=batch_size, 
+        shuffle=True, 
+        generator=data_gen  # Control shuffling with fixed seed
+    )
 
-#     val_loader = DataLoader(
-#         val_dataset, 
-#         batch_size=batch_size, 
-#         shuffle=True, 
-#         generator=data_gen  # Control shuffling with fixed seed
-#     )
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=batch_size, 
+        shuffle=True, 
+        generator=data_gen  # Control shuffling with fixed seed
+    )
 
 
-#     # Training variables
-#     train_losses = []
-#     val_losses = []
-#     best_val_loss = float('inf')
-#     best_model_stage1_params = None
-#     best_model_stage2_params = None
-#     epoch_num_model = 0
-#     total_steps = 0
-#     no_improvement_count = 0  # Early stopping counter
-#     ema_val_loss = None
-#     reinitialization_count = 0  # Track reinitializations
+    # Training variables
+    train_losses = []
+    val_losses = []
+    best_val_loss = float('inf')
+    best_model_stage1_params = None
+    best_model_stage2_params = None
+    epoch_num_model = 0
+    total_steps = 0
+    no_improvement_count = 0  # Early stopping counter
+    ema_val_loss = None
+    reinitialization_count = 0  # Track reinitializations
     
-#     early_stop = False  # Set the flag to break the outer loop
+    early_stop = False  # Set the flag to break the outer loop
 
 
 
-#     # For tabular display
-#     loss_table = pd.DataFrame(columns=['Epoch', 'Avg Training Loss', 'Avg Validation Loss'])
+    # For tabular display
+    loss_table = pd.DataFrame(columns=['Epoch', 'Avg Training Loss', 'Avg Validation Loss'])
 
-#     for epoch in range(n_epoch):
+    for epoch in range(n_epoch):
         
-#         if early_stop:
-#             break  # Break out of the epoch loop if early stopping is triggered
+        if early_stop:
+            break  # Break out of the epoch loop if early stopping is triggered
 
-#         nn_stage1.train()
-#         nn_stage2.train()
+        nn_stage1.train()
+        nn_stage2.train()
 
-#         # Accumulate loss over batches for the epoch
-#         running_train_loss = 0.0
-#         running_val_loss = 0.0
-#         num_batches = 0
-#         num_val_steps = 0
+        # Accumulate loss over batches for the epoch
+        running_train_loss = 0.0
+        running_val_loss = 0.0
+        num_batches = 0
+        num_val_steps = 0
 
-#         # train_loader = get_data_loader_with_reshuffle(train_dataset, batch_size, batches_to_sample)
-#         for batch_data in train_loader:   
+        # train_loader = get_data_loader_with_reshuffle(train_dataset, batch_size, batches_to_sample)
+        for batch_data in train_loader:   
 
-#             total_steps += 1
-#             num_batches += 1
+            total_steps += 1
+            num_batches += 1
 
-#             batch_data = {k: v.to(device) for k, v in batch_data.items()}
+            batch_data = {k: v.to(device) for k, v in batch_data.items()}
 
-#             # Forward pass
-#             outputs_stage1 = nn_stage1(batch_data['input1'])
-#             outputs_stage2 = nn_stage2(batch_data['input2'])
+            # Forward pass
+            outputs_stage1 = nn_stage1(batch_data['input1'])
+            outputs_stage2 = nn_stage2(batch_data['input2'])
 
-#             outputs_stage1 = torch.stack(outputs_stage1, dim=1).squeeze()
-#             outputs_stage2 = torch.stack(outputs_stage2, dim=1).squeeze()
+            outputs_stage1 = torch.stack(outputs_stage1, dim=1).squeeze()
+            outputs_stage2 = torch.stack(outputs_stage2, dim=1).squeeze()
 
-#             # Compute loss
-#             loss = main_loss_gamma(
-#                 outputs_stage1, outputs_stage2, batch_data['A1'], batch_data['A2'], 
-#                 batch_data['Ci'], option=option_sur, surrogate_num=params['surrogate_num']
-#             )
+            # Compute loss
+            loss = main_loss_gamma(
+                outputs_stage1, outputs_stage2, batch_data['A1'], batch_data['A2'], 
+                batch_data['Ci'], option=option_sur, surrogate_num=params['surrogate_num']
+            )
 
-#             # Backward and optimize
-#             optimizer.zero_grad()
-#             loss.backward()
+            # Backward and optimize
+            optimizer.zero_grad()
+            loss.backward()
 
-#             # Gradient Clipping (to prevent exploding gradients)
-#             if params['gradient_clipping']:
-#                 torch.nn.utils.clip_grad_norm_(nn_stage1.parameters(), max_norm=1.0)
-#                 torch.nn.utils.clip_grad_norm_(nn_stage2.parameters(), max_norm=1.0)
+            # Gradient Clipping (to prevent exploding gradients)
+            if params['gradient_clipping']:
+                torch.nn.utils.clip_grad_norm_(nn_stage1.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(nn_stage2.parameters(), max_norm=1.0)
 
-#             optimizer.step() 
-#             running_train_loss += loss.item()
+            optimizer.step() 
+            running_train_loss += loss.item()
 
-#             # Evaluate model at specified frequency
-#             if total_steps % eval_freq == 0:            
-#                 val_loss = evaluate_model(nn_stage1, nn_stage2, val_loader, params)
-#                 running_val_loss += val_loss
-#                 num_val_steps += 1                     
+            # Evaluate model at specified frequency
+            if total_steps % eval_freq == 0:            
+                val_loss = evaluate_model(nn_stage1, nn_stage2, val_loader, params)
+                running_val_loss += val_loss
+                num_val_steps += 1                     
 
-#                 # Save the best model
-#                 # if val_loss < best_val_loss:
-#                 #     epoch_num_model = epoch
-#                 #     best_val_loss = val_loss
-#                 #     best_model_stage1_params = copy.deepcopy(nn_stage1.state_dict())
-#                 #     best_model_stage2_params = copy.deepcopy(nn_stage2.state_dict())
-#                 #     no_improvement_count = 0  # Reset early stopping counter
+                # Save the best model
+                # if val_loss < best_val_loss:
+                #     epoch_num_model = epoch
+                #     best_val_loss = val_loss
+                #     best_model_stage1_params = copy.deepcopy(nn_stage1.state_dict())
+                #     best_model_stage2_params = copy.deepcopy(nn_stage2.state_dict())
+                #     no_improvement_count = 0  # Reset early stopping counter
                 
-#                 # Calculate EMA of validation loss
-#                 if ema_val_loss is None:
-#                     ema_val_loss = val_loss
-#                 else:
-#                     ema_val_loss = ema_alpha * val_loss + (1 - ema_alpha) * ema_val_loss
+                # Calculate EMA of validation loss
+                if ema_val_loss is None:
+                    ema_val_loss = val_loss
+                else:
+                    ema_val_loss = ema_alpha * val_loss + (1 - ema_alpha) * ema_val_loss
                 
-#                 # Save the best model using EMA of validation loss
-#                 if ema_val_loss < best_val_loss:
-#                     # print(" Improved ---> ema_val_loss, best_val_loss: Saving the model...",  ema_val_loss, best_val_loss) 
-#                     print(f"Improved ---> ema_val_loss: {ema_val_loss}, best_val_loss: {best_val_loss}. Saving the model...")
+                # Save the best model using EMA of validation loss
+                if ema_val_loss < best_val_loss:
+                    # print(" Improved ---> ema_val_loss, best_val_loss: Saving the model...",  ema_val_loss, best_val_loss) 
+                    print(f"Improved ---> ema_val_loss: {ema_val_loss}, best_val_loss: {best_val_loss}. Saving the model...")
 
-#                     epoch_num_model = epoch
-#                     best_val_loss = ema_val_loss
-#                     best_model_stage1_params = copy.deepcopy(nn_stage1.state_dict())
-#                     best_model_stage2_params = copy.deepcopy(nn_stage2.state_dict())
-#                     no_improvement_count = 0  # Reset early stopping counter                    
-#                 else:
-#                     # print(" Did not improve ---> ema_val_loss, best_val_loss, no_improvement_count, stabilization_patience",  ema_val_loss, best_val_loss, no_improvement_count, stabilization_patience)
-#                     print(f"Did not improve ---> ema_val_loss: {ema_val_loss}, best_val_loss: {best_val_loss}, no_improvement_count: {no_improvement_count}, stabilization_patience: {stabilization_patience}")
+                    epoch_num_model = epoch
+                    best_val_loss = ema_val_loss
+                    best_model_stage1_params = copy.deepcopy(nn_stage1.state_dict())
+                    best_model_stage2_params = copy.deepcopy(nn_stage2.state_dict())
+                    no_improvement_count = 0  # Reset early stopping counter                    
+                else:
+                    # print(" Did not improve ---> ema_val_loss, best_val_loss, no_improvement_count, stabilization_patience",  ema_val_loss, best_val_loss, no_improvement_count, stabilization_patience)
+                    print(f"Did not improve ---> ema_val_loss: {ema_val_loss}, best_val_loss: {best_val_loss}, no_improvement_count: {no_improvement_count}, stabilization_patience: {stabilization_patience}")
 
-#                     no_improvement_count += 1  # Increment early stopping counter
+                    no_improvement_count += 1  # Increment early stopping counter
                     
                     
-#                 # Check stabilization condition
-#                 if reinitialization_count < reinitializations_allowed and no_improvement_count >= stabilization_patience:
-#                     print(f"Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch {epoch + 1}")
+                # Check stabilization condition
+                if reinitialization_count < reinitializations_allowed and no_improvement_count >= stabilization_patience:
+                    print(f"Validation loss stabilized <<<<<<<<<<---------->>>>>>>>>> reinitializing model at epoch {epoch + 1}")
                     
-#                     nn_stage1 = initialize_and_prepare_model(1, params, seed_value+reinitialization_count)  # Reinitialize model 1
-#                     nn_stage2 = initialize_and_prepare_model(2, params, seed_value+reinitialization_count+123)  # Reinitialize model 2
-#                     optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
-#                     no_improvement_count = 0  # Reset counter after reinitialization
-#                     reinitialization_count += 1
+                    nn_stage1 = initialize_and_prepare_model(1, params, seed_value+reinitialization_count)  # Reinitialize model 1
+                    nn_stage2 = initialize_and_prepare_model(2, params, seed_value+reinitialization_count+123)  # Reinitialize model 2
+                    optimizer, scheduler = initialize_optimizer_and_scheduler(nn_stage1, nn_stage2, params)
+                    no_improvement_count = 0  # Reset counter after reinitialization
+                    reinitialization_count += 1
                     
-#                  # Early stopping condition based on best_val_loss
-#                 if params['early_stopping'] and reinitialization_count >= reinitializations_allowed and no_improvement_count >= stabilization_patience:
-#                     print(f"Early stopping after {epoch + 1} epochs due to no further improvement.")                 
-#                     early_stop = True  # Set the flag to break the outer loop
-#                     break
+                 # Early stopping condition based on best_val_loss
+                if params['early_stopping'] and reinitialization_count >= reinitializations_allowed and no_improvement_count >= stabilization_patience:
+                    print(f"Early stopping after {epoch + 1} epochs due to no further improvement.")                 
+                    early_stop = True  # Set the flag to break the outer loop
+                    break
 
-#                 # # Early stopping check 
-#                 # if params['early_stopping'] and no_improvement_count >= early_stopping_patience:
-#                 #     print(f"Early stopping triggered after {epoch + 1} epochs.")
-#                 #     break
+                # # Early stopping check 
+                # if params['early_stopping'] and no_improvement_count >= early_stopping_patience:
+                #     print(f"Early stopping triggered after {epoch + 1} epochs.")
+                #     break
 
-#                 # Update scheduler if necessary
-#                 update_scheduler(scheduler, params, val_loss)                 
-#                 # update_scheduler(scheduler, params, ema_val_loss)
-
-
-#         # Calculate and store average training loss for this epoch
-#         avg_train_loss = running_train_loss / num_batches
-#         train_losses.append(avg_train_loss)  
-#         print(" total_steps   ---->  ",  total_steps)  
-#         print(" num_batches   ---->  ",  num_batches)                 
-#         print(" num_val_steps   ---->  ",  num_val_steps)
+                # Update scheduler if necessary
+                update_scheduler(scheduler, params, val_loss)                 
+                # update_scheduler(scheduler, params, ema_val_loss)
 
 
-#         if num_val_steps > 0:
-#             avg_val_loss = running_val_loss / num_val_steps
-#             val_losses.append(avg_val_loss)
-#         else:
-#             val_losses.append(float('nan'))  # In case there were no validation steps this epoch
+        # Calculate and store average training loss for this epoch
+        avg_train_loss = running_train_loss / num_batches
+        train_losses.append(avg_train_loss)  
+        print(" total_steps   ---->  ",  total_steps)  
+        print(" num_batches   ---->  ",  num_batches)                 
+        print(" num_val_steps   ---->  ",  num_val_steps)
+
+
+        if num_val_steps > 0:
+            avg_val_loss = running_val_loss / num_val_steps
+            val_losses.append(avg_val_loss)
+        else:
+            val_losses.append(float('nan'))  # In case there were no validation steps this epoch
             
-#         print()
-#         print(f'Epoch [{epoch+1}/{n_epoch}], Average Training Loss: {avg_train_loss:.4f}, Average Validation Loss: {avg_val_loss if num_val_steps > 0 else "N/A"}')
-#         print("_"*90)
+        print()
+        print(f'Epoch [{epoch+1}/{n_epoch}], Average Training Loss: {avg_train_loss:.4f}, Average Validation Loss: {avg_val_loss if num_val_steps > 0 else "N/A"}')
+        print("_"*90)
         
-#         # Append to the table
-#         new_row = pd.DataFrame({
-#             'Epoch': [epoch + 1],
-#             'Avg Training Loss': [avg_train_loss],
-#             'Avg Validation Loss': [avg_val_loss if num_val_steps > 0 else "N/A"]
-#         })
-#         loss_table = pd.concat([loss_table, new_row], ignore_index=True)
+        # Append to the table
+        new_row = pd.DataFrame({
+            'Epoch': [epoch + 1],
+            'Avg Training Loss': [avg_train_loss],
+            'Avg Validation Loss': [avg_val_loss if num_val_steps > 0 else "N/A"]
+        })
+        loss_table = pd.concat([loss_table, new_row], ignore_index=True)
 
     
 
-#     # Print the table at the end of training
-#     print()
-#     print("LOSS TABLE: ")
-#     print(loss_table.to_string(index=False))
-#     print()
+    # Print the table at the end of training
+    print()
+    print("LOSS TABLE: ")
+    print(loss_table.to_string(index=False))
+    print()
 
-#     # Save the best model parameters
-#     model_dir = f"models/{params['job_id']}"
-#     os.makedirs(model_dir, exist_ok=True)
+    # Save the best model parameters
+    model_dir = f"models/{params['job_id']}"
+    os.makedirs(model_dir, exist_ok=True)
 
-#     # Define file paths for saving models
-#     model_path_stage1 = os.path.join(
-#         model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+    # Define file paths for saving models
+    model_path_stage1 = os.path.join(
+        model_dir, f'best_model_stage_surr_1_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
     
-#     model_path_stage2 = os.path.join(
-#         model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
+    model_path_stage2 = os.path.join(
+        model_dir, f'best_model_stage_surr_2_{sample_size}_config_number_{config_number}_ensemble_num_{ensemble_num}.pt')
 
 
-#     # Ensure the model parameters are not None before saving
-#     if best_model_stage1_params is not None and best_model_stage2_params is not None:
-#         # Save models
-#         torch.save(best_model_stage1_params, model_path_stage1)
-#         torch.save(best_model_stage2_params, model_path_stage2)
+    # Ensure the model parameters are not None before saving
+    if best_model_stage1_params is not None and best_model_stage2_params is not None:
+        # Save models
+        torch.save(best_model_stage1_params, model_path_stage1)
+        torch.save(best_model_stage2_params, model_path_stage2)
 
-#         # Verify that files were saved correctly
-#         if os.path.isfile(model_path_stage1) and os.path.getsize(model_path_stage1) > 0:
-#             print(f"Model stage 1 saved successfully at {model_path_stage1}")
-#         else:
-#             print(f"Error: Model stage 1 was not saved correctly at {model_path_stage1}")
+        # Verify that files were saved correctly
+        if os.path.isfile(model_path_stage1) and os.path.getsize(model_path_stage1) > 0:
+            print(f"Model stage 1 saved successfully at {model_path_stage1}")
+        else:
+            print(f"Error: Model stage 1 was not saved correctly at {model_path_stage1}")
 
-#         if os.path.isfile(model_path_stage2) and os.path.getsize(model_path_stage2) > 0:
-#             print(f"Model stage 2 saved successfully at {model_path_stage2}")
-#         else:
-#             print(f"Error: Model stage 2 was not saved correctly at {model_path_stage2}")
-#     else:
-#         print("Error: Model parameters are None, not saving the models.")
+        if os.path.isfile(model_path_stage2) and os.path.getsize(model_path_stage2) > 0:
+            print(f"Model stage 2 saved successfully at {model_path_stage2}")
+        else:
+            print(f"Error: Model stage 2 was not saved correctly at {model_path_stage2}")
+    else:
+        print("Error: Model parameters are None, not saving the models.")
 
-#     return ((train_losses, val_losses), epoch_num_model)
+    return ((train_losses, val_losses), epoch_num_model)
 
 
 

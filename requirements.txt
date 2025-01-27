@@ -22,3 +22,30 @@ wandb==0.18.7
 # conda create --name test_env python=3.8 -y
 # conda activate test_env
 # pip install -r requirements.txt
+
+
+# # brew install docker docker-compose
+# brew install colima
+# colima start --memory 4 --cpu 2
+
+
+# brew install docker-machine
+# docker-machine create --driver virtualbox default
+# docker-machine start default
+# eval $(docker-machine env default)
+
+
+# docker --version
+
+# docker run -it ubuntu bash
+
+# colima start
+
+# docker-machine start
+# eval $(docker-machine env default)
+
+# docker build -t directsearchapp .
+
+# docker run --rm directsearchapp
+
+
