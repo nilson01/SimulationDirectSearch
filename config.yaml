@@ -7,7 +7,7 @@ run_surr_opt: True
 run_adaptive_contrast_tao: False
 setting: 'new' # 'linear', 'tao', 'scheme_5', 'scheme_6', 'scheme_7', 'scheme_8', 'new'
 num_replications: 100 # 9, 15, 30, 100
-sample_size: 15000 # 15000, 30000, 10000  # Number of samples to be used
+sample_size: 5000 # 15000, 30000, 10000  # Number of samples to be used
 # new scheme
 input_dim: 50 #10, 50, 100 # only for new scheme
 t_difficulty: "medium" # easy, medium, difficult
